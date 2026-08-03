@@ -46,9 +46,26 @@
 
 ```powershell
 .\build.ps1             # 一键构建全部 27 个 C# 工程
+.\test.ps1              # 提交前冒烟测试（构建+启动+预览 PNG/文本/SQLite）
 ```
 
 产物输出到 `Build\Release\`。需要 .NET 8 SDK（Windows 版）。
+
+## 运行期插件依赖修复（v2）
+
+初版迁移在运行时出现「以下插件加载失败」（ImageViewer / TextViewer / VideoViewer）：
+根因是 .NET 8/10 下库项目不会把 NuGet 依赖复制到输出目录，且原生库默认放不进
+插件目录。本分支的修复：
+
+- 全部插件工程添加 `<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>`，
+  托管依赖（Google.Protobuf、AvalonEdit、QuickLook.MediaInfo、SQLitePCLRaw 等）
+  复制到各自插件目录
+- 全部插件工程设置 `RuntimeIdentifier`（x64/ARM64 按平台）并关闭 RID 目录后缀，
+  配合构建后 `FlattenRuntimeNative` 目标，把 `runtimes\win-x64\native\*.dll`
+  （Magick.Native、e_sqlite3/e_sqlcipher、WebView2Loader、EVRPresenter 等）
+  复制到插件根目录，保证 LoadFrom 加载的插件能解析原生库
+
+提交策略：每次提交前必须运行 `.\test.ps1` 且全部通过。
 
 ## 未改动 / 注意事项
 

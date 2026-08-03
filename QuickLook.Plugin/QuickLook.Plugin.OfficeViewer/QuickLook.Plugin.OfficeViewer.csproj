@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <RuntimeIdentifier Condition="'$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64'">win-x64</RuntimeIdentifier>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
         <TargetFramework>net10.0-windows</TargetFramework>
@@ -89,5 +93,11 @@
             <Link>Properties\GitVersion.cs</Link>
         </Compile>
     </ItemGroup>
-
+  <Target Name="FlattenRuntimeNative" AfterTargets="Build">
+    <ItemGroup>
+      <_RidNative Include="$(OutputPath)runtimes\win-x64\native\*.dll" Condition="'$(Platform)' != 'ARM64'" />
+      <_RidNative Include="$(OutputPath)runtimes\win-arm64\native\*.dll" Condition="'$(Platform)' == 'ARM64'" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RidNative)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
