@@ -59,8 +59,9 @@ public class WebpagePanel : UserControl
                 UserDataFolder = Path.Combine(SettingHelper.LocalDataPath, @"WebView2_Data\"),
             },
 
-            // Prevent white flash in dark mode
-            DefaultBackgroundColor = GetThemeBackgroundColor(),
+            // v1.2.1: transparent background so the window's Mica backdrop shows
+            // through the web content (both light and dark themes).
+            DefaultBackgroundColor = System.Drawing.Color.FromArgb(0, 0, 0, 0),
         };
         _webView.NavigationStarting += Webview_NavigationStarting;
         _webView.NavigationCompleted += WebView_NavigationCompleted;
@@ -168,21 +169,24 @@ public class WebpagePanel : UserControl
 
     protected virtual void WebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
     {
-        // v1.2.0: keep the background matching the current theme instead of
-        // forcing white, otherwise dark mode shows a white/black edge around
-        // the rendered web content.
-        _webView.DefaultBackgroundColor = GetThemeBackgroundColor();
+        // Keep the background transparent so Mica stays visible.
+        _webView.DefaultBackgroundColor = System.Drawing.Color.FromArgb(0, 0, 0, 0);
     }
-
-    protected static System.Drawing.Color GetThemeBackgroundColor() =>
-        OSThemeHelper.AppsUseDarkTheme()
-            ? System.Drawing.Color.FromArgb(255, 32, 32, 32)
-            : System.Drawing.Color.FromArgb(255, 255, 255, 255);
 
     protected virtual void WebView_CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
     {
         if (e.IsSuccess)
         {
+            // v1.2.1: make the web content follow the app's manual light/dark
+            // toggle (prefers-color-scheme inside the page matches this).
+            _webView.CoreWebView2.Profile.PreferredColorScheme =
+                AppThemeState.IsDark ? CoreWebView2PreferredColorScheme.Dark : CoreWebView2PreferredColorScheme.Light;
+
+            // v1.2.1: keep the page background transparent so the window's Mica
+            // backdrop shows through the web content (all web-based viewers).
+            _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
+                "document.documentElement.style.backgroundColor='transparent';document.body.style.backgroundColor='transparent';");
+
             _webView.CoreWebView2.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
             _webView.CoreWebView2.WebResourceRequested += WebView_WebResourceRequested;
         }

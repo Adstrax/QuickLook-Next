@@ -59,6 +59,10 @@ public partial class ViewerWindow : Window
 
         InitializeComponent();
 
+        // v1.2.1: start with the user's saved light/dark choice (None = follow system).
+        ContextObject.Theme = (Themes)SettingHelper.Get(
+            "LastTheme", (int)Themes.None, "QuickLook");
+
         _autoReload = SettingHelper.Get("AutoReload", false);
 
         Icon = (App.IsWin10 ? Properties.Resources.app_white_png : Properties.Resources.app_png).ToBitmapSource();
@@ -73,6 +77,7 @@ public partial class ViewerWindow : Window
 
         Topmost = SettingHelper.Get("Topmost", false);
         buttonTop.Tag = Topmost ? "Top" : "Auto";
+        buttonTheme.Click += ToggleTheme;
 
         ShowInTaskbar = SettingHelper.Get("ShowInTaskbar", false);
 
@@ -476,6 +481,22 @@ public partial class ViewerWindow : Window
 
         // by user?
         _customWindowSize = new Size(Width, Height);
+    }
+
+    private void ToggleTheme(object sender, RoutedEventArgs e)
+    {
+        var newTheme = CurrentTheme == Themes.Dark ? Themes.Light : Themes.Dark;
+
+        // ContextObject.Theme triggers SwitchTheme (window + Mica + theme state).
+        ContextObject.Theme = newTheme;
+
+        // Persist the choice so future previews start with it.
+        SettingHelper.Set("LastTheme", (int)newTheme, "QuickLook");
+        SettingHelper.Set("LastTheme", (int)newTheme, "QuickLook.Plugin.ImageViewer");
+
+        // Re-render the current preview so web content (WebView2) picks up the
+        // new PreferredColorScheme / theme.
+        ViewWindowManager.GetInstance().ReloadPreview();
     }
 
     private void ShowWindowCaptionContainer(object sender, MouseEventArgs e)

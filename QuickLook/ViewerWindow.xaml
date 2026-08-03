@@ -110,6 +110,11 @@
                             DockPanel.Dock="Right"
                             Style="{StaticResource CaptionButtonStyle}"
                             ToolTip="Share" />
+                    <Button x:Name="buttonTheme"
+                            Content="&#xE706;"
+                            DockPanel.Dock="Right"
+                            Style="{StaticResource CaptionButtonStyle}"
+                            ToolTip="Toggle Light/Dark Theme" />
                     <Button x:Name="buttonOpenWith"
                             Content="&#xE7AC;"
                             DockPanel.Dock="Right"

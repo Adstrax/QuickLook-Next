@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.2.0
+# QuickLook Lite（精简版）v1.2.1
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰
@@ -84,6 +84,15 @@
   （深色 #202020 / 浅色白），MD/HTML 内容在深色模式下不再出现白边/黑边
 - **亮/暗模式在所有场景生效**：窗口 Mica 与 Web 内容均跟随系统主题
   （MD 模板已通过 `prefers-color-scheme` 切换 github-dark CSS）
+
+## v1.2.1 更新内容
+
+- **MD/Web 内容支持 Mica**：WebView2 背景改为透明，并向页面注入透明背景脚本，
+  MD/HTML/AsciiDoc/ipynb/rst 的页面背景透出窗口 Mica，不再是纯黑
+- **顶栏新增亮/暗切换按钮**（太阳/月亮图标）：手动切换主题，窗口、Mica 与 Web
+  内容同步变化（Web 通过 PreferredColorScheme + 重载预览跟随），选择会被记住
+- **快捷方式**：桌面「QuickLook Lite.lnk」与 `D:\Codex\QuickLook-Lite.lnk`
+  直达最新版 exe，无需层层翻目录
 
 ## 构建与测试
 

@@ -116,6 +116,7 @@ public partial class ViewerWindow : INotifyPropertyChanged
         if (isDark)
         {
             CurrentTheme = Themes.Dark;
+            AppThemeState.IsDark = true;
 
             // Update theme for QuickLook controls
             if (!Resources.MergedDictionaries.Contains(_darkDict))
@@ -127,6 +128,7 @@ public partial class ViewerWindow : INotifyPropertyChanged
         else
         {
             CurrentTheme = Themes.Light;
+            AppThemeState.IsDark = false;
 
             // Update theme for QuickLook controls
             if (Resources.MergedDictionaries.Contains(_darkDict))
@@ -135,6 +137,9 @@ public partial class ViewerWindow : INotifyPropertyChanged
             // Update theme for WPF-UI controls
             ThemeManager.Apply(ApplicationTheme.Light);
         }
+
+        // Theme button: sun = switch to light, moon = switch to dark.
+        buttonTheme.Content = isDark ? "\uE706" : "\uE708";
 
         if (IsLoaded)
             ApplyWindowBackgroundEffects();
