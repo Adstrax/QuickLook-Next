@@ -22,6 +22,7 @@ using QuickLook.Helpers;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -45,7 +46,9 @@ public partial class ViewerWindow : Window
     private string _path = string.Empty;
     private FileSystemWatcher _autoReloadWatcher;
     private readonly bool _autoReload;
-    private DateTime _captionSuppressUntil;
+    private int _lastCursorX;
+    private int _lastCursorY;
+    private bool _hasLastCursor;
 
     internal ViewerWindow()
     {
@@ -195,11 +198,16 @@ public partial class ViewerWindow : Window
     {
         base.OnContentRendered(e);
 
-        // v1.1.3: the preview window opens near the cursor and WPF synthesizes a
-        // MouseMove at that moment, which would flash the toolbar right away.
-        // Ignore mouse moves for a short settling window so the toolbar stays
-        // hidden until the user actually moves the mouse over the preview.
-        _captionSuppressUntil = DateTime.Now.AddMilliseconds(600);
+        // v1.1.4: baseline the cursor position. WPF synthesizes MouseMove events
+        // when the window opens or its content is replaced (preview switching)
+        // while the cursor is stationary. We only treat a MouseMove as real when
+        // the cursor screen position actually changes.
+        if (GetCursorPos(out var pt))
+        {
+            _lastCursorX = pt.X;
+            _lastCursorY = pt.Y;
+            _hasLastCursor = true;
+        }
 
         ApplyWindowBackgroundEffects();
     }
@@ -472,13 +480,39 @@ public partial class ViewerWindow : Window
 
     private void ShowWindowCaptionContainer(object sender, MouseEventArgs e)
     {
-        if (DateTime.Now < _captionSuppressUntil)
+        if (!GetCursorPos(out var pt))
             return;
+
+        if (!_hasLastCursor)
+        {
+            _hasLastCursor = true;
+            _lastCursorX = pt.X;
+            _lastCursorY = pt.Y;
+            return;
+        }
+
+        // Synthetic MouseMove (window opened/moved under a stationary cursor)
+        // carries the same cursor position; ignore it.
+        if (pt.X == _lastCursorX && pt.Y == _lastCursorY)
+            return;
+
+        _lastCursorX = pt.X;
+        _lastCursorY = pt.Y;
 
         var show = (Storyboard)windowCaptionContainer.FindResource("ShowCaptionContainerStoryboard");
 
         if (windowCaptionContainer.Opacity == 0 || windowCaptionContainer.Opacity == 1)
             show.Begin();
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
     }
 
     private void AutoHideCaptionContainer(object sender, EventArgs e)
