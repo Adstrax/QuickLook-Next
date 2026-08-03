@@ -26,6 +26,7 @@ using QuickLook.Plugin.TextViewer.Detectors;
 using QuickLook.Plugin.TextViewer.Themes;
 using QuickLook.Plugin.TextViewer.Themes.HighlightingDefinitions;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -75,6 +77,24 @@ public partial class TextViewerPanel : TextEditor, IDisposable
         ShowLineNumbers = true;
         WordWrap = true;
         IsReadOnly = true;
+
+        // v1.2.3: thin, subtle scrollbars (override the system scrollbar styles
+        // used by AvalonEdit's internal ScrollViewer).
+        var thinScrollBar = new ResourceDictionary
+        {
+            Source = new Uri(
+                "pack://application:,,,/QuickLook.Plugin.TextViewer;component/ThinScrollBar.xaml",
+                UriKind.Absolute),
+        };
+        Loaded += (_, _) =>
+        {
+            foreach (var scrollBar in FindVisualChildren<ScrollBar>(this))
+            {
+                scrollBar.Style = (Style)(scrollBar.Orientation == Orientation.Vertical
+                    ? thinScrollBar["ThinVerticalScrollBar"]
+                    : thinScrollBar["ThinHorizontalScrollBar"]);
+            }
+        };
 
         // Enable manipulation events (touch gestures like pan/scroll).
         IsManipulationEnabled = true;
@@ -135,6 +155,20 @@ public partial class TextViewerPanel : TextEditor, IDisposable
     public void Dispose()
     {
         _disposed = true;
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    {
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+                yield return match;
+
+            foreach (var sub in FindVisualChildren<T>(child))
+                yield return sub;
+        }
     }
 
     private void Viewer_ManipulationInertiaStarting(object sender, ManipulationInertiaStartingEventArgs e)

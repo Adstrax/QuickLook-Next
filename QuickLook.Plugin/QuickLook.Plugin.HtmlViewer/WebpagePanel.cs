@@ -188,7 +188,11 @@ public class WebpagePanel : UserControl
             _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                 "document.addEventListener('DOMContentLoaded',function(){" +
                 "var s=document.createElement('style');" +
-                "s.textContent='html,body,.markdown-body,#content,.ipynb-notebook,.jp-Notebook,.document{background:transparent!important}';" +
+                "s.textContent='html,body,.markdown-body,#content,.ipynb-notebook,.jp-Notebook,.document{background:transparent!important}" +
+                "::-webkit-scrollbar{width:6px;height:6px}" +
+                "::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.45);border-radius:3px}" +
+                "::-webkit-scrollbar-track{background:transparent}" +
+                "::-webkit-scrollbar-corner{background:transparent}';" +
                 "document.head.appendChild(s);});");
 
             _webView.CoreWebView2.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
