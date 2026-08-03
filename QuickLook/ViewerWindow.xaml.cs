@@ -431,7 +431,7 @@ public partial class ViewerWindow : Window
 
     private static SystembackdropType GetBackdropOption()
     {
-        var option = SettingHelper.Get("WindowBackdrop", nameof(SystembackdropType.Auto), "QuickLook")?.Trim();
+        var option = SettingHelper.Get("WindowBackdrop", nameof(SystembackdropType.Mica), "QuickLook")?.Trim();
 
         if (string.IsNullOrEmpty(option))
             return SystembackdropType.Auto;

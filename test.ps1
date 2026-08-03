@@ -76,19 +76,11 @@ $g.Dispose()
 $bmp.Save((Join-Path $smoke 'test.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()
 Set-Content -Path (Join-Path $smoke 'test.txt') -Value "QuickLook smoke test`r`nLine 2" -Encoding UTF8
-if (Get-Command python -ErrorAction SilentlyContinue) {
-    Remove-Item (Join-Path $smoke 'test.db') -Force -ErrorAction SilentlyContinue
-    @"
-import sqlite3, os
-p = os.path.join(os.environ['TEMP'], 'ql-smoke', 'test.db')
-c = sqlite3.connect(p)
-c.execute('CREATE TABLE t (id INTEGER, name TEXT)')
-c.execute("INSERT INTO t VALUES (1, 'hello')")
-c.commit(); c.close()
-"@ | python - 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host 'WARN: python 创建 SQLite 测试库失败，跳过 db 预览' -ForegroundColor Yellow
-    }
+Set-Content -Path (Join-Path $smoke 'test.md') -Value "# Markdown`n`n这是 **测试**。" -Encoding UTF8
+Compress-Archive -Path (Join-Path $smoke 'test.txt') -DestinationPath (Join-Path $smoke 'test.zip') -Force
+Copy-Item -LiteralPath "$env:WINDIR\Fonts\arial.ttf" -Destination (Join-Path $smoke 'test.ttf') -Force
+if (-not (Test-Path (Join-Path $smoke 'test.mp4'))) {
+    curl.exe -sL -o (Join-Path $smoke 'test.mp4') "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
 }
 
 # ---------- 4. 启动 + 插件加载 ----------
@@ -104,10 +96,13 @@ Assert ((Get-LogLength) -eq $before) '插件加载无失败（日志零新增）
 Write-Host "== 5/6 预览测试 ==" -ForegroundColor Cyan
 $previews = @(
     @{ File = 'test.png'; Title = 'test.png' },
-    @{ File = 'test.txt'; Title = 'test.txt' }
+    @{ File = 'test.txt'; Title = 'test.txt' },
+    @{ File = 'test.md'; Title = 'test.md' },
+    @{ File = 'test.zip'; Title = 'test.zip' },
+    @{ File = 'test.ttf'; Title = 'test.ttf' }
 )
-if (Test-Path (Join-Path $smoke 'test.db')) {
-    $previews += @{ File = 'test.db'; Title = 'test.db' }
+if (Test-Path (Join-Path $smoke 'test.mp4')) {
+    $previews += @{ File = 'test.mp4'; Title = 'test.mp4' }
 }
 foreach ($pv in $previews) {
     $before = Get-LogLength

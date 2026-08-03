@@ -283,7 +283,7 @@ public partial class App : Application
 
     private bool EnsureFirstInstance(string[] args)
     {
-        _isRunning = new Mutex(true, "QuickLook.App.Mutex", out bool isFirst);
+        _isRunning = new Mutex(true, "QuickLook.Lite.App.Mutex", out bool isFirst);
 
         if (isFirst)
             return true;

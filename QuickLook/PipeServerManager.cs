@@ -42,7 +42,7 @@ public static class PipeMessages
 
 public class PipeServerManager : IDisposable
 {
-    private static readonly string PipeName = "QuickLook.App.Pipe." + WindowsIdentity.GetCurrent().User?.Value;
+    private static readonly string PipeName = "QuickLook.Lite.App.Pipe." + WindowsIdentity.GetCurrent().User?.Value;
     private static PipeServerManager _instance;
 
     private DispatcherOperation _lastOperation;
@@ -94,7 +94,7 @@ public class PipeServerManager : IDisposable
         {
             using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
             {
-                client.Connect();
+                client.Connect(2000);
 
                 using (var writer = new StreamWriter(client))
                 {
