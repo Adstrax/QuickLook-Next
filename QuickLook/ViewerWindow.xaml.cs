@@ -45,6 +45,7 @@ public partial class ViewerWindow : Window
     private string _path = string.Empty;
     private FileSystemWatcher _autoReloadWatcher;
     private readonly bool _autoReload;
+    private DateTime _captionSuppressUntil;
 
     internal ViewerWindow()
     {
@@ -193,6 +194,12 @@ public partial class ViewerWindow : Window
     protected override void OnContentRendered(EventArgs e)
     {
         base.OnContentRendered(e);
+
+        // v1.1.3: the preview window opens near the cursor and WPF synthesizes a
+        // MouseMove at that moment, which would flash the toolbar right away.
+        // Ignore mouse moves for a short settling window so the toolbar stays
+        // hidden until the user actually moves the mouse over the preview.
+        _captionSuppressUntil = DateTime.Now.AddMilliseconds(600);
 
         ApplyWindowBackgroundEffects();
     }
@@ -465,6 +472,9 @@ public partial class ViewerWindow : Window
 
     private void ShowWindowCaptionContainer(object sender, MouseEventArgs e)
     {
+        if (DateTime.Now < _captionSuppressUntil)
+            return;
+
         var show = (Storyboard)windowCaptionContainer.FindResource("ShowCaptionContainerStoryboard");
 
         if (windowCaptionContainer.Opacity == 0 || windowCaptionContainer.Opacity == 1)
