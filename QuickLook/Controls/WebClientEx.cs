@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 
@@ -41,6 +42,7 @@ public class WebClientEx : WebClient
         Timeout = timeout;
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int Timeout { get; set; }
 
     protected override WebRequest GetWebRequest(Uri address)

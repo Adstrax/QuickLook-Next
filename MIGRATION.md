@@ -1,15 +1,17 @@
-# QuickLook .NET 8 迁移说明
+# QuickLook .NET 10 迁移说明
 
-本分支（`net8.0`）将 QuickLook 4.5.0 的全部 C# 工程从 `.NET Framework 4.6.2` 迁移到
-`.NET 8`（`net8.0-windows`），迁移后的版本与原始版本通过 git worktree 分目录隔离：
+本分支（`net10.0`）将 QuickLook 4.5.0 的全部 C# 工程迁移到 `.NET 10`
+（`net10.0-windows`）。迁移从 `net8.0` 分支（已完成 net462 → net8 的全部兼容性改造）
+继续升级而来，各版本通过 git worktree 分目录隔离：
 
 - `D:\Codex\QuickLook-4.5.0` —— 原版（master 分支，net462，未改动）
-- `D:\Codex\QuickLook-4.5.0-net8` —— 本迁移版（net8.0 分支，net8.0-windows）
+- `D:\Codex\QuickLook-4.5.0-net8` —— .NET 8 迁移版（net8.0 分支）
+- `D:\Codex\QuickLook-4.5.0-net10` —— 本迁移版（net10.0 分支，net10.0-windows）
 
 ## 目标框架
 
-- 主程序 `QuickLook`：`net8.0-windows10.0.19041.0`（需要 WinRT 投影，用于系统共享）
-- 公共库与全部插件：`net8.0-windows`
+- 主程序 `QuickLook`：`net10.0-windows10.0.19041.0`（需要 WinRT 投影，用于系统共享）
+- 公共库与全部插件：`net10.0-windows`
 - 使用 `UseWPF` / `UseWindowsForms`，Sdk 从 `Microsoft.NET.Sdk.WindowsDesktop` 改为 `Microsoft.NET.Sdk`
 
 ## 主要改动
@@ -43,7 +45,7 @@
 ## 构建
 
 ```powershell
-.\build-net8.ps1        # 一键构建全部 27 个 C# 工程
+.\build.ps1             # 一键构建全部 27 个 C# 工程
 ```
 
 产物输出到 `Build\Release\`。需要 .NET 8 SDK（Windows 版）。
