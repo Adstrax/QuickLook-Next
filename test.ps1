@@ -49,6 +49,8 @@ Start-Sleep -Seconds 3
 
 # ---------- 2. 构建 ----------
 Write-Host "== 2/6 全量构建 ==" -ForegroundColor Cyan
+Get-ChildItem (Join-Path $root 'Build\Release') -Force -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force
 $projects = @(
     (Join-Path $root 'QuickLook.Common\QuickLook.Common.csproj'),
     (Join-Path $root 'QuickLook\QuickLook.csproj')

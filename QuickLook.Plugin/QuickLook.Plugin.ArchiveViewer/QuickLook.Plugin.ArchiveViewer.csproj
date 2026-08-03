@@ -2,7 +2,8 @@
 
     <PropertyGroup>
         <RuntimeIdentifier Condition="'$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
-        <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64'">win-x64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(Platform)' == 'x86'">win-x86</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64' and '$(Platform)' != 'x86'">win-x64</RuntimeIdentifier>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
@@ -97,11 +98,12 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+  
+  
+  
+  
+  
   <Target Name="FlattenRuntimeNative" AfterTargets="Build">
-    <ItemGroup>
-      <_RidNative Include="$(OutputPath)runtimes\win-x64\native\*.dll" Condition="'$(Platform)' != 'ARM64'" />
-      <_RidNative Include="$(OutputPath)runtimes\win-arm64\native\*.dll" Condition="'$(Platform)' == 'ARM64'" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_RidNative)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="powershell -NoProfile -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\..\Scripts\flatten-native.ps1&quot; -AssetsPath &quot;$(MSBuildProjectDirectory)\obj\project.assets.json&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(Configuration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
 </Project>

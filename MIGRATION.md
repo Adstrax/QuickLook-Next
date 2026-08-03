@@ -60,12 +60,13 @@
 - 全部插件工程添加 `<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>`，
   托管依赖（Google.Protobuf、AvalonEdit、QuickLook.MediaInfo、SQLitePCLRaw 等）
   复制到各自插件目录
-- 全部插件工程设置 `RuntimeIdentifier`（x64/ARM64 按平台）并关闭 RID 目录后缀，
-  配合构建后 `FlattenRuntimeNative` 目标，把 `runtimes\win-x64\native\*.dll`
-  （Magick.Native、e_sqlite3/e_sqlcipher、WebView2Loader、EVRPresenter 等）
-  复制到插件根目录，保证 LoadFrom 加载的插件能解析原生库
+- 全部插件工程设置 `RuntimeIdentifier`（x64/x86/ARM64 按平台）并关闭 RID 目录后缀，
+  构建后 `FlattenRuntimeNative` 目标调用 `Scripts\flatten-native.ps1`，从
+  `project.assets.json` 读取本工程引用的原生资产并直接从 NuGet 缓存复制到插件
+  根目录（Magick.Native、e_sqlite3/e_sqlcipher 等），保证 LoadFrom 加载的插件
+  能解析原生库
 
-提交策略：每次提交前必须运行 `.\test.ps1` 且全部通过。
+提交策略：每次提交前必须运行 `.\test.ps1`（干净构建 + 启动 + 预览）且全部通过。
 
 ## 未改动 / 注意事项
 
