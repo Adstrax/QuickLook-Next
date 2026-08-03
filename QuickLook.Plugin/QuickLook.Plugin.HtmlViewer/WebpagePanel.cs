@@ -60,7 +60,7 @@ public class WebpagePanel : UserControl
             },
 
             // Prevent white flash in dark mode
-            DefaultBackgroundColor = OSThemeHelper.AppsUseDarkTheme() ? Color.FromArgb(255, 32, 32, 32) : Color.White,
+            DefaultBackgroundColor = GetThemeBackgroundColor(),
         };
         _webView.NavigationStarting += Webview_NavigationStarting;
         _webView.NavigationCompleted += WebView_NavigationCompleted;
@@ -168,8 +168,16 @@ public class WebpagePanel : UserControl
 
     protected virtual void WebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
     {
-        _webView.DefaultBackgroundColor = Color.White; // Reset to white after page load to match expected default behavior
+        // v1.2.0: keep the background matching the current theme instead of
+        // forcing white, otherwise dark mode shows a white/black edge around
+        // the rendered web content.
+        _webView.DefaultBackgroundColor = GetThemeBackgroundColor();
     }
+
+    protected static System.Drawing.Color GetThemeBackgroundColor() =>
+        OSThemeHelper.AppsUseDarkTheme()
+            ? System.Drawing.Color.FromArgb(255, 32, 32, 32)
+            : System.Drawing.Color.FromArgb(255, 255, 255, 255);
 
     protected virtual void WebView_CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
     {

@@ -33,10 +33,14 @@ public class ContextObject : INotifyPropertyChanged
     private bool _fullWindowDragging;
     private bool _isBusy;
     private string _title = string.Empty;
-    private bool _titlebarAutoHide;
+    // v1.2.0: all previews default to the modern look — the toolbar auto-hides,
+    // the content extends under it (no dark strip), and the bar itself is
+    // transparent so the window's Mica backdrop shows through. Plugins that need
+    // a different look (e.g. video's glass bar) override these explicitly.
+    private bool _titlebarAutoHide = true;
     private bool _titlebarBlurVisibility;
-    private bool _titlebarColourVisibility = true;
-    private bool _titlebarOverlap;
+    private bool _titlebarColourVisibility;
+    private bool _titlebarOverlap = true;
     private Themes _theme = Themes.None;
     private object _viewerContent;
     private string _colorProfileName = null;

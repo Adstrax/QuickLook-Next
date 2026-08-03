@@ -110,6 +110,7 @@ public sealed class Plugin : IViewer
             context.TitlebarAutoHide = true;
             context.Theme = Themes.Dark;
             context.TitlebarBlurVisibility = true;
+            context.TitlebarColourVisibility = true; // keep the video glass bar look
         }
         else // audio
         {
