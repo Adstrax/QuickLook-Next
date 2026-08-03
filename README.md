@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.2.1
+# QuickLook Lite（精简版）v1.2.2
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰
@@ -93,6 +93,17 @@
   内容同步变化（Web 通过 PreferredColorScheme + 重载预览跟随），选择会被记住
 - **快捷方式**：桌面「QuickLook Lite.lnk」与 `D:\Codex\QuickLook-Lite.lnk`
   直达最新版 exe，无需层层翻目录
+
+## v1.2.2 修复内容
+
+- **修复工具栏黑条 + 不自动隐藏（关键）**：`ContextObject.Reset()` 在每次预览前
+  把标题栏标志硬编码重置为旧值（AutoHide=false、Colour=true），导致 MD/TXT 等
+  非图片预览又变回「常驻黑色工具栏」。现在 Reset() 重置为现代默认
+  （自动隐藏 + 内容重叠 + 透明工具栏），全场景生效
+- **修复 MD 背景未透出 Mica**：透明注入脚本改为在 DOMContentLoaded 后注入
+  `!important` 样式（之前脚本在 body 未创建时运行，直接失败），页面背景真正透明
+- **WebView2 初始化失败会写日志**，不再无声黑屏
+- **自动隐藏更彻底**：移除「光标悬停工具栏则不隐藏」的守卫，静止 1 秒后必然淡出
 
 ## 构建与测试
 

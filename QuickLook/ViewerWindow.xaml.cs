@@ -541,9 +541,6 @@ public partial class ViewerWindow : Window
         if (!ContextObject.TitlebarAutoHide)
             return;
 
-        if (windowCaptionContainer.IsMouseOver)
-            return;
-
         var hide = (Storyboard)windowCaptionContainer.FindResource("HideCaptionContainerStoryboard");
 
         hide.Begin();

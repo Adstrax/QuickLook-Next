@@ -252,10 +252,13 @@ public class ContextObject : INotifyPropertyChanged
         FullWindowDragging = false;
 
         Theme = Themes.None;
-        TitlebarOverlap = false;
-        TitlebarAutoHide = false;
+        // v1.2.2: reset to the modern defaults (auto-hide, content overlap,
+        // transparent toolbar). Previously this hard-coded the old values and
+        // silently reverted every non-image preview to the legacy black toolbar.
+        TitlebarOverlap = true;
+        TitlebarAutoHide = true;
         TitlebarBlurVisibility = false;
-        TitlebarColourVisibility = true;
+        TitlebarColourVisibility = false;
 
         ViewerContent = null;
 

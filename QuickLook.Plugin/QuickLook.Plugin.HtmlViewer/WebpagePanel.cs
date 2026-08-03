@@ -182,13 +182,21 @@ public class WebpagePanel : UserControl
             _webView.CoreWebView2.Profile.PreferredColorScheme =
                 AppThemeState.IsDark ? CoreWebView2PreferredColorScheme.Dark : CoreWebView2PreferredColorScheme.Light;
 
-            // v1.2.1: keep the page background transparent so the window's Mica
-            // backdrop shows through the web content (all web-based viewers).
+            // v1.2.2: keep the page background transparent so the window's Mica
+            // backdrop shows through. Runs once the DOM exists and uses
+            // !important to beat the page's own background rules.
             _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
-                "document.documentElement.style.backgroundColor='transparent';document.body.style.backgroundColor='transparent';");
+                "document.addEventListener('DOMContentLoaded',function(){" +
+                "var s=document.createElement('style');" +
+                "s.textContent='html,body,.markdown-body,#content,.ipynb-notebook,.jp-Notebook,.document{background:transparent!important}';" +
+                "document.head.appendChild(s);});");
 
             _webView.CoreWebView2.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
             _webView.CoreWebView2.WebResourceRequested += WebView_WebResourceRequested;
+        }
+        else
+        {
+            ProcessHelper.WriteLog($"[WebpagePanel] CoreWebView2 init failed: {e.InitializationException}");
         }
     }
 
