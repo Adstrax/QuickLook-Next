@@ -244,6 +244,13 @@ public sealed partial class Plugin : IViewer, IMoreMenu
             context.PreferredSize = new Size(800, 600);
 
         context.Theme = (Themes)SettingHelper.Get("LastTheme", 1, "QuickLook.Plugin.ImageViewer");
+
+        // v1.1.0: auto-hide the top toolbar and let the Win11 Mica backdrop show
+        // through instead of the solid dark caption overlay. Keep the toolbar on
+        // its own strip (no content overlap) so the visible bar sits on Mica.
+        context.TitlebarAutoHide = true;
+        context.TitlebarBlurVisibility = true;
+        context.TitlebarColourVisibility = false;
     }
 
     public void View(string path, ContextObject context)
