@@ -23,20 +23,17 @@ namespace QuickLook.Common.ExtensionMethods;
 
 public static class WindowInteropHelperExtension
 {
-    extension(WindowInteropHelper windowInteropHelper)
+    public static nint EnsureHandleSafe(this WindowInteropHelper windowInteropHelper)
     {
-        public nint EnsureHandleSafe()
+        try
         {
-            try
-            {
-                return windowInteropHelper?.EnsureHandle() ?? IntPtr.Zero;
-            }
-            catch (Exception e)
-            {
-                // Returning 0 is fine, since this error usually only occurs when the window is already closed or being disposed.
-                ProcessHelper.WriteLog(e.ToString());
-                return IntPtr.Zero;
-            }
+            return windowInteropHelper?.EnsureHandle() ?? IntPtr.Zero;
+        }
+        catch (Exception e)
+        {
+            // Returning 0 is fine, since this error usually only occurs when the window is already closed or being disposed.
+            ProcessHelper.WriteLog(e.ToString());
+            return IntPtr.Zero;
         }
     }
 }

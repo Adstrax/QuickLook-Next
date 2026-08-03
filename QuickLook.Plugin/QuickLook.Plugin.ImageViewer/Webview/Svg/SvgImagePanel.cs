@@ -37,13 +37,14 @@ public class SvgImagePanel : WebpagePanel, IWebImagePanel
     protected const string _resourcePrefix = "QuickLook.Plugin.ImageViewer.Resources.";
     protected internal static readonly Dictionary<string, byte[]> _resources = [];
     protected byte[] _homePage;
+    private object _objectForScripting;
 
     public object ObjectForScripting
     {
-        get;
+        get => _objectForScripting;
         set
         {
-            field = value;
+            _objectForScripting = value;
             _webView?.EnsureCoreWebView2Async()
                 .ContinueWith(_ =>
                     _webView?.Dispatcher.Invoke(() =>

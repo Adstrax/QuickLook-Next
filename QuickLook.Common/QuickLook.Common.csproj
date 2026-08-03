@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
-        <TargetFramework>net462</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Common</RootNamespace>
         <AssemblyName>QuickLook.Common</AssemblyName>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -60,9 +61,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="Microsoft.CSharp" />
-        <Reference Include="WindowsBase" />
-    </ItemGroup>
+        </ItemGroup>
 
     <ItemGroup>
         <Compile Include="..\GitVersion.cs">
@@ -76,6 +75,8 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <PreBuildEvent>powershell -ExecutionPolicy Bypass -file "$(SolutionDir)Scripts\update-version.ps1"</PreBuildEvent>
     </PropertyGroup>
+    <Target Name="UpdateVersion" BeforeTargets="BeforeBuild">
+        <Exec Command="powershell -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\Scripts\update-version.ps1&quot;" />
+    </Target>
 </Project>

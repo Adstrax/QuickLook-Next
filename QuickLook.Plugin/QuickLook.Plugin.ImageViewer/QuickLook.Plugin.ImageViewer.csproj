@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
-        <TargetFramework>net462</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Plugin.ImageViewer</RootNamespace>
         <AssemblyName>QuickLook.Plugin.ImageViewer</AssemblyName>
         <FileAlignment>512</FileAlignment>
@@ -13,7 +14,6 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{FE5A5111-9607-4721-A7BE-422754002ED8}</ProjectGuid>
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -81,12 +81,6 @@
         <PackageReference Include="fo-dicom.Imaging.Desktop" Version="5.2.6">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="System.IO.Compression" Version="4.3.0">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="QuickLook.ImageGlass.WebP" Version="1.4.0">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
@@ -97,12 +91,6 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Google.Protobuf" Version="3.35.1">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="System.Memory" Version="4.6.3">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="QuickLook.LibAPNG" Version="0.3.1">
@@ -117,9 +105,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="System.Web" />
-        <Reference Include="WindowsBase" />
-    </ItemGroup>
+        </ItemGroup>
 
     <ItemGroup>
         <Resource Include="Resources\background-b.png" />

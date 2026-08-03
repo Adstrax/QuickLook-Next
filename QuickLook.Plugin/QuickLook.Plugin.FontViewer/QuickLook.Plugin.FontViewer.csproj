@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
-        <TargetFramework>net462</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Plugin.FontViewer</RootNamespace>
         <AssemblyName>QuickLook.Plugin.FontViewer</AssemblyName>
         <FileAlignment>512</FileAlignment>
@@ -11,7 +12,6 @@
         <LangVersion>latest</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{CE40160D-5E3C-4A41-9BDA-C4F414C174EB}</ProjectGuid>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

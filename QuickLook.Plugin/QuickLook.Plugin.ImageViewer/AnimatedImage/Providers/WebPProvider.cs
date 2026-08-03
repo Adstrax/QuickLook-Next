@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using ImageGlass.Base.Photoing.Codecs;
-using ImageGlass.WebP;
 using ImageMagick;
 using ImageMagick.Formats;
 using QuickLook.Common.Helpers;
@@ -24,6 +22,7 @@ using QuickLook.Common.Plugin;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,47 +92,47 @@ internal class WebPProvider : ImageMagickProvider
 
     private BitmapSource AnimatedWebP(string fileName)
     {
-        using var webP = new WebPWrapper();
+        using var collection = new MagickImageCollection(fileName);
+        collection.Coalesce();
 
-        var aniWebP = webP.AnimLoad(fileName);
-        var frames = aniWebP.Select(frame =>
+        var frames = collection.Select(frame =>
         {
-            var duration = frame.Duration > 0 ? frame.Duration : 100;
-            var bitmap = frame.Bitmap;
-
-            return new AnimatedImgFrame(frame.Bitmap, (uint)duration);
-        });
-
-        var animatedImg = new AnimatedImg(frames, frames.Count());
+            var durationMs = frame.AnimationDelay > 0 ? frame.AnimationDelay * 10 : 100;
+            frame.Format = MagickFormat.Png;
+            using var stream = new MemoryStream(frame.ToByteArray());
+            return (Bitmap: new Bitmap(stream), Duration: TimeSpan.FromMilliseconds(durationMs));
+        }).ToList();
 
         var writeableBitmap = Application.Current.Dispatcher.Invoke(() =>
         {
-            var frame = animatedImg.Frames.ElementAt(0);
-            var bitmap = (Bitmap)frame.Bitmap;
-            return bitmap.ToWriteableBitmap();
+            return frames[0].Bitmap.ToWriteableBitmap();
         });
 
         _isPlaying = true;
         _ = Task.Factory.StartNew(() =>
         {
-            while (_isPlaying)
+            try
             {
-                foreach (var frame in animatedImg.Frames)
+                while (_isPlaying)
                 {
-                    if (!_isPlaying) break;
-
-                    writeableBitmap.Dispatcher.Invoke(() =>
+                    foreach (var frame in frames)
                     {
-                        var bitmap = (Bitmap)frame.Bitmap;
-                        bitmap.CopyToWriteableBitmap(writeableBitmap);
-                    });
+                        if (!_isPlaying) break;
 
-                    Thread.Sleep((int)frame.Duration.TotalMilliseconds);
+                        writeableBitmap.Dispatcher.Invoke(() =>
+                        {
+                            frame.Bitmap.CopyToWriteableBitmap(writeableBitmap);
+                        });
+
+                        Thread.Sleep((int)frame.Duration.TotalMilliseconds);
+                    }
                 }
             }
-
-            animatedImg?.Dispose();
-            animatedImg = null;
+            finally
+            {
+                foreach (var frame in frames)
+                    frame.Bitmap.Dispose();
+            }
         }, TaskCreationOptions.LongRunning);
 
         return writeableBitmap;

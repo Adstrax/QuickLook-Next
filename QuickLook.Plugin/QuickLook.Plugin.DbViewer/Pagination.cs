@@ -263,9 +263,12 @@ public class Pagination : Control
 
     public override void OnApplyTemplate()
     {
-        _previousButton?.Click -= OnPreviousButtonClick;
-        _nextButton?.Click -= OnNextButtonClick;
-        _pageSizeSelector?.SelectionChanged -= OnPageSizeSelectorChanged;
+        if (_previousButton != null)
+            _previousButton.Click -= OnPreviousButtonClick;
+        if (_nextButton != null)
+            _nextButton.Click -= OnNextButtonClick;
+        if (_pageSizeSelector != null)
+            _pageSizeSelector.SelectionChanged -= OnPageSizeSelectorChanged;
         if (_quickJumpInput != null)
         {
             _quickJumpInput.KeyDown -= OnQuickJumpKeyDown;
@@ -280,14 +283,17 @@ public class Pagination : Control
         _quickJumpInput = GetTemplateChild(PART_QuickJumpInput) as TextBox;
         _pageSizeSelector = GetTemplateChild(PART_PageSizeSelector) as ComboBox;
 
-        _previousButton?.Click += OnPreviousButtonClick;
-        _nextButton?.Click += OnNextButtonClick;
+        if (_previousButton != null)
+            _previousButton.Click += OnPreviousButtonClick;
+        if (_nextButton != null)
+            _nextButton.Click += OnNextButtonClick;
         if (_quickJumpInput != null)
         {
             _quickJumpInput.KeyDown += OnQuickJumpKeyDown;
             _quickJumpInput.LostFocus += OnQuickJumpLostFocus;
         }
-        _pageSizeSelector?.SelectionChanged += OnPageSizeSelectorChanged;
+        if (_pageSizeSelector != null)
+            _pageSizeSelector.SelectionChanged += OnPageSizeSelectorChanged;
 
         InitializePanelButtons();
         RecalcPageCount();
@@ -362,8 +368,10 @@ public class Pagination : Control
             }
         } // end if (_buttonPanel != null && _buttons[0] != null)
 
-        _previousButton?.IsEnabled = currentPage > 1;
-        _nextButton?.IsEnabled = currentPage < pageCount;
+        if (_previousButton != null)
+            _previousButton.IsEnabled = currentPage > 1;
+        if (_nextButton != null)
+            _nextButton.IsEnabled = currentPage < pageCount;
         RefreshQuickJumpText();
         SyncPageSizeSelector();
     }

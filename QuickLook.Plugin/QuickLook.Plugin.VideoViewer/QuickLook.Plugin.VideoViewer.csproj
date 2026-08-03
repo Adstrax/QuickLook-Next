@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
-        <TargetFramework>net462</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Plugin.VideoViewer</RootNamespace>
         <AssemblyName>QuickLook.Plugin.VideoViewer</AssemblyName>
         <FileAlignment>512</FileAlignment>
@@ -11,7 +12,6 @@
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{1B746D92-49A5-4A37-9D75-DCC490393290}</ProjectGuid>
         <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -61,12 +61,7 @@
         <PackageReference Include="QuickLook.MediaInfo" Version="26.5.0" />
         <PackageReference Include="QuickLook.MediaInfo.Native.win-x64" Version="26.5.0" />
         <PackageReference Include="QuickLook.MediaInfo.Native.win-x86" Version="26.5.0" />
-        <PackageReference Include="System.Memory" Version="4.6.3" />
         <!--<PackageReference Include="QuickLook.MediaInfo.Native.win-arm64" Version="26.5.0" />-->
-        <Reference Include="WindowsBase" />
-        <Reference Include="DirectShowLib-2005, Version=2.1.0.26626, Culture=neutral, PublicKeyToken=67e7b740cdfc2d3f, processorArchitecture=MSIL">
-            <SpecificVersion>False</SpecificVersion>
-        </Reference>
         <PackageReference Include="UTF.Unknown" Version="2.6.0" />
         <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
@@ -227,4 +222,14 @@
         </Compile>
     </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="DirectShowLib-2005">
+      <HintPath>lib\DirectShowLib-2005.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="QuickLook.WPFMediaKit">
+      <HintPath>lib\QuickLook.WPFMediaKit.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
 </Project>

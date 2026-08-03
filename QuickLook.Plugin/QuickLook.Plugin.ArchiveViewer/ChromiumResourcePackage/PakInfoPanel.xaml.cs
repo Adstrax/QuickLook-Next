@@ -106,7 +106,8 @@ public partial class PakInfoPanel : UserControl, IDisposable, INotifyPropertyCha
             {
                 if (_disposed)
                     return;
-                fileListView?.DataContext = _fileEntries[string.Empty].Children.Keys;
+                if (fileListView != null)
+                    fileListView.DataContext = _fileEntries[string.Empty].Children.Keys;
                 archiveCount.Content = $"PAK File{t}";
                 archiveSizeC.Content = string.Empty;
                 archiveSizeU.Content = $"Total resource size {((long)sizeU).ToPrettySize(2)}";

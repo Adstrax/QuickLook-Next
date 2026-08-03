@@ -1,8 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
         <OutputType>Library</OutputType>
-        <TargetFramework>net462</TargetFramework>
+        <TargetFramework>net8.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Plugin.PrefetchViewer</RootNamespace>
         <AssemblyName>QuickLook.Plugin.PrefetchViewer</AssemblyName>
         <FileAlignment>512</FileAlignment>
@@ -11,7 +12,6 @@
         <LangVersion>latest</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <ProjectGuid>{7A3D2F10-6E04-4F7E-96A0-4E18359FBD31}</ProjectGuid>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <Platforms>AnyCPU;x64;ARM64</Platforms>

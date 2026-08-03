@@ -89,10 +89,11 @@ public partial class TextViewerPanel : TextEditor, IDisposable
         // The default LineNumberMargin in AvalonEdit often contains a thin Line element
         // used as a visual separator between line numbers and the text.
         // If found, set its Stroke to Transparent to hide the separator visually.
-        TextArea.LeftMargins
+        var separatorLine = TextArea.LeftMargins
             .OfType<System.Windows.Shapes.Line>()
-            .FirstOrDefault()
-            ?.Stroke = Brushes.Transparent;
+            .FirstOrDefault();
+        if (separatorLine != null)
+            separatorLine.Stroke = Brushes.Transparent;
 
         ContextMenu = new ContextMenu();
         // Add "Copy" menu item.

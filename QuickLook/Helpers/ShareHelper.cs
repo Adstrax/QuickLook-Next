@@ -107,7 +107,23 @@ internal static class DataTransferManagerHelper
         new Guid(0xa5caee9b, 0x8708, 0x49d1, 0x8d, 0x36, 0x67, 0xd2, 0x5a, 0x8d, 0xa0, 0x0c);
 
     private static IDataTransferManagerInterop DataTransferManagerInterop =>
-        (IDataTransferManagerInterop)WindowsRuntimeMarshal.GetActivationFactory(typeof(DataTransferManager));
+        GetDataTransferManagerInterop();
+
+    private static IDataTransferManagerInterop GetDataTransferManagerInterop()
+    {
+        var className = typeof(DataTransferManager).FullName!;
+        WindowsCreateString(className, className.Length, out var hstring);
+        try
+        {
+            var iid = DTM_IID;
+            RoGetActivationFactory(hstring, ref iid, out var factoryPtr);
+            return (IDataTransferManagerInterop)Marshal.GetObjectForIUnknown(factoryPtr);
+        }
+        finally
+        {
+            WindowsDeleteString(hstring);
+        }
+    }
 
     public static DataTransferManager GetForWindow(nint hwnd)
     {
@@ -128,4 +144,14 @@ internal static class DataTransferManagerHelper
 
         public void ShowShareUIForWindow(nint appWindow);
     }
+
+    [DllImport("combase.dll")]
+    private static extern int RoGetActivationFactory(IntPtr activatableClassId, ref Guid iid, out IntPtr factory);
+
+    [DllImport("combase.dll")]
+    private static extern int WindowsCreateString(
+        [MarshalAs(UnmanagedType.LPWStr)] string sourceString, int length, out IntPtr hstring);
+
+    [DllImport("combase.dll")]
+    private static extern int WindowsDeleteString(IntPtr hstring);
 }

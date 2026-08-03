@@ -23,7 +23,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Web;
+using System.Net;
 using System.Windows;
 
 namespace QuickLook.Plugin.ImageViewer.Webview.PlantUml;
@@ -78,7 +78,7 @@ public class PuImagePanel : SvgImagePanel
                     "Network access was denied. PlantUML preview requires an internet connection.");
                 NavigateToHtml(
                     $"<html><body style='font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#555'>" +
-                    $"<p style='max-width:400px;text-align:center'>{HttpUtility.HtmlEncode(deniedMsg)}</p></body></html>");
+            $"<p style='max-width:400px;text-align:center'>{WebUtility.HtmlEncode(deniedMsg)}</p></body></html>");
                 return;
             }
 
