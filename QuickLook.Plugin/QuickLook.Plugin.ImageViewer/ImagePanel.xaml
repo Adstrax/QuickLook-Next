@@ -92,7 +92,7 @@
             </Border.Resources>
         </Border>
 
-        <StackPanel Margin="0,8,0,0"
+        <StackPanel Margin="0,40,0,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Orientation="Horizontal">
