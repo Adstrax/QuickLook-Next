@@ -116,7 +116,104 @@ foreach ($pv in $previews) {
 }
 
 # ---------- 6. 清理 ----------
-Write-Host "== 6/6 清理 ==" -ForegroundColor Cyan
+# ---------- 6. Shell 集成验证（空格键链路：Explorer 选区读取） ----------
+Write-Host "== 6/7 Shell 集成验证 ==" -ForegroundColor Cyan
+$selWin = Get-Process explorer -ErrorAction SilentlyContinue |
+    Where-Object { $_.MainWindowTitle -like '*ql-smoke*' } | Select-Object -First 1
+if ($selWin) { $selWin.CloseMainWindow() | Out-Null; Start-Sleep -Seconds 2 }
+Start-Process explorer.exe "/select,`"$smoke\test.png`""
+Start-Sleep -Seconds 6
+$shellProbe = @"
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+public class ShellProbe2 {
+    private static readonly Guid IID_IDataObject = new Guid("0000010E-0000-0000-C000-000000000046");
+    private static readonly Guid IID_IShellBrowser = new Guid("000214E2-0000-0000-C000-000000000046");
+    private static readonly Guid CLSID_ShellWindows = new Guid("9BA05972-F6A8-11CF-A442-00A0C90A8F39");
+    [ComImport, Guid("6D5140C1-7436-11CE-8034-00AA006009FA")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IServiceProvider { [PreserveSig] int QueryService(ref Guid g, ref Guid r, out IntPtr p); }
+    [ComImport, Guid("000214E2-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IShellBrowser {
+        [PreserveSig] int GetWindow(out IntPtr phwnd);
+        [PreserveSig] int ContextSensitiveHelp(int f);
+        [PreserveSig] int InsertMenusSB(IntPtr a, IntPtr b);
+        [PreserveSig] int SetMenuSB(IntPtr a, IntPtr b, IntPtr c);
+        [PreserveSig] int RemoveMenusSB(IntPtr a);
+        [PreserveSig] int SetStatusTextSB(IntPtr a);
+        [PreserveSig] int EnableModelessSB(int f);
+        [PreserveSig] int TranslateAcceleratorSB(IntPtr a, ushort b);
+        [PreserveSig] int BrowseObject(IntPtr a, uint b);
+        [PreserveSig] int GetViewStateStream(uint a, out IntPtr b);
+        [PreserveSig] int GetControlWindow(uint a, out IntPtr b);
+        [PreserveSig] int SendControlMsg(uint a, uint b, IntPtr c, IntPtr d, out IntPtr e);
+        [PreserveSig] int QueryActiveShellView(out IntPtr ppshv);
+        [PreserveSig] int OnViewWindowActive(IntPtr a);
+        [PreserveSig] int SetToolbarItems(IntPtr a, uint b, uint c);
+    }
+    [ComImport, Guid("000214E3-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IShellView {
+        [PreserveSig] int GetWindow(out IntPtr phwnd);
+        [PreserveSig] int ContextSensitiveHelp(int f);
+        [PreserveSig] int TranslateAccelerator(IntPtr a);
+        [PreserveSig] int EnableModeless(int f);
+        [PreserveSig] int UIActivate(uint s);
+        [PreserveSig] int Refresh();
+        [PreserveSig] int CreateViewWindow(IntPtr a, IntPtr b, uint c, IntPtr d, out IntPtr e);
+        [PreserveSig] int DestroyViewWindow();
+        [PreserveSig] int GetCurrentInfo(out IntPtr a);
+        [PreserveSig] int AddPropertySheetPages(uint a, IntPtr b, IntPtr c);
+        [PreserveSig] int SaveViewState();
+        [PreserveSig] int SelectItem(IntPtr a, uint b);
+        [PreserveSig] int GetItemObject(uint u, ref Guid r, out IntPtr p);
+    }
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    static extern int DragQueryFile(IntPtr h, uint i, StringBuilder b, int c);
+    [DllImport("ole32.dll")]
+    static extern void ReleaseStgMedium(ref STGMEDIUM m);
+    public static string Probe() {
+        Type swType = Type.GetTypeFromCLSID(CLSID_ShellWindows);
+        object sw = Activator.CreateInstance(swType);
+        int count = (int)swType.InvokeMember("Count", BindingFlags.GetProperty, null, sw, null);
+        for (int i = 0; i < count; i++) {
+            object disp = swType.InvokeMember("Item", BindingFlags.InvokeMethod, null, sw, new object[] { i });
+            var sp = (IServiceProvider)disp;
+            Guid iid = IID_IShellBrowser;
+            IntPtr sbPtr;
+            if (sp.QueryService(ref iid, ref iid, out sbPtr) != 0) continue;
+            var browser = (IShellBrowser)Marshal.GetObjectForIUnknown(sbPtr);
+            IntPtr psvPtr;
+            if (browser.QueryActiveShellView(out psvPtr) != 0 || psvPtr == IntPtr.Zero) continue;
+            var view = (IShellView)Marshal.GetObjectForIUnknown(psvPtr);
+            Guid diid = IID_IDataObject;
+            IntPtr daoPtr;
+            if (view.GetItemObject(0x1, ref diid, out daoPtr) != 0 || daoPtr == IntPtr.Zero) continue;
+            var dao = (IDataObject)Marshal.GetObjectForIUnknown(daoPtr);
+            var fe = new FORMATETC { cfFormat = 15, ptd = IntPtr.Zero, dwAspect = DVASPECT.DVASPECT_CONTENT, lindex = -1, tymed = TYMED.TYMED_HGLOBAL };
+            STGMEDIUM sm;
+            try { dao.GetData(ref fe, out sm); }
+            catch { return string.Empty; }
+            try {
+                var sb = new StringBuilder(32767);
+                return DragQueryFile(sm.unionmember, 0, sb, sb.Capacity) > 0 ? sb.ToString() : string.Empty;
+            }
+            finally { ReleaseStgMedium(ref sm); }
+        }
+        return string.Empty;
+    }
+}
+"@
+Add-Type -TypeDefinition $shellProbe
+$probeResult = [ShellProbe2]::Probe()
+Assert ($probeResult -like '*test.png*') "Explorer 选区读取链路（COM 探针）返回: $probeResult"
+
+# ---------- 7. 清理 ----------
+Write-Host "== 7/7 清理 ==" -ForegroundColor Cyan
 Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
 
 if ($failed) {

@@ -29,12 +29,15 @@
 
 - 删除 11 个插件：Binary/Cert/Chm/Db/Dump/ELF/Helix/Mail/PE/Prefetch/Thumbnail
 - 更新解决方案 `QuickLook.slnx`（移除已删插件与 WiX 安装工程）
+- **删除原生 C++ 依赖（QuickLook.Native）**：空格键链路（焦点判断 + Explorer/桌面
+  选区读取）改为纯 C# 实现（P/Invoke + Shell COM），不再需要 VS C++/ATL 工具链，
+  构建只需 .NET SDK。第三方文件管理器（DOpus/Everything 等）集成不在精简版范围
 - Win11 Mica 默认开启：`WindowBackdrop` 默认值 `Auto` → `Mica`
   （Win10 自动回退 Acrylic/Blur，不影响低版本系统）
 - 命名隔离：管道 `QuickLook.Lite.App.Pipe.*`、互斥体 `QuickLook.Lite.App.Mutex`，
   避免与已安装的完整版冲突
 - 修复第二实例挂起：管道连接加 2 秒超时
-- 测试覆盖：png/txt/md/zip/ttf/mp4（test.ps1，提交前必须全绿）
+- 测试覆盖：png/txt/md/zip/ttf/mp4 预览 + Shell 选区读取链路（test.ps1，提交前必须全绿）
 
 ## 构建与测试
 
@@ -50,3 +53,5 @@
 - OfficeViewer 依赖 WebView2 在线渲染，离线环境可能无法预览 Office 文件
 - 视频后端仍为 WPFMediaKit（DirectShow/LAV）；如遇特定格式问题，下一步可替换为
   LibVLCSharp
+- 空格键预览依赖全局键盘钩子；以管理员身份运行的窗口（UIPI 限制）无法触发，
+  这是 Windows 平台所有同类工具的固有限制

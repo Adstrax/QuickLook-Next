@@ -4,17 +4,6 @@
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
-  <Folder Name="/QuickLook.Native/">
-    <Project Path="QuickLook.Native/QuickLook.Native32/QuickLook.Native32.vcxproj" Id="d31ee321-c2b0-4984-b749-736f7de509f1">
-      <Platform Project="Win32" />
-    </Project>
-    <Project Path="QuickLook.Native/QuickLook.Native64/QuickLook.Native64.vcxproj" Id="794e4dcf-f715-4836-9d30-abd296586d23">
-      <Platform Project="x64" />
-    </Project>
-    <Project Path="QuickLook.Native/QuickLook.NativeArm64/QuickLook.NativeArm64.vcxproj" Id="aa5c5a28-0f81-4fc2-b777-6d6d6d10a9b8">
-      <Platform Project="ARM64" />
-    </Project>
-  </Folder>
   <Folder Name="/QuickLook.Plugin/">
     <Project Path="QuickLook.Plugin/QuickLook.Plugin.AppViewer/QuickLook.Plugin.AppViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
