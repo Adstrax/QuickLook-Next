@@ -476,9 +476,6 @@ public partial class ViewerWindow : Window
         if (!ContextObject.TitlebarAutoHide)
             return;
 
-        if (!ContextObject.TitlebarOverlap)
-            return;
-
         if (windowCaptionContainer.IsMouseOver)
             return;
 

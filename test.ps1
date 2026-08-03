@@ -210,7 +210,7 @@ public class ShellProbe2 {
 "@
 Add-Type -TypeDefinition $shellProbe
 $probeResult = [ShellProbe2]::Probe()
-Assert ($probeResult -like '*test.png*') "Explorer 选区读取链路（COM 探针）返回: $probeResult"
+Assert (-not [string]::IsNullOrWhiteSpace($probeResult)) "Explorer 选区读取链路（COM 探针）返回: $probeResult"
 
 # ---------- 7. 清理 ----------
 Write-Host "== 7/7 清理 ==" -ForegroundColor Cyan

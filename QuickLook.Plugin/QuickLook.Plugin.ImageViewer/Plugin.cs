@@ -245,11 +245,12 @@ public sealed partial class Plugin : IViewer, IMoreMenu
 
         context.Theme = (Themes)SettingHelper.Get("LastTheme", 1, "QuickLook.Plugin.ImageViewer");
 
-        // v1.1.0: auto-hide the top toolbar and let the Win11 Mica backdrop show
-        // through instead of the solid dark caption overlay. Keep the toolbar on
-        // its own strip (no content overlap) so the visible bar sits on Mica.
+        // v1.1.1: auto-hide the top toolbar and let the Win11 Mica backdrop show
+        // through. The caption strip stays separate from the content (no overlap),
+        // and blur/colour/noise are all disabled so the bar is fully transparent
+        // over the window's Mica backdrop.
         context.TitlebarAutoHide = true;
-        context.TitlebarBlurVisibility = true;
+        context.TitlebarBlurVisibility = false;
         context.TitlebarColourVisibility = false;
     }
 

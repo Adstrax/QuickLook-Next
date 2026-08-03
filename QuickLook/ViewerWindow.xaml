@@ -84,7 +84,7 @@
                 <glassLayer:GlassLayer BlurredElement="{Binding ElementName=containerPanel}"
                                        ColorOverlayVisibility="{Binding ContextObject.TitlebarColourVisibility, ElementName=mainWindow, Converter={StaticResource BooleanToVisibilityConverter}}"
                                        GlassVisibility="{Binding ContextObject.TitlebarBlurVisibility, ElementName=mainWindow, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                       NoiseVisibility="Visible"
+                                       NoiseVisibility="{Binding ContextObject.TitlebarBlurVisibility, ElementName=mainWindow, Converter={StaticResource BooleanToVisibilityConverter}}"
                                        OverlayColor="{DynamicResource CaptionBackground}" />
                 <DockPanel>
                     <Button x:Name="buttonCloseWindow"
