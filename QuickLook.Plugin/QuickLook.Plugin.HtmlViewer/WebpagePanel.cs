@@ -189,8 +189,8 @@ public class WebpagePanel : UserControl
                 "document.addEventListener('DOMContentLoaded',function(){" +
                 "var s=document.createElement('style');" +
                 "s.textContent='html,body,.markdown-body,#content,.ipynb-notebook,.jp-Notebook,.document{background:transparent!important}" +
-                "::-webkit-scrollbar{width:6px;height:6px}" +
-                "::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.45);border-radius:3px}" +
+                "::-webkit-scrollbar{width:4px;height:4px}" +
+                "::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.4);border-radius:2px}" +
                 "::-webkit-scrollbar-track{background:transparent}" +
                 "::-webkit-scrollbar-corner{background:transparent}';" +
                 "document.head.appendChild(s);});");

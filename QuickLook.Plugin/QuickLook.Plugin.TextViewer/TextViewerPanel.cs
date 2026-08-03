@@ -78,23 +78,30 @@ public partial class TextViewerPanel : TextEditor, IDisposable
         WordWrap = true;
         IsReadOnly = true;
 
-        // v1.2.3: thin, subtle scrollbars (override the system scrollbar styles
-        // used by AvalonEdit's internal ScrollViewer).
+        // v1.2.5: thin, subtle scrollbars via an implicit style in this panel's
+        // resources. AvalonEdit creates its scrollbars lazily, so an implicit
+        // style (found by resource lookup at apply time) is more reliable than
+        // walking the visual tree after Loaded.
         var thinScrollBar = new ResourceDictionary
         {
             Source = new Uri(
                 "pack://application:,,,/QuickLook.Plugin.TextViewer;component/ThinScrollBar.xaml",
                 UriKind.Absolute),
         };
-        Loaded += (_, _) =>
+        var thinScrollBarStyle = new Style(typeof(ScrollBar));
+        thinScrollBarStyle.Setters.Add(new Setter(ScrollBar.WidthProperty, 6.0));
+        thinScrollBarStyle.Setters.Add(new Setter(
+            ScrollBar.TemplateProperty, (ControlTemplate)thinScrollBar["ThinVerticalTemplate"]));
+        var horizontalTrigger = new Trigger
         {
-            foreach (var scrollBar in FindVisualChildren<ScrollBar>(this))
-            {
-                scrollBar.Style = (Style)(scrollBar.Orientation == Orientation.Vertical
-                    ? thinScrollBar["ThinVerticalScrollBar"]
-                    : thinScrollBar["ThinHorizontalScrollBar"]);
-            }
+            Property = ScrollBar.OrientationProperty,
+            Value = Orientation.Horizontal,
         };
+        horizontalTrigger.Setters.Add(new Setter(ScrollBar.HeightProperty, 6.0));
+        horizontalTrigger.Setters.Add(new Setter(
+            ScrollBar.TemplateProperty, (ControlTemplate)thinScrollBar["ThinHorizontalTemplate"]));
+        thinScrollBarStyle.Triggers.Add(horizontalTrigger);
+        Resources[typeof(ScrollBar)] = thinScrollBarStyle;
 
         // Enable manipulation events (touch gestures like pan/scroll).
         IsManipulationEnabled = true;
@@ -157,19 +164,6 @@ public partial class TextViewerPanel : TextEditor, IDisposable
         _disposed = true;
     }
 
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
-    {
-        var count = VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < count; i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is T match)
-                yield return match;
-
-            foreach (var sub in FindVisualChildren<T>(child))
-                yield return sub;
-        }
-    }
 
     private void Viewer_ManipulationInertiaStarting(object sender, ManipulationInertiaStartingEventArgs e)
     {
