@@ -96,8 +96,18 @@ public partial class ViewerWindow : INotifyPropertyChanged
                 if (ContextObject.IsBusy)
                 {
                     _timingBusyPath = _path;
+                    // v1.2.14: the spinner only shows for the initial load of a
+                    // preview; during switches the previous content stays on
+                    // screen so there is nothing to hide behind it.
+                    if (CheckAccess())
+                        busyIndicatorLayer.Visibility = ContextObject.ShowBusyIndicator
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
                     break;
                 }
+
+                if (CheckAccess())
+                    busyIndicatorLayer.Visibility = Visibility.Collapsed;
 
                 // v1.2.14: apply content that was held back until the first
                 // frame decoded (image plugin) - the swap is atomic, so the old

@@ -15,6 +15,11 @@
   ready, and the window only resizes once the new frame is decoded
 - Replace the separate-thread busy overlay with an in-process spinner so the
   loading indicator can no longer paint over the preview
+- Video previews no longer show the gray backdrop while the media opens: the
+  video panel now has a black background (standard player look)
+- Image switches no longer flash the spinner or the zoom-percentage badge; the
+  spinner only shows for the initial load, and the zoom badge only appears on
+  manual zooming
 - Tray menu: new "Backdrop Mode" section to switch between Auto / None /
   Mica / Acrylic / Acrylic 10 / Acrylic 11 / Tabbed; applies to the open
   preview immediately and persists

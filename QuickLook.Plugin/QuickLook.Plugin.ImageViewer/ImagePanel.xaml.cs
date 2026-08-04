@@ -283,9 +283,6 @@ public partial class ImagePanel : UserControl, INotifyPropertyChanged, IDisposab
                 _isZoomFactorFirstSet = false;
                 return;
             }
-
-            if (ShowZoomLevelInfo)
-                ((Storyboard)zoomLevelInfo.FindResource("StoryboardShowZoomLevelInfo")).Begin();
         }
     }
 
@@ -648,6 +645,12 @@ public partial class ImagePanel : UserControl, INotifyPropertyChanged, IDisposab
         factor = Math.Min(factor, MaxZoomFactor);
 
         ZoomFactor = factor;
+
+        // v1.2.14: only show the zoom percentage badge for manual zooming
+        // (wheel/pinch); automatic fit-to-window during previews/switches
+        // should not flash a percentage overlay.
+        if (ShowZoomLevelInfo && !isToFit && !suppressEvent)
+            ((Storyboard)zoomLevelInfo.FindResource("StoryboardShowZoomLevelInfo")).Begin();
 
         var position = ZoomToFit
             ? new Point(viewPanelImage.Source.Width / 2, viewPanelImage.Source.Height / 2)

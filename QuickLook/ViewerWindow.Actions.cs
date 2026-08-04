@@ -335,7 +335,9 @@ public partial class ViewerWindow
 
         SetOpenWithButtonAndPath();
 
-        // Revert UI changes
+        // Revert UI changes. During a switch the previous content is still on
+        // screen, so the spinner is unnecessary (v1.2.14).
+        ContextObject.ShowBusyIndicator = _staleViewerContent == null;
         ContextObject.IsBusy = true;
 
         var newSize = ComputeWindowSize();

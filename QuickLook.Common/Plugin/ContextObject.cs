@@ -93,6 +93,13 @@ public class ContextObject : INotifyPropertyChanged
     public bool DeferResizeUntilReady { get; set; }
 
     /// <summary>
+    /// v1.2.14: whether the busy spinner should be visible. During preview
+    /// switches the previous content stays on screen, so the spinner is hidden
+    /// and only shown for the initial load of a preview.
+    /// </summary>
+    public bool ShowBusyIndicator { get; set; } = true;
+
+    /// <summary>
     /// Show or hide the busy indicator icon.
     /// </summary>
     public bool IsBusy

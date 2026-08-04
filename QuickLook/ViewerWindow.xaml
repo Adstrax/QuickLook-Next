@@ -214,7 +214,7 @@
             </DockPanel>
         </Grid>
         <Grid x:Name="busyIndicatorLayer"
-              Visibility="{Binding ElementName=mainWindow, Path=ContextObject.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Visibility="Collapsed"
               ZIndex="200">
             <!-- v1.2.14: in-process spinner. The previous BusyDecorator rendered
                  through a separate-thread HostVisual; combined with the old
