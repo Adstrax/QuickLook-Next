@@ -455,22 +455,27 @@ internal sealed class TrayMenuWindow : Window
             source.CompositionTarget.BackgroundColor = Colors.Transparent;
         }
 
+        // v1.2.10: the startup notification popup (a Windows 11 toast card) is
+        // rendered with Acrylic (frosted glass), not Mica. Menus now use the
+        // same Acrylic backdrop so every popup shares the notification look.
         if (App.IsWin11)
         {
-            if (Environment.OSVersion.Version >= new Version(10, 0, 22523))
-                WindowHelper.EnableBackdropMicaBlur(this, _isDark);
-            else
-                WindowHelper.EnableMicaBlur(this, _isDark);
-
             WindowHelper.SetWindowCorner(this, Dwmapi.WindowCornerStyle.Round);
+
+            if (Environment.OSVersion.Version >= new Version(10, 0, 22523))
+                WindowHelper.EnableBackdropAcrylicBlur(this, _isDark);
+            else
+                WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.8d);
         }
         else
         {
-            WindowHelper.EnableBlur(this);
-            Background = new SolidColorBrush(_isDark
-                ? Color.FromRgb(0x20, 0x20, 0x20)
-                : Color.FromRgb(0xF3, 0xF3, 0xF3));
+            WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.8d);
         }
+    }
+
+    private Color GetTintColor()
+    {
+        return _isDark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3);
     }
 
     private void InstallHooks()

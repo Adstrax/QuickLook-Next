@@ -2,6 +2,11 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.10
+
+- Switch tray menu, "More" menu and the preview window default backdrop from Mica to Acrylic - the same frosted-glass effect as the startup notification popup
+- Smoke test now asserts the menu's DWM backdrop is Acrylic (`systembackdrop=3`)
+
 ## QuickLook Lite 1.2.9
 
 - Unify the tray menu and the preview window's "More" menu into one Mica-backed menu with a Win11-style translucent panel, rounded corners and icons

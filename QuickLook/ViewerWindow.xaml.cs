@@ -428,7 +428,9 @@ public partial class ViewerWindow : Window
 
     private static SystembackdropType GetBackdropOption()
     {
-        var option = SettingHelper.Get("WindowBackdrop", nameof(SystembackdropType.Mica), "QuickLook")?.Trim();
+        // v1.2.10: default to Acrylic - the same frosted effect as the startup
+        // notification popup. Mica/Tabbed remain available via the setting.
+        var option = SettingHelper.Get("WindowBackdrop", nameof(SystembackdropType.Acrylic), "QuickLook")?.Trim();
 
         if (string.IsNullOrEmpty(option))
             return SystembackdropType.Auto;
@@ -464,7 +466,7 @@ public partial class ViewerWindow : Window
     {
         var newTheme = CurrentTheme == Themes.Dark ? Themes.Light : Themes.Dark;
 
-        // ContextObject.Theme triggers SwitchTheme (window + Mica + theme state).
+        // ContextObject.Theme triggers SwitchTheme (window + backdrop + theme state).
         ContextObject.Theme = newTheme;
 
         // Persist the choice so future previews start with it.
