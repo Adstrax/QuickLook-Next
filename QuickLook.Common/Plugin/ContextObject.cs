@@ -251,7 +251,6 @@ public class ContextObject : INotifyPropertyChanged
         CanResize = true;
         FullWindowDragging = false;
 
-        Theme = Themes.None;
         // v1.2.2: reset to the modern defaults (auto-hide, content overlap,
         // transparent toolbar). Previously this hard-coded the old values and
         // silently reverted every non-image preview to the legacy black toolbar.

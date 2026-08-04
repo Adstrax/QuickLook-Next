@@ -78,31 +78,6 @@ public partial class TextViewerPanel : TextEditor, IDisposable
         WordWrap = true;
         IsReadOnly = true;
 
-        // v1.2.5: thin, subtle scrollbars via an implicit style in this panel's
-        // resources. AvalonEdit creates its scrollbars lazily, so an implicit
-        // style (found by resource lookup at apply time) is more reliable than
-        // walking the visual tree after Loaded.
-        var thinScrollBar = new ResourceDictionary
-        {
-            Source = new Uri(
-                "pack://application:,,,/QuickLook.Plugin.TextViewer;component/ThinScrollBar.xaml",
-                UriKind.Absolute),
-        };
-        var thinScrollBarStyle = new Style(typeof(ScrollBar));
-        thinScrollBarStyle.Setters.Add(new Setter(ScrollBar.WidthProperty, 6.0));
-        thinScrollBarStyle.Setters.Add(new Setter(
-            ScrollBar.TemplateProperty, (ControlTemplate)thinScrollBar["ThinVerticalTemplate"]));
-        var horizontalTrigger = new Trigger
-        {
-            Property = ScrollBar.OrientationProperty,
-            Value = Orientation.Horizontal,
-        };
-        horizontalTrigger.Setters.Add(new Setter(ScrollBar.HeightProperty, 6.0));
-        horizontalTrigger.Setters.Add(new Setter(
-            ScrollBar.TemplateProperty, (ControlTemplate)thinScrollBar["ThinHorizontalTemplate"]));
-        thinScrollBarStyle.Triggers.Add(horizontalTrigger);
-        Resources[typeof(ScrollBar)] = thinScrollBarStyle;
-
         // Enable manipulation events (touch gestures like pan/scroll).
         IsManipulationEnabled = true;
 

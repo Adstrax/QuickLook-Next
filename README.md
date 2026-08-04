@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.2.5
+# QuickLook Lite（精简版）v1.2.7
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰
@@ -117,6 +117,21 @@
   （AvalonEdit 惰性创建滚动条），改为**隐式样式**放在面板资源里，滚动条无论何时
   创建都会被套上细样式
 
+## v1.2.6 更新内容
+
+- **修复桌面文件无法预览**：`IShellWindows.FindWindowSW` 在 .NET Core 下用
+  `dynamic` 调用会失败/崩溃，改为正确的 dual COM 接口 + 手动构造 VARIANT 传递，
+  并增加桌面列表视图回退路径
+
+## v1.2.7 更新内容
+
+- **修复亮/暗切换无效**：`ContextObject.Reset()` 在每次预览前把 Theme 重置为
+  「跟随系统」，刚切换的主题被立即撤销。现在 Reset() 不再重置 Theme，手动选择的
+  主题在切换/重载后持续生效
+- **滚动条全局统一**：把应用统一的 `ScrollBarStyleDictionary.xaml` 改为细样式
+  （6px、半透明圆角滑块、透明轨道），TXT/PDF 等所有 WPF 滚动条一处生效；
+  删除文本预览的独立滚动条样式，集中维护
+
 ## 构建与测试
 
 ```powershell
@@ -128,7 +143,8 @@
 
 ## 已知事项
 
-- OfficeViewer 依赖 WebView2 在线渲染，离线环境可能无法预览 Office 文件
+- Office 预览走系统预览处理器（Office 自带界面，离线可用）；其内部工具栏/
+  状态栏由 Office 渲染，无法由 QuickLook 隐藏
 - 视频后端仍为 WPFMediaKit（DirectShow/LAV）；如遇特定格式问题，下一步可替换为
   LibVLCSharp
 - 空格键预览依赖全局键盘钩子；以管理员身份运行的窗口（UIPI 限制）无法触发，
