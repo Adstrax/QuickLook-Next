@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="reStructuredText" extensions=".rst">
+
+    <RuleSets>
+        <RuleSet ignorecase="false">
+            <Span name="Bold" stopateol="true" color="White" bold="true" italic="false">
+                <Begin>\*\*</Begin>
+                <End>\*\*</End>
+            </Span>
+            <Span name="InlineCode" stopateol="true" color="#D0D0D0" bold="false" italic="false">
+                <Begin>``</Begin>
+                <End>``</End>
+            </Span>
+            <Span name="Italic" stopateol="true" color="#D4D4D4" bold="false" italic="true">
+                <Begin>\*</Begin>
+                <End>\*</End>
+            </Span>
+            <Span name="Directive" stopateol="true" color="#FFFF8000" bold="false" italic="false">
+                <Begin>\.\.</Begin>
+            </Span>
+            <Span name="Role" stopateol="true" color="#FF8080FF" bold="false" italic="false">
+                <Begin>:`</Begin>
+                <End>`</End>
+            </Span>
+            <Span name="Link" stopateol="true" color="#FF4080FF" bold="false" italic="false">
+                <Begin>`</Begin>
+                <End>`_</End>
+            </Span>
+        </RuleSet>
+    </RuleSets>
+</SyntaxDefinition>

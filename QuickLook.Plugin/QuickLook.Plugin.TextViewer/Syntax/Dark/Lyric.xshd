@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="Lyric" extensions=".lrc">
+
+    <Digits name="Digits" bold="false" italic="false" color="#B5CEA8"/>
+
+    <RuleSets>
+        <RuleSet ignorecase="false">
+            <Span name="CurlyBrace" stopateol="false" color="#DA66BE" bold="false" italic="false">
+                <Begin>\{</Begin>
+                <End>\}</End>
+            </Span>
+            <Span name="SquareBrace" stopateol="false" color="#FFD710" bold="false" italic="false">
+                <Begin>\[</Begin>
+                <End>\]</End>
+            </Span>
+        </RuleSet>
+    </RuleSets>
+</SyntaxDefinition>

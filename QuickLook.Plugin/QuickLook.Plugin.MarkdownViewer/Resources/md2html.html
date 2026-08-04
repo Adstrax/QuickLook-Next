@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html dir="{{rtl}}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <script>
+      // Load the saved TOC width and visibility immediately to prevent layout shift
+      const savedWidth = localStorage.getItem("tocWidth") || "178px";
+      const tocCollapsed = localStorage.getItem("tocVisible") === "false";
+      document.documentElement.style.setProperty("--toc-width", tocCollapsed ? "0px" : savedWidth);
+      if (tocCollapsed) {
+        document.documentElement.style.setProperty("--toc-min-width", "0px");
+        document.documentElement.style.setProperty("--toc-overflow-y", "hidden");
+      }
+    </script>
+
+    <link rel="stylesheet" href="highlight.js/styles/github.min.css" />
+    <link
+      rel="stylesheet"
+      href="highlight.js/styles/github-dark.min.css"
+      media="(prefers-color-scheme: dark)"
+    />
+
+    <script src="highlight.js/highlight.min.js"></script>
+
+    <script src="js/markdownItAnchor.umd.js"></script>
+    <script src="js/mermaid.min.js"></script>
+  </head>
+  <body class="markdown-body">
+    <link rel="stylesheet" href="css/github-markdown.css" />
+
+    <script src="js/markdown-it.min.js"></script>
+
+    <style>
+      body {
+        background-color: var(--bgColor-default);
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Add a wrapper div for the flex layout */
+      .container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      #preview {
+        flex: 1;
+        padding: 1rem;
+        min-width: 0;
+      }
+
+      /* From github.com */
+      .container-lg {
+        max-width: 1012px;
+        margin-right: auto;
+        margin-left: auto;
+      }
+
+      #toc {
+        font-family: "Segoe UI", Helvetica, Arial, sans-serif, "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        position: sticky;
+        top: 0;
+        left: 0;
+
+        width: var(--toc-width);
+
+        min-width: var(--toc-min-width, 4px);
+        max-width: 80%;
+
+        height: 100vh;
+        background: var(--bgColor-muted);
+
+        overflow-y: var(--toc-overflow-y, auto);
+        overflow-x: hidden;
+
+        max-height: 100vh;
+        box-sizing: border-box;
+
+        transition: width 0.3s ease; /* Duration must match TOC_TRANSITION_MS in the resize script */
+      }
+
+      #toc a {
+        display: block;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .table-of-contents {
+        font-size: 0.8em;
+        padding: 1em 2em;
+      }
+
+      .table-of-contents ul {
+        list-style-type: none;
+        padding-left: 1em;
+      }
+
+      .table-of-contents > ul {
+        padding: 0;
+      }
+
+      .table-of-contents li {
+        margin: 0 0 0.75em 0;
+      }
+
+      .table-of-contents a {
+        color: var(--fgColor-default);
+        text-decoration: none;
+        border-left: 2px solid transparent;
+        margin-left: -1em;
+        padding-left: calc(1em - 2px);
+        transition: border-left-color 0.2s ease-out;
+      }
+
+      .table-of-contents a:hover {
+        color: var(--fgColor-accent);
+      }
+
+      .table-of-contents .active {
+        color: var(--fgColor-accent);
+        border-left: 2px solid var(--fgColor-accent);
+        margin-left: -1em;
+        padding-left: calc(1em - 2px);
+        transition: all 0.2s ease-out;
+      }
+
+      h1:target,
+      h2:target,
+      h3:target,
+      h4:target {
+        animation: highlight 1s ease;
+      }
+
+      @keyframes highlight {
+        from {
+          background: var(--bgColor-attention-muted);
+        }
+        to {
+          background: var(--bgColor-default);
+        }
+      }
+
+      .resize-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+        cursor: ew-resize;
+        user-select: none;
+      }
+
+      /* RTL support */
+      html[dir="rtl"] .container {
+        flex-direction: row-reverse;
+      }
+
+      html[dir="rtl"] #toc {
+        right: 0;
+        left: auto;
+      }
+
+      html[dir="rtl"] .table-of-contents a {
+        border-right: 2px solid transparent;
+        border-left: none;
+        margin-right: -1em;
+        margin-left: 0;
+        padding-right: calc(1em - 2px);
+        padding-left: 0;
+      }
+
+      html[dir="rtl"] .table-of-contents .active {
+        border-right: 2px solid var(--fgColor-accent);
+        border-left: none;
+        margin-right: -1em;
+        margin-left: 0;
+        padding-right: calc(1em - 2px);
+        padding-left: 0;
+      }
+
+      /* Mermaid diagram styles */
+      .mermaid {
+        display: flex;
+        justify-content: center;
+        margin: 1em 0;
+      }
+
+      .mermaid svg {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .mermaid-placeholder {
+        border: 2px dashed var(--borderColor-default);
+        background: var(--bgColor-muted);
+        color: var(--fgColor-muted);
+        border-radius: 6px;
+      }
+
+      .mermaid-placeholder pre {
+        background: var(--bgColor-default);
+        border: 1px solid var(--borderColor-default);
+        color: var(--fgColor-default);
+      }
+    </style>
+
+    <textarea id="text-input" style="display: none">{{content}}</textarea>
+
+    <div class="container">
+      <div id="toc" class="toc"></div>
+      <div id="preview" class="container-lg"></div>
+    </div>
+
+    <script>
+      var md = window
+        .markdownit({
+          html: true,
+          typographer: false,
+          quotes: "“”‘’",
+          highlight: function (str, lang) {
+            if (lang === 'mermaid') {
+              return '<div class="mermaid">' + str + '</div>';
+            }
+            if (lang && hljs.getLanguage(lang)) {
+              try {
+                return (
+                  '<pre class="hljs"><code>' +
+                  hljs.highlight(str, { language: lang, ignoreIllegals: true })
+                    .value +
+                  "</code></pre>"
+                );
+              } catch (__) {}
+            }
+            return (
+              '<pre class="hljs"><code>' +
+              md.utils.escapeHtml(str) +
+              "</code></pre>"
+            );
+          },
+        })
+        .use(markdownItAnchor, {
+          permalink: false,
+          slugify: (s) =>
+            s
+              .toLowerCase()
+              .replace(/[^a-z0-9 -]/g, "")
+              .replace(/\s+/g, "-")
+              .replace(/-+/g, "-"),
+        });
+      // Feature toggle: convert YAML front matter to a ```yaml``` code fence before rendering
+      const ENABLE_FRONTMATTER_RENDERING = true;
+
+      function processFrontmatter(content) {
+        if (!ENABLE_FRONTMATTER_RENDERING) return content;
+        // Match a YAML front matter block at the very start of the document:
+        // - starts with --- (optionally followed by spaces) then a newline
+        // - followed by any content (non-greedy, stops at the first closing --- line)
+        // - closed by --- (optionally followed by spaces) on its own line
+        const frontmatterRegex = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/;
+        const match = content.match(frontmatterRegex);
+        if (match) {
+          // Preserve the document's original line ending style
+          const eol = match[0].includes('\r\n') ? '\r\n' : '\n';
+          // Trim any leading blank lines from the remainder so we don't accumulate
+          // extra whitespace on top of the blank line the code fence already ends with
+          const rest = content.slice(match[0].length).replace(/^(\r?\n)+/, '');
+          const yamlBlock = "```yaml" + eol + match[1] + eol + "```" + eol + (rest ? eol : '');
+          return yamlBlock + rest;
+        }
+        return content;
+      }
+
+      // Read raw content; strip UTF-8 BOM (U+FEFF) if the file was encoded with one
+      let rawContent = document.getElementById("text-input").value;
+      if (rawContent.charCodeAt(0) === 0xFEFF) rawContent = rawContent.slice(1);
+
+      document.getElementById("preview").innerHTML = md.render(
+        processFrontmatter(rawContent)
+      );
+
+      // Initialize Mermaid after markdown rendering
+      if (window.mermaid) {
+        // Determine theme based on system preference
+        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDarkMode ? 'dark' : 'default',
+          securityLevel: 'loose', // Allow HTML in diagrams for enhanced features
+          fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif',
+          themeVariables: {
+            primaryColor: isDarkMode ? '#58a6ff' : '#0969da',
+            primaryTextColor: isDarkMode ? '#f0f6fc' : '#24292f',
+            primaryBorderColor: isDarkMode ? '#30363d' : '#d0d7de',
+            lineColor: isDarkMode ? '#484f58' : '#656d76',
+            sectionBkgColor: isDarkMode ? '#21262d' : '#f6f8fa',
+            altSectionBkgColor: isDarkMode ? '#161b22' : '#ffffff',
+            gridColor: isDarkMode ? '#21262d' : '#f6f8fa',
+            cScale0: isDarkMode ? '#58a6ff' : '#0969da',
+            cScale1: isDarkMode ? '#a5f3fc' : '#54aeff',
+            cScale2: isDarkMode ? '#ff7b72' : '#d1242f'
+          }
+        });
+        
+        // Render Mermaid diagrams with error handling
+        setTimeout(() => {
+          try {
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+          } catch (error) {
+            console.warn('Mermaid rendering error:', error);
+          }
+        }, 100);
+        
+        // Listen for theme changes and re-render diagrams
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+          if (window.mermaid) {
+            const newTheme = e.matches ? 'dark' : 'default';
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: newTheme,
+              securityLevel: 'loose',
+              fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif'
+            });
+            
+            // Re-render all Mermaid diagrams
+            setTimeout(() => {
+              try {
+                mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+              } catch (error) {
+                console.warn('Mermaid re-rendering error:', error);
+              }
+            }, 100);
+          }
+        });
+      }
+
+      /* codes below are adopted from https://codepen.io/jtojnar/full/Juiop */
+      var ToC = `<nav role='navigation' class='table-of-contents'>
+        <h2>Contents</h2>
+        <ul>`;
+
+      var newLine,
+        el,
+        title,
+        link,
+        level = 0,
+        baseLevel = 0,
+        count = 0;
+
+      document
+        .querySelectorAll("#preview h1, #preview h2, #preview h3, #preview h4")
+        .forEach(function (heading) {
+          count++;
+          el = heading;
+          title = el.textContent;
+
+          if (!el.id) el.id = "h-" + count;
+          link = "#" + el.id;
+
+          var prevLevel = level || 0;
+          level = heading.nodeName.substr(1);
+          if (!baseLevel) {
+            // make sure you start with highest level of heading or it won't work
+            baseLevel = level;
+          }
+          if (prevLevel == 0) {
+            newLine = "<li>";
+          } else if (level == prevLevel) {
+            newLine = "</li><li>";
+          } else if (level > prevLevel) {
+            newLine = "</li><ul><li>";
+          } else if (level < prevLevel) {
+            newLine = "</li></ul>".repeat(prevLevel - level) + "</li><li>";
+          }
+
+          newLine += `<a href="${link}"${
+            count === 1 ? ` class="active"` : ``
+          }>${title}</a>`;
+
+          ToC += newLine;
+        });
+
+      ToC +=
+        "</li></ul>".repeat(level - baseLevel) + "</li>" + "</ul>" + "</nav>";
+
+      document.getElementById("toc").innerHTML = ToC;
+
+      if (count < 2) {
+        document.getElementById("toc").style.display = "none";
+        document.querySelector(".markdown-body").style.width = "100%";
+      }
+    </script>
+
+    <script>
+      // == Resizable TOC width ==
+      document.addEventListener("DOMContentLoaded", function () {
+        const toc = document.getElementById("toc");
+        let isResizing = false;
+        let lastDownX = 0;
+        let overlay = null;
+        const RESIZE_HANDLE_WIDTH = 8; // Width of the resize handle area in pixels
+        const TOC_TRANSITION_MS = 300; // Must match the CSS transition duration for #toc
+        let tocIsVisible = localStorage.getItem("tocVisible") !== "false";
+
+        // Restore initial overflow state when TOC was collapsed before page load
+        if (!tocIsVisible && toc.style.display !== "none") {
+          toc.style.overflowY = "hidden";
+          toc.style.minWidth = "0px";
+        }
+
+        // Toggle TOC visibility with smooth animation
+        function toggleToc() {
+          if (count < 2) return; // TOC is not shown when there are fewer than 2 headings
+
+          if (tocIsVisible) {
+            // Collapse TOC
+            toc.style.width = "0px";
+            toc.style.minWidth = "0px";
+            toc.style.overflowY = "hidden";
+            tocIsVisible = false;
+            localStorage.setItem("tocVisible", "false");
+          } else {
+            // Expand TOC
+            const width = localStorage.getItem("tocWidth") || "178px";
+            toc.style.width = width;
+            toc.style.minWidth = "4px";
+            tocIsVisible = true;
+            localStorage.setItem("tocVisible", "true");
+            // Restore overflow after the transition completes
+            // Use "auto" explicitly to override any lingering --toc-overflow-y CSS variable
+            setTimeout(function () {
+              if (tocIsVisible) {
+                toc.style.overflowY = "auto";
+              }
+            }, TOC_TRANSITION_MS);
+          }
+        }
+
+        // Expose toggleToc globally so it can be invoked from the host application (C#) via ExecuteScriptAsync
+        window.toggleToc = toggleToc;
+
+        // Helper: check if a KeyboardEvent matches a shortcut string like "Ctrl+Shift+L"
+        // Supported modifiers: Ctrl, Shift, Alt. Key name is case-insensitive and matches e.key.
+        function matchesShortcut(e, shortcut) {
+          if (!shortcut) return false;
+          var parts = shortcut.toLowerCase().split("+").map(function (p) { return p.trim(); }).filter(Boolean);
+          if (parts.length === 0) return false;
+          var key = parts[parts.length - 1];
+          return e.key.toLowerCase() === key
+            && e.ctrlKey === parts.includes("ctrl")
+            && e.shiftKey === parts.includes("shift")
+            && e.altKey === parts.includes("alt");
+        }
+
+        const TOC_TOGGLE_SHORTCUT = "{{tocShortcut}}";
+
+        // Create overlay function
+        function createOverlay() {
+          overlay = document.createElement("div");
+          overlay.className = "resize-overlay";
+          document.body.appendChild(overlay);
+          document.body.style.userSelect = "none"; // Disable text selection
+        }
+
+        // Remove overlay function
+        function removeOverlay() {
+          if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+            overlay = null;
+            document.body.style.userSelect = ""; // Re-enable text selection
+          }
+        }
+
+        // Check if cursor is in resize area
+        function isInResizeArea(clientX, rect) {
+          if (!tocIsVisible) return false; // Disable resize when collapsed
+          const toc = document.getElementById("toc");
+          const hasScrollbar = toc.scrollHeight > toc.clientHeight;
+          const scrollbarWidth = hasScrollbar ? 17 : 0; // Standard scrollbar width in most browsers
+          return (
+            clientX > rect.right - scrollbarWidth - RESIZE_HANDLE_WIDTH &&
+            clientX < rect.right - scrollbarWidth + RESIZE_HANDLE_WIDTH
+          );
+        }
+
+        // Handle cursor style when moving over the resize area
+        toc.addEventListener("mousemove", function (e) {
+          const rect = toc.getBoundingClientRect();
+          if (isInResizeArea(e.clientX, rect)) {
+            toc.style.cursor = "ew-resize";
+          } else {
+            toc.style.cursor = "auto";
+          }
+        });
+
+        toc.addEventListener("mousedown", function (e) {
+          const rect = toc.getBoundingClientRect();
+          if (isInResizeArea(e.clientX, rect)) {
+            isResizing = true;
+            lastDownX = e.clientX;
+            // Disable CSS transition during drag so width follows the cursor without delay
+            toc.style.transition = "none";
+            createOverlay();
+          }
+        });
+
+        document.addEventListener("mousemove", function (e) {
+          if (!isResizing) return;
+          const width = toc.getBoundingClientRect().width;
+          const newWidth = width + (e.clientX - lastDownX);
+
+          toc.style.width = newWidth + "px";
+
+          lastDownX = e.clientX;
+          e.preventDefault();
+        });
+
+        document.addEventListener("mouseup", function () {
+          if (isResizing) {
+            isResizing = false;
+            removeOverlay();
+            // Save the new width
+            const newWidth = toc.style.width;
+            localStorage.setItem("tocWidth", newWidth);
+            document.documentElement.style.setProperty("--toc-width", newWidth);
+            // Restore CSS transition after drag ends
+            toc.style.transition = "";
+          }
+        });
+
+        // Reset cursor when leaving the TOC
+        toc.addEventListener("mouseleave", function () {
+          if (!isResizing) {
+            toc.style.cursor = "auto";
+          }
+        });
+
+        // Prevent default behavior of spacebar scrolling the page, while we use spacebar to dismiss the preview
+        document.addEventListener("keydown", function (e) {
+          if (e.code === "Space") {
+            e.preventDefault();
+          }
+
+          // Toggle TOC with configurable shortcut (default: Ctrl+Shift+L, matching Typora)
+          if (matchesShortcut(e, TOC_TOGGLE_SHORTCUT)) {
+            toggleToc();
+            e.preventDefault();
+            return;
+          }
+
+          // Support keyboard shortcuts for RTL and LTR text direction
+          // RTL: Ctrl + RShift
+          // LTR: Ctrl + LShift
+          if ((e.ctrlKey || e.metaKey)) {
+            if (e.shiftKey && e.location === KeyboardEvent.DOM_KEY_LOCATION_RIGHT) {
+              // Right Shift + Ctrl: RTL
+              document.documentElement.setAttribute('dir', 'rtl');
+              e.preventDefault();
+            } else if (e.shiftKey && e.location === KeyboardEvent.DOM_KEY_LOCATION_LEFT) {
+              // Left Shift + Ctrl: LTR
+              document.documentElement.setAttribute('dir', 'ltr');
+              e.preventDefault();
+            }
+          }
+        });
+      });
+    </script>
+
+    <script>
+      // == Help track your position in the file with highlighted TOC link ==
+      document.addEventListener("DOMContentLoaded", function () {
+        let isManualScroll = false;
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (isManualScroll) return;
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                updateActiveHeading(entry.target);
+              }
+            });
+          },
+          {
+            rootMargin: "-10% 0px -85% 0px", // Adjust these values to change when the active state triggers
+          }
+        );
+
+        // Function to update active heading
+        function updateActiveHeading(heading) {
+          document.querySelectorAll(".table-of-contents a").forEach((link) => {
+            link.classList.remove("active");
+          });
+
+          const id = heading.getAttribute("id");
+          const tocLink = document.querySelector(
+            `.table-of-contents a[href="#${id}"]`
+          );
+          if (tocLink) {
+            tocLink.classList.add("active");
+
+            //#region Add auto-scroll functionality
+            const toc = document.getElementById("toc");
+            const tocRect = toc.getBoundingClientRect();
+            const linkRect = tocLink.getBoundingClientRect();
+
+            // Check if the active link is outside the visible area
+            if (
+              linkRect.top < tocRect.top ||
+              linkRect.bottom > tocRect.bottom
+            ) {
+              // Simply scroll the element into view with a small offset
+              tocLink.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+              });
+            }
+            //#endregion
+          }
+        }
+
+        // Function to find the current heading based on scroll position
+        function findCurrentHeading() {
+          const headings = Array.from(
+            document.querySelectorAll(
+              "#preview h1, #preview h2, #preview h3, #preview h4"
+            )
+          );
+
+          for (const heading of headings) {
+            const rect = heading.getBoundingClientRect();
+            // Check if the heading is in the viewport
+            if (rect.top >= 0 && rect.top <= window.innerHeight * 0.3) {
+              return heading;
+            }
+          }
+
+          // If no heading is found in the viewport, return the last heading before viewport
+          for (let i = headings.length - 1; i >= 0; i--) {
+            const rect = headings[i].getBoundingClientRect();
+            if (rect.top < 0) {
+              return headings[i];
+            }
+          }
+
+          // If no heading is found, return the first heading
+          return headings[0];
+        }
+
+        // Modify scroll event handler
+        document.addEventListener("scroll", () => {
+          if (isManualScroll) return;
+          const currentHeading = findCurrentHeading();
+          if (currentHeading) {
+            updateActiveHeading(currentHeading);
+          }
+        });
+
+        // Modify anchor link click handler
+        document.querySelectorAll(".table-of-contents a").forEach((link) => {
+          link.addEventListener("click", () => {
+            isManualScroll = true;
+            const targetId = link.getAttribute("href").substring(1);
+            const targetHeading = document.getElementById(targetId);
+            if (targetHeading) {
+              updateActiveHeading(targetHeading);
+            }
+            // Reset the flag after a delay
+            // We do this to ensure the clicked heading is highlighted, especially when at the bottom of the page
+            setTimeout(() => {
+              isManualScroll = false;
+            }, 10);
+          });
+        });
+
+        // Observe all headings
+        document
+          .querySelectorAll(
+            "#preview h1, #preview h2, #preview h3, #preview h4"
+          )
+          .forEach((heading) => {
+            observer.observe(heading);
+          });
+
+        // Initial active heading
+        const currentHeading = findCurrentHeading();
+        if (currentHeading) {
+          updateActiveHeading(currentHeading);
+        }
+      });
+
+      // Support MathJax inline math
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+      };
+    </script>
+
+    <script id="MathJax-script" async src="mathjax/tex-mml-svg.js"></script>
+  </body>
+</html>
