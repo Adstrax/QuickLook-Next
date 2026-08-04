@@ -186,23 +186,41 @@ internal static class QuickLook
 
     private static string GetSelectionFromDesktop()
     {
-        var shellWindowsType = Type.GetTypeFromCLSID(CLSID_ShellWindows);
-        if (shellWindowsType == null)
-            return string.Empty;
+        // v1.2.6: get the desktop folder view via IShellWindows.FindWindowSW
+        // (the same route the original native code used). VARIANT-byref params
+        // are passed as raw IntPtr pointing at manually allocated VT_EMPTY
+        // VARIANTs; the interface must be declared as dual for the vtable to be
+        // aligned (InterfaceIsIUnknown crashes on .NET Core here).
+        var selection = GetSelectionFromDesktopViaShell();
+        if (!string.IsNullOrEmpty(selection))
+            return selection;
 
-        dynamic shellWindows = Activator.CreateInstance(shellWindowsType);
+        // Fallback: read the desktop list view directly.
+        return GetSelectionFromDesktopListView();
+    }
+
+    private static string GetSelectionFromDesktopViaShell()
+    {
+        var shellWindows = (IShellWindows)Activator.CreateInstance(
+            Type.GetTypeFromCLSID(CLSID_ShellWindows));
+
+        var emptyVariant = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(VARIANT)));
         try
         {
-            object loc = null;
-            object locRoot = null;
+            // vt = VT_EMPTY, everything else zero.
+            Marshal.WriteInt16(emptyVariant, 0, 0);
+            Marshal.WriteInt16(emptyVariant, 2, 0);
+            Marshal.WriteInt16(emptyVariant, 4, 0);
+            Marshal.WriteInt16(emptyVariant, 6, 0);
+            Marshal.WriteIntPtr(emptyVariant + 8, IntPtr.Zero);
+            Marshal.WriteIntPtr(emptyVariant + 16, IntPtr.Zero);
 
-            object dispOut;
-            shellWindows.FindWindowSW(ref loc, ref locRoot, SWC_DESKTOP, out int hwnd,
-                SWFO_NEEDDISPATCH, out dispOut);
-            if (dispOut == null)
+            var hr = shellWindows.FindWindowSW(emptyVariant, emptyVariant,
+                SWC_DESKTOP, out var hwnd, SWFO_NEEDDISPATCH, out var dispPtr);
+            if (hr != S_OK || dispPtr == IntPtr.Zero)
                 return string.Empty;
 
-            var disp = dispOut;
+            var disp = Marshal.GetObjectForIUnknown(dispPtr);
             try
             {
                 var provider = (IServiceProvider)disp;
@@ -227,8 +245,47 @@ internal static class QuickLook
         }
         finally
         {
-            Marshal.FinalReleaseComObject(shellWindows);
+            Marshal.FreeHGlobal(emptyVariant);
         }
+    }
+
+    private static string GetSelectionFromDesktopListView()
+    {
+        var progman = FindWindow("Progman", null);
+        if (progman == IntPtr.Zero)
+            progman = FindWindow("WorkerW", null);
+
+        var defView = FindWindowEx(progman, IntPtr.Zero, "SHELLDLL_DefView", null);
+        if (defView == IntPtr.Zero)
+            return string.Empty;
+
+        var listView = FindWindowEx(defView, IntPtr.Zero, "SysListView32", null);
+        if (listView == IntPtr.Zero)
+            return string.Empty;
+
+        var selectedIndex = SendMessage(listView, LVM_GETNEXTITEM, (IntPtr)(-1), (IntPtr)LVNI_SELECTED);
+        if (selectedIndex.ToInt64() < 0)
+            return string.Empty;
+
+        var buffer = new StringBuilder(MaxPath);
+        var item = new LVITEM
+        {
+            iSubItem = 0,
+            cchTextMax = buffer.Capacity,
+            pszText = buffer,
+        };
+        SendMessage(listView, LVM_GETITEMTEXT, selectedIndex, ref item);
+
+        var name = buffer.ToString();
+        if (string.IsNullOrEmpty(name))
+            return string.Empty;
+
+        var fullPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), name);
+
+        return File.Exists(fullPath) || Directory.Exists(fullPath)
+            ? ResolveShortcut(fullPath)
+            : fullPath;
     }
 
     private static string GetSelectedInternal(IShellBrowser browser)
@@ -402,6 +459,39 @@ internal static class QuickLook
     [DllImport("ole32.dll")]
     private static extern void ReleaseStgMedium(ref STGMEDIUM pmedium);
 
+    private const uint LVM_GETNEXTITEM = 0x100C;
+    private const uint LVM_GETITEMTEXT = 0x1073;
+    private const int LVNI_SELECTED = 0x0002;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, ref LVITEM lParam);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct LVITEM
+    {
+        public uint mask;
+        public int iItem;
+        public int iSubItem;
+        public uint state;
+        public uint stateMask;
+        public StringBuilder pszText;
+        public int cchTextMax;
+        public int iImage;
+        public IntPtr lParam;
+        public int iIndent;
+        public int iGroupId;
+        public uint cColumns;
+        public IntPtr puColumns;
+        public IntPtr piColFmt;
+        public int iGroup;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct GUITHREADINFO
     {
@@ -425,7 +515,57 @@ internal static class QuickLook
         public int Bottom;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct VARIANT
+    {
+        public ushort vt;
+        public ushort wReserved1;
+        public ushort wReserved2;
+        public ushort wReserved3;
+        public IntPtr data1;
+        public IntPtr data2;
+    }
+
     // ---- Shell COM interfaces ---------------------------------------------
+
+    [ComImport, Guid("85CB6900-4D95-11CF-960C-0080C7F4EE85")]
+    [InterfaceType(ComInterfaceType.InterfaceIsDual)]
+    private interface IShellWindows
+    {
+        // IShellWindows is a dual interface. The methods are declared in vtable
+        // order (IUnknown + IDispatch are implicit for dual), and VARIANT-byref
+        // parameters are raw IntPtr to avoid .NET Core's broken marshaling.
+        [DispId(1), PreserveSig] int get_Count(out int count);
+
+        [DispId(2), PreserveSig]
+        int Item([In, MarshalAs(UnmanagedType.Struct)] object index,
+            [Out, MarshalAs(UnmanagedType.IDispatch)] out object pDisp);
+
+        [DispId(3), PreserveSig] int _NewEnum(out IntPtr ppunk);
+
+        [DispId(4), PreserveSig]
+        int Register([In, MarshalAs(UnmanagedType.IDispatch)] object pid, int hwnd, int swClass,
+            out int plCookie);
+
+        [DispId(5), PreserveSig]
+        int RegisterPending(int lThreadId, IntPtr pvarloc, IntPtr pvarlocRoot, int swClass,
+            out int plCookie);
+
+        [DispId(6), PreserveSig] int Revoke(int lCookie);
+
+        [DispId(7), PreserveSig] int OnNavigate(int lCookie, IntPtr pvarLoc);
+
+        [DispId(8), PreserveSig] int OnActivated(int lCookie, IntPtr fActive);
+
+        [DispId(9), PreserveSig]
+        int FindWindowSW(IntPtr pvarLoc, IntPtr pvarLocRoot, int swClass, out int phwnd,
+            int swfwOptions, out IntPtr ppdispOut);
+
+        [DispId(10), PreserveSig]
+        int OnCreated(int lCookie, [In, MarshalAs(UnmanagedType.IUnknown)] object punk);
+
+        [DispId(11), PreserveSig] int ProcessAttachDetach(int fAttach);
+    }
 
     [ComImport, Guid("6D5140C1-7436-11CE-8034-00AA006009FA")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
