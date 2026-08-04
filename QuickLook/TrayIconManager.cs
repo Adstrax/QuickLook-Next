@@ -15,14 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLook.Common.Commands;
 using QuickLook.Common.Helpers;
+using QuickLook.Common.Plugin;
 using QuickLook.Helpers;
 using QuickLook.Properties;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using Wpf.Ui.Violeta.Win32;
 using OSThemeHelper = QuickLook.Common.Helpers.OSThemeHelper;
@@ -36,9 +37,6 @@ internal partial class TrayIconManager : IDisposable
 
     private readonly TrayIconHost _icon;
 
-    private readonly TrayMenuItem _itemAutorun = null!;
-    private readonly TrayMenuItem _itemCloseOnLostFocus = null!;
-
     private TrayIconManager()
     {
         _icon = new TrayIconHost
@@ -47,69 +45,107 @@ internal partial class TrayIconManager : IDisposable
                 Application.ProductVersion),
             Icon = GetTrayIconByDPI(),
             ThemeMode = TrayThemeMode.System,
-            Menu =
-            [
-                new TrayMenuItem()
-                {
-                    Header = $"v{Application.ProductVersion}{(App.IsUWP ? " (UWP)" : string.Empty)}",
-                    IsEnabled = false,
-                },
-                new TraySeparator(),
-                new TrayMenuItem()
-                {
-                   Header = TranslationHelper.Get("Icon_CheckUpdate"),
-                   Command = new RelayCommand(() => Updater.CheckForUpdates()),
-                },
-                new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_GetPlugin"),
-                    Command = new RelayCommand(() => Process.Start("https://github.com/QL-Win/QuickLook/wiki/Available-Plugins")),
-                },
-                new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_OpenDataFolder"),
-                    Command = new RelayCommand(() => Process.Start("explorer.exe", SettingHelper.LocalDataPath)),
-                },
-                _itemAutorun = new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_RunAtStartup"),
-                    Command = new RelayCommand(() =>
-                    {
-                        if (AutoStartupHelper.IsAutorun())
-                            AutoStartupHelper.RemoveAutorunShortcut();
-                        else
-                            AutoStartupHelper.CreateAutorunShortcut();
-                    }),
-                    IsEnabled = !App.IsUWP,
-                },
-                _itemCloseOnLostFocus = new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_CloseOnLostFocus"),
-                    Command = new RelayCommand(() =>
-                    {
-                        var current = SettingHelper.Get("CloseOnLostFocus", false);
-                        SettingHelper.Set("CloseOnLostFocus", !current);
-                    }),
-                },
-                new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_Restart"),
-                    Command = new RelayCommand(() => Restart(forced: true)),
-                },
-                new TrayMenuItem()
-                {
-                    Header = TranslationHelper.Get("Icon_Quit"),
-                    Command = new RelayCommand(System.Windows.Application.Current.Shutdown),
-                }
-            ],
+            // v1.2.8: the built-in native menu cannot render Mica, so it is
+            // disabled (Menu = null is safe: the host's ShowContextMenu uses a
+            // null-conditional) and replaced by TrayMenuWindow.
+            Menu = null,
             IsVisible = SettingHelper.Get("ShowTrayIcon", true)
         };
 
-        _icon.RightDown += (_, _) =>
+        // RightClick fires on WM_RBUTTONUP, immediately before the host would
+        // open the (now disabled) native menu - the same timing users expect
+        // from a system tray context menu.
+        _icon.RightClick += (_, _) =>
         {
-            _itemAutorun.IsChecked = AutoStartupHelper.IsAutorun();
-            _itemCloseOnLostFocus.IsChecked = SettingHelper.Get("CloseOnLostFocus", false);
+            TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme());
         };
+    }
+
+    private static List<TrayMenuEntry> BuildMenuEntries()
+    {
+        return
+        [
+            new TrayMenuEntry
+            {
+                Header = $"v{Application.ProductVersion}{(App.IsUWP ? " (UWP)" : string.Empty)}",
+                IsEnabled = false,
+                IsBold = true,
+            },
+            TrayMenuEntry.Separator,
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_CheckUpdate"),
+                Command = () => Updater.CheckForUpdates(),
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_GetPlugin"),
+                Command = () => Process.Start("https://github.com/QL-Win/QuickLook/wiki/Available-Plugins"),
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_OpenDataFolder"),
+                Command = () => Process.Start("explorer.exe", SettingHelper.LocalDataPath),
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_RunAtStartup"),
+                Command = ToggleAutorun,
+                IsChecked = AutoStartupHelper.IsAutorun(),
+                IsEnabled = !App.IsUWP,
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_CloseOnLostFocus"),
+                Command = ToggleCloseOnLostFocus,
+                IsChecked = SettingHelper.Get("CloseOnLostFocus", false),
+            },
+            TrayMenuEntry.Separator,
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_Restart"),
+                Command = () => GetInstance().Restart(forced: true),
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_Quit"),
+                Command = () => System.Windows.Application.Current.Shutdown(),
+            },
+        ];
+    }
+
+    private static void ToggleAutorun()
+    {
+        if (AutoStartupHelper.IsAutorun())
+            AutoStartupHelper.RemoveAutorunShortcut();
+        else
+            AutoStartupHelper.CreateAutorunShortcut();
+    }
+
+    private static void ToggleCloseOnLostFocus()
+    {
+        var current = SettingHelper.Get("CloseOnLostFocus", false);
+        SettingHelper.Set("CloseOnLostFocus", !current);
+    }
+
+    private static bool IsDarkTheme()
+    {
+        var theme = (Themes)SettingHelper.Get("LastTheme", (int)Themes.None, "QuickLook");
+        return theme switch
+        {
+            Themes.Dark => true,
+            Themes.Light => false,
+            _ => OSThemeHelper.AppsUseDarkTheme(),
+        };
+    }
+
+    /// <summary>
+    /// Test hook used by test.ps1 (via the hidden /test-tray-menu startup
+    /// switch): opens the Mica tray menu once and lets it auto-close.
+    /// </summary>
+    internal static void ShowTestMenu()
+    {
+        TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme(), autoCloseMs: 4000);
     }
 
     public void Dispose()

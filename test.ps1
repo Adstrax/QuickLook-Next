@@ -86,10 +86,20 @@ if (-not (Test-Path (Join-Path $smoke 'test.mp4'))) {
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
 $before = Get-LogLength
-$p = Start-Process -FilePath $exe -ArgumentList '/autorun' -PassThru
-Start-Sleep -Seconds 25
+$p = Start-Process -FilePath $exe -ArgumentList '/autorun /test-tray-menu' -PassThru
+$trayMenuSeen = $false
+for ($i = 0; $i -lt 60; $i++) {
+    Start-Sleep -Milliseconds 500
+    $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
+    if ($null -eq $alive) { break }
+    $titles = Get-QuickLookWindows $p.Id
+    if (($titles -join ' ') -match 'QuickLook Tray Menu') { $trayMenuSeen = $true; break }
+}
+# Wait for the menu to auto-close and the plugins to finish loading.
+Start-Sleep -Seconds 15
 $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
 Assert ($null -ne $alive) '启动后进程存活'
+Assert $trayMenuSeen 'Mica 托盘菜单窗口出现并自动关闭'
 Assert ((Get-LogLength) -eq $before) '插件加载无失败（日志零新增）'
 
 # ---------- 5. 预览测试 ----------

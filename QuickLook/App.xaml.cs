@@ -126,6 +126,14 @@ public partial class App : Application
 
         RunListener(e);
 
+        // Hidden test hook: open the tray menu once so the smoke test can
+        // verify the Mica tray menu renders without errors.
+        if (e.Args.Contains("/test-tray-menu"))
+        {
+            Dispatcher.BeginInvoke(new Action(TrayIconManager.ShowTestMenu),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
         // First instance: run and preview this file
         if (e.Args.Any())
         {
