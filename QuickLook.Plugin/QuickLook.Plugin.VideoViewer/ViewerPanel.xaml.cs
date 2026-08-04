@@ -499,9 +499,14 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
 
     public void LoadAndPlay(string path, MediaInfoSnapshot info)
     {
+        // v1.2.15: know upfront whether this is a video, so the audio cover
+        // panel (music note + tags) never flashes while the playback graph is
+        // being built - it would render as a gray area until MediaOpened.
+        HasVideo = info?.HasVideo == true;
+
         // v1.2.15: show the shell thumbnail while the media opens so the start
         // of a video preview has no blank/gray loading surface.
-        if (info?.HasVideo == true)
+        if (HasVideo)
             LoadThumbnailAsync(path);
 
         // Detect whether it is other playback formats

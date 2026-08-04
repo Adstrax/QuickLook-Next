@@ -12,6 +12,8 @@
   graph ("播放区建立" phase) and is only revealed once the media is open, so
   the renderer's blank gray surface can never be seen; the thumbnail covers
   the short reveal moment as well
+- Video files set HasVideo immediately, so the audio cover panel (music note +
+  tags) no longer flashes as a gray area before the video actually opens
 
 ## QuickLook Lite 1.2.14
 
