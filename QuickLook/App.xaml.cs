@@ -1,4 +1,4 @@
-// Copyright © 2017-2026 QL-Win Contributors
+﻿// Copyright © 2017-2026 QL-Win Contributors
 //
 // This file is part of QuickLook program.
 //
@@ -52,6 +52,11 @@ public partial class App : Application
     // whenever content becomes ready (IsBusy -> false) so automated benches
     // can measure the real "spinner until content shows" latency.
     internal static bool IsTimingEnabled { get; private set; }
+
+    // Hidden test hook (/test-no-focusmonitor): disables the selection-follow
+    // polling so automated preview benches are not disturbed by Explorer's
+    // current selection.
+    internal static bool DisableFocusMonitor { get; private set; }
 
     // The WMI video-controller query used by the blacklist check can take
     // hundreds of milliseconds on some machines. Compute it lazily on a
@@ -135,6 +140,7 @@ public partial class App : Application
         _ = Task.Run(() => _ = _gpuInBlacklist.Value);
 
         IsTimingEnabled = e.Args.Contains("/test-timing");
+        DisableFocusMonitor = e.Args.Contains("/test-no-focusmonitor");
 
         if (!EnsureOSVersion()
          || !EnsureFirstInstance(e.Args)

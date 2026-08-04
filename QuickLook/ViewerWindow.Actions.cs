@@ -338,18 +338,20 @@ public partial class ViewerWindow
         // Revert UI changes
         ContextObject.IsBusy = true;
 
-        var newHeight = ContextObject.PreferredSize.Height + BorderThickness.Top + BorderThickness.Bottom +
-                        (ContextObject.TitlebarOverlap ? 0 : windowCaptionContainer.Height);
-        var newWidth = ContextObject.PreferredSize.Width + BorderThickness.Left + BorderThickness.Right;
-
-        var newSize = new Size(newWidth, newHeight);
-        // If use has adjusted the window size, keep it
-        if (_customWindowSize != Size.Empty)
-            newSize = _customWindowSize;
-        else
+        var newSize = ComputeWindowSize();
+        if (_customWindowSize == Size.Empty)
             _ignoreNextWindowSizeChange = true;
 
-        PositionWindow(newSize);
+        // v1.2.14: when switching to an image, keep the window (and the old
+        // image) at its current size until the new first frame is decoded -
+        // resizing early re-fits the old image into the new aspect ratio and
+        // shows gray letterbox bands during the load.
+        var deferResize = ContextObject.DeferResizeUntilReady && _staleViewerContent != null;
+        if (!deferResize)
+        {
+            PositionWindow(newSize);
+            ContextObject.DeferResizeUntilReady = false;
+        }
 
         if (!IsVisible)
         {
@@ -424,6 +426,21 @@ public partial class ViewerWindow
                 exceptionHandler(path, ExceptionDispatchInfo.Capture(e));
             }
         }, DispatcherPriority.Input);
+    }
+
+    private Size ComputeWindowSize()
+    {
+        var newHeight = ContextObject.PreferredSize.Height + BorderThickness.Top + BorderThickness.Bottom +
+                        (ContextObject.TitlebarOverlap ? 0 : windowCaptionContainer.Height);
+        var newWidth = ContextObject.PreferredSize.Width + BorderThickness.Left + BorderThickness.Right;
+
+        var newSize = new Size(newWidth, newHeight);
+
+        // If the user has adjusted the window size, keep it
+        if (_customWindowSize != Size.Empty)
+            newSize = _customWindowSize;
+
+        return newSize;
     }
 
     private void ClearMoreMenuEntries()
@@ -581,8 +598,6 @@ public partial class ViewerWindow
             _pendingPluginCleanup = null;
             _staleViewerContent = null;
         }
-
-        busyDecorator.Dispose();
 
         base.OnClosing(e);
 

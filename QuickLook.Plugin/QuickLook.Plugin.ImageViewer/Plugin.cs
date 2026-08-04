@@ -239,6 +239,11 @@ public sealed partial class Plugin : IViewer, IMoreMenu
 
         var size = _meta.GetSize();
 
+        // v1.2.14: the first frame is decoded before the content is swapped in
+        // (and the window resized), so switching never shows gray letterbox
+        // bands from an early resize to the new aspect ratio.
+        context.DeferResizeUntilReady = true;
+
         if (!size.IsEmpty)
             context.SetPreferredSizeFit(size, 0.8d);
         else

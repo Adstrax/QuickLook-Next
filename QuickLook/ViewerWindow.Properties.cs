@@ -109,6 +109,23 @@ public partial class ViewerWindow : INotifyPropertyChanged
                     ContextObject.PendingViewerContent = null;
                 }
 
+                // v1.2.14: the window kept the previous preview's size while
+                // the new image decoded; resize it now that the content is
+                // ready so no gray letterbox bands are visible during loading.
+                if (ContextObject.DeferResizeUntilReady)
+                {
+                    ContextObject.DeferResizeUntilReady = false;
+                    PositionWindow(ComputeWindowSize());
+                }
+
+                // v1.2.14: force the layout synchronously so the just-swapped
+                // content renders in the same composition frame - without this
+                // the window can show one gray frame before the new panel is
+                // measured and drawn. Only on the UI thread: some plugins set
+                // IsBusy=false from a background thread.
+                if (ContextObject.ViewerContent != null && CheckAccess())
+                    UpdateLayout();
+
                 // Hidden test hook: record when content actually becomes ready
                 // (spinner dismissed) so benches can measure preview latency.
                 if (App.IsTimingEnabled && IsVisible && _timingBusyPath != null

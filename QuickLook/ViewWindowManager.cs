@@ -111,6 +111,11 @@ public class ViewWindowManager : IDisposable
 
     private void RunFocusMonitor()
     {
+        // v1.2.14 test hook: automated benches can disable the selection-follow
+        // polling (it otherwise reacts to Explorer's current selection).
+        if (App.DisableFocusMonitor)
+            return;
+
         FocusMonitor.GetInstance().Start();
     }
 

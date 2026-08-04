@@ -85,6 +85,14 @@ public class ContextObject : INotifyPropertyChanged
     public object PendingViewerContent { get; set; }
 
     /// <summary>
+    /// v1.2.14: when true, the viewer window keeps the window (and the previous
+    /// preview) at its current size until the pending content is applied, so a
+    /// switch to an image with a different aspect ratio does not resize early
+    /// and show gray letterbox bands while the new frame decodes.
+    /// </summary>
+    public bool DeferResizeUntilReady { get; set; }
+
+    /// <summary>
     /// Show or hide the busy indicator icon.
     /// </summary>
     public bool IsBusy
@@ -268,6 +276,7 @@ public class ContextObject : INotifyPropertyChanged
 
         ViewerContent = null;
         PendingViewerContent = null;
+        DeferResizeUntilReady = false;
 
         ColorProfileName = null;
         IsBlocked = false;

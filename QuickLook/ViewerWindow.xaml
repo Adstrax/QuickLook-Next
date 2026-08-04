@@ -210,17 +210,33 @@
                       Visibility="{Binding ContextObject.TitlebarOverlap, ElementName=mainWindow, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                 <ContentControl x:Name="container"
                                 Content="{Binding ContextObject.ViewerContent, ElementName=mainWindow}"
-                                Foreground="{DynamicResource WindowTextForeground}"
-                                Visibility="{Binding ElementName=mainWindow, Path=ContextObject.IsBusy, Converter={StaticResource BooleanToVisibilityHiddenConverter}}" />
+                                Foreground="{DynamicResource WindowTextForeground}" />
             </DockPanel>
         </Grid>
         <Grid x:Name="busyIndicatorLayer"
               Visibility="{Binding ElementName=mainWindow, Path=ContextObject.IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
               ZIndex="200">
-            <busyDecorator:BusyDecorator x:Name="busyDecorator"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"
-                                         IsBusyIndicatorShowing="{Binding ElementName=mainWindow, Path=ContextObject.IsBusy}" />
+            <!-- v1.2.14: in-process spinner. The previous BusyDecorator rendered
+                 through a separate-thread HostVisual; combined with the old
+                 "hide content while busy" binding this produced the gray
+                 loading area during preview switches. -->
+            <busyDecorator:SpinIcon x:Name="busySpinner"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource SegoeFluent}"
+                                    FontSize="30"
+                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                    Opacity="0.9"
+                                    Spin="{Binding ElementName=mainWindow, Path=ContextObject.IsBusy}"
+                                    SpinDuration="1.2"
+                                    Text="&#xE72C;">
+                <busyDecorator:SpinIcon.Effect>
+                    <DropShadowEffect BlurRadius="8"
+                                      ShadowDepth="1"
+                                      Opacity="0.45"
+                                      Color="Black" />
+                </busyDecorator:SpinIcon.Effect>
+            </busyDecorator:SpinIcon>
         </Grid>
     </Grid>
 </Window>
