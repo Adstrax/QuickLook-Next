@@ -22,9 +22,13 @@
     </UserControl.Resources>
     <Grid MouseLeftButtonDown="Panel_MouseLeftButtonDown"
           Background="Black">
-        <mediakit:MediaUriElement x:Name="mediaElement" />
-        <!-- v1.2.15: shell thumbnail shown while the media opens, so the start
-             of a video preview never shows a blank/gray loading surface. -->
+        <!-- v1.2.15: the MediaUriElement is hidden while DirectShow builds the
+             playback graph - its renderer surface paints gray/white during
+             setup. It is revealed on MediaOpened, so the opening moment only
+             ever shows the thumbnail (or the black panel) underneath. -->
+        <mediakit:MediaUriElement x:Name="mediaElement"
+                                  Visibility="Collapsed" />
+        <!-- shell thumbnail shown while the media opens -->
         <Image x:Name="videoThumbnail"
                Stretch="Uniform"
                IsHitTestVisible="False"

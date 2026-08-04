@@ -225,8 +225,28 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
         if (mediaElement == null)
             return;
 
-        videoThumbnail.Source = null;
-        videoThumbnail.Visibility = Visibility.Collapsed;
+        // v1.2.15: the playback graph is ready. Reveal the surface under the
+        // thumbnail and keep the thumbnail on top for a short grace period, so
+        // the renderer's blank surface (gray) is never visible before its first
+        // frame paints.
+        mediaElement.Visibility = Visibility.Visible;
+
+        if (videoThumbnail.Visibility == Visibility.Visible)
+        {
+            Task.Delay(250).ContinueWith(_ => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_disposed)
+                    return;
+
+                videoThumbnail.Source = null;
+                videoThumbnail.Visibility = Visibility.Collapsed;
+            })));
+        }
+        else
+        {
+            videoThumbnail.Source = null;
+            videoThumbnail.Visibility = Visibility.Collapsed;
+        }
 
         HasVideo = mediaElement.HasVideo;
 

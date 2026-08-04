@@ -8,6 +8,10 @@
   of a video no longer shows a blank/gray loading surface or the busy spinner
 - The busy spinner is disabled for video previews (the thumbnail covers the
   opening moment; the panel keeps its black background as a fallback)
+- The video renderer surface stays hidden while DirectShow builds the playback
+  graph ("播放区建立" phase) and is only revealed once the media is open, so
+  the renderer's blank gray surface can never be seen; the thumbnail covers
+  the short reveal moment as well
 
 ## QuickLook Lite 1.2.14
 
