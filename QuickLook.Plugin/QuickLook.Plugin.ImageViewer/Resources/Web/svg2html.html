@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>SVG Preview</title>
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #svgContainer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="svgContainer">
+        <div id="svgWrapper"></div>
+    </div>
+    <script src="js/svg2html.js"></script>
+</body>
+</html>
