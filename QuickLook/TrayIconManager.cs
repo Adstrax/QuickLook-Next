@@ -146,6 +146,43 @@ internal partial class TrayIconManager : IDisposable
     internal static void ShowTestMenu()
     {
         TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme(), autoCloseMs: 4000);
+
+        try
+        {
+            var diagDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ql-smoke");
+            var diagFile = System.IO.Path.Combine(diagDir, "tray-menu-dwm.txt");
+
+            // Wait until the tray menu is on screen, dump the DWM backdrop
+            // readback so test.ps1 can assert Mica is really applied.
+            System.Threading.Tasks.Task.Delay(1500).ContinueWith(_ =>
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    System.IO.Directory.CreateDirectory(diagDir);
+                    System.IO.File.WriteAllText(diagFile,
+                        $"{TrayMenuWindow.DiagnoseBackdrop()}\nmore-menu-opened=false");
+                }));
+
+            // After the tray menu auto-closed, exercise the same unified menu
+            // through the preview window's "More" button path.
+            System.Threading.Tasks.Task.Delay(5000).ContinueWith(_ =>
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        ViewWindowManager.GetInstance().CurrentViewerWindow?.ShowMoreMenuForTest();
+                        System.IO.Directory.CreateDirectory(diagDir);
+                        System.IO.File.AppendAllText(diagFile, "\nmore-menu-opened=true");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.IO.File.AppendAllText(diagFile, $"\nmore-menu-error: {ex}");
+                    }
+                }));
+        }
+        catch
+        {
+            // Diagnostics must never break the test itself.
+        }
     }
 
     public void Dispose()

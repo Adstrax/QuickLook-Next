@@ -36,6 +36,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Violeta.Controls;
 using WinForms = System.Windows.Forms;
 using MenuItem = System.Windows.Controls.MenuItem;
 
@@ -43,6 +44,10 @@ namespace QuickLook;
 
 public partial class ViewerWindow
 {
+    // v1.2.9: plugin-provided More menu items, snapshotted into the unified
+    // Mica menu (TrayMenuWindow) every time the menu is opened.
+    private readonly List<TrayMenuEntry> _pluginMoreMenuEntries = new();
+
     internal void Run()
     {
         if (string.IsNullOrEmpty(_path))
@@ -362,8 +367,8 @@ public partial class ViewerWindow
 
                 Plugin.View(path, ContextObject);
 
-                // Initial the more menu
-                ClearMoreMenuUnpin();
+                // Initialize the more menu
+                ClearMoreMenuEntries();
                 foreach (var plugin in
                     PluginManager.GetInstance().LoadedPlugins
                         .GroupBy(x => x.ToString()).Select(g => g.First()) // DistinctBy plugin name
@@ -373,7 +378,7 @@ public partial class ViewerWindow
                     {
                         if (Plugin is IMoreMenu moreMenu && moreMenu.MenuItems is not null)
                         {
-                            InsertMoreMenu(moreMenu.MenuItems);
+                            AddPluginMoreMenu(moreMenu.MenuItems);
                         }
                         continue;
                     }
@@ -381,7 +386,7 @@ public partial class ViewerWindow
                     {
                         if (plugin is IMoreMenuExtended moreMenu && moreMenu.MenuItems is not null)
                         {
-                            InsertMoreMenu(moreMenu.MenuItems);
+                            AddPluginMoreMenu(moreMenu.MenuItems);
                         }
                     }
                 }
@@ -393,89 +398,108 @@ public partial class ViewerWindow
         }, DispatcherPriority.Input);
     }
 
-    private void ClearMoreMenuUnpin()
+    private void ClearMoreMenuEntries()
     {
-        var toRemove = buttonMore.ContextMenu.Items
-            .OfType<FrameworkElement>() // MenuItem and Separator
-            .Where(item => item.Tag is not "PinMenu")
-            .ToArray();
-
-        foreach (var item in toRemove)
-        {
-            buttonMore.ContextMenu.Items.Remove(item);
-        }
+        _pluginMoreMenuEntries.Clear();
     }
 
-    private void InsertMoreMenu(IEnumerable<IMenuItem> moreMenu)
+    private void AddPluginMoreMenu(IEnumerable<IMenuItem> moreMenu)
     {
-        int count = 0;
-
         foreach (IMenuItem item in moreMenu)
         {
             if (item is null) continue;
 
-            if (!item.IsSeparator)
+            if (item.IsSeparator)
             {
-                MenuItem menuItem = new()
-                {
-                    Icon = ResolveIcon(item.Icon),
-                    Command = item.Command,
-                };
-
-                if (item is INotifyPropertyChanged)
-                {
-                    menuItem.SetBinding(MenuItem.HeaderProperty, new Binding(nameof(IMenuItem.Header))
-                    {
-                        Source = item,
-                        Mode = BindingMode.OneWay,
-                    });
-                    menuItem.SetBinding(UIElement.VisibilityProperty, new Binding(nameof(IMenuItem.IsVisible))
-                    {
-                        Source = item,
-                        Mode = BindingMode.OneWay,
-                        Converter = new BooleanToVisibilityConverter(),
-                    });
-                }
-                else
-                {
-                    menuItem.Header = item.Header;
-                    menuItem.Visibility = item.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-                }
-
-                buttonMore.ContextMenu.Items.Insert(count++, menuItem);
+                _pluginMoreMenuEntries.Add(TrayMenuEntry.Separator);
+                continue;
             }
-            else
+
+            if (!item.IsVisible)
+                continue;
+
+            var command = item.Command;
+            var parameter = item.CommandParameter;
+
+            _pluginMoreMenuEntries.Add(new TrayMenuEntry
             {
-                buttonMore.ContextMenu.Items.Insert(count++, new Separator());
-            }
-        }
-
-        if (moreMenu.Any())
-        {
-            buttonMore.ContextMenu.Items.Insert(count++, new Separator());
+                Header = item.Header?.ToString(),
+                Icon = ResolveMenuIcon(item.Icon),
+                IsEnabled = item.IsEnabled,
+                ToolTip = item.ToolTip,
+                Command = () =>
+                {
+                    if (command?.CanExecute(parameter) == true)
+                        command.Execute(parameter);
+                },
+            });
         }
     }
 
-    private object ResolveIcon(object icon)
+    private static object ResolveMenuIcon(object icon)
     {
-        if (icon is string glyph)
+        return icon is string or ImageSource or FrameworkElement ? icon : null;
+    }
+
+    private List<TrayMenuEntry> BuildMoreMenuEntries()
+    {
+        var entries = new List<TrayMenuEntry>
         {
-            return new FontIcon()
+            new()
             {
-                FontFamily = (FontFamily)Application.Current.Resources["SymbolThemeFontFamily"],
-                Glyph = glyph,
-            };
-        }
-        else if (icon is UIElement)
+                Header = TranslationHelper.Get("MW_Reload"),
+                Icon = FontSymbols.Refresh,
+                Command = () => ViewWindowManager.GetInstance().ReloadPreview(),
+            },
+            new()
+            {
+                Header = TranslationHelper.Get("InfoPanelMoreItem_CopyAsPath"),
+                Icon = FontSymbols.Copy,
+                Command = CopyPathToClipboard,
+            },
+        };
+
+        if (_pluginMoreMenuEntries.Count > 0)
         {
-            return icon;
-        }
-        else
-        {
-            // Not supported yet
+            entries.Add(TrayMenuEntry.Separator);
+            entries.AddRange(_pluginMoreMenuEntries);
         }
 
-        return null;
+        return entries;
+    }
+
+    private void CopyPathToClipboard()
+    {
+        try
+        {
+            Clipboard.SetText($"\"{(_path.Length >= 260 ? @"\\?\" + _path : _path)}\"");
+            Toast.Success(TranslationHelper.Get("InfoPanelMoreItem_CopySucc"));
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+        }
+    }
+
+    private void ToggleMoreMenu()
+    {
+        if (TrayMenuWindow.IsOpen)
+        {
+            TrayMenuWindow.CloseCurrentMenu();
+            return;
+        }
+
+        ShowMoreMenu();
+    }
+
+    private void ShowMoreMenu()
+    {
+        TrayMenuWindow.ShowMenu(BuildMoreMenuEntries(), CurrentTheme == Themes.Dark, buttonMore);
+    }
+
+    internal void ShowMoreMenuForTest()
+    {
+        TrayMenuWindow.ShowMenu(BuildMoreMenuEntries(), CurrentTheme == Themes.Dark, buttonMore, autoCloseMs: 3000);
     }
 
     private void SetOpenWithButtonAndPath()

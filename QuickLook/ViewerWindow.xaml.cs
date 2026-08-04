@@ -147,28 +147,7 @@ public partial class ViewerWindow : Window
 
         buttonReload.Visibility = SettingHelper.Get("ShowReload", false) ? Visibility.Visible : Visibility.Collapsed;
 
-        moreItemReload.Click += (_, _) =>
-        {
-            ViewWindowManager.GetInstance().ReloadPreview();
-        };
-
-        moreItemCopyAsPath.Click += (_, _) =>
-        {
-            try
-            {
-                Clipboard.SetText($"\"{(_path.Length >= 260 ? @"\\?\" + _path : _path)}\"");
-                Toast.Success(TranslationHelper.Get("InfoPanelMoreItem_CopySucc"));
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
-        };
-
-        moreItemOpenSettings.Click += (_, _) =>
-        {
-            Toast.Warning("Coming soon...");
-        };
+        buttonMore.Click += (_, _) => ToggleMoreMenu();
 
         // Set UI translations
         buttonTop.ToolTip = TranslationHelper.Get("MW_StayTop");
@@ -177,8 +156,6 @@ public partial class ViewerWindow : Window
         buttonShare.ToolTip = TranslationHelper.Get("MW_Share");
         buttonReload.ToolTip = TranslationHelper.Get("MW_Reload", failsafe: "Reload");
         buttonMore.ToolTip = TranslationHelper.Get("MW_More", failsafe: "More");
-        moreItemReload.Header = TranslationHelper.Get("MW_Reload");
-        moreItemCopyAsPath.Header = TranslationHelper.Get("InfoPanelMoreItem_CopyAsPath");
     }
 
     public new void Close()

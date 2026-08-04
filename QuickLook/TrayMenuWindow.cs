@@ -53,6 +53,7 @@ internal sealed class TrayMenuWindow : Window
     private readonly Brush _separatorBrush;
     private readonly Brush _borderBrush;
     private readonly Brush _checkBrush;
+    private readonly Brush _tintBrush;
 
     private LowLevelMouseProc _mouseProc;
     private LowLevelKeyboardProc _keyboardProc;
@@ -85,12 +86,16 @@ internal sealed class TrayMenuWindow : Window
         _separatorBrush = CreateBrush(isDark ? "#14FFFFFF" : "#10000000");
         _borderBrush = CreateBrush(isDark ? "#26FFFFFF" : "#26000000");
         _checkBrush = CreateBrush(isDark ? "#60CDFF" : "#005FB8");
+        // Win11-style Mica panel: a translucent tint layered over the Mica
+        // backdrop gives the menu a definite surface while the wallpaper tint
+        // still shows through (Mica itself is a subtle wallpaper-derived tint).
+        _tintBrush = CreateBrush(isDark ? "#B3202020" : "#D9F9F9F9");
 
         _root = BuildMenu(entries);
 
         Content = new Border
         {
-            Background = Brushes.Transparent,
+            Background = _tintBrush,
             BorderBrush = _borderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
@@ -115,21 +120,92 @@ internal sealed class TrayMenuWindow : Window
     }
 
     /// <summary>
+    /// Reads back the DWM backdrop attributes of the currently open menu
+    /// window so tests can prove Mica is actually applied.
+    /// </summary>
+    public static string DiagnoseBackdrop()
+    {
+        var menu = _current;
+        if (menu is null || !menu.IsVisible)
+            return "no menu window open";
+
+        var hwnd = new WindowInteropHelper(menu).Handle;
+        var backdropType = 0;
+        var micaEffect = 0;
+        DwmGetWindowAttribute(hwnd, (uint)Dwmapi.WindowAttribute.SystembackdropType,
+            ref backdropType, Marshal.SizeOf<int>());
+        DwmGetWindowAttribute(hwnd, (uint)Dwmapi.WindowAttribute.MicaEffect,
+            ref micaEffect, Marshal.SizeOf<int>());
+
+        return $"hwnd=0x{hwnd.ToInt64():X} systembackdrop={backdropType} ({BackdropName(backdropType)}) micaEffect={micaEffect}";
+    }
+
+    private static string BackdropName(int type) => type switch
+    {
+        0 => "None",
+        1 => "Auto",
+        2 => "Mica",
+        3 => "Acrylic",
+        4 => "Tabbed",
+        _ => "Unknown",
+    };
+
+    /// <summary>
     /// Show the tray menu at the current cursor position. Any previously open
     /// menu is closed first.
     /// </summary>
+    public static bool IsOpen => _current?.IsVisible == true;
+
+    public static void CloseCurrentMenu()
+    {
+        _current?.CloseMenu();
+    }
+
+    /// <summary>
+    /// Show a menu at the current cursor position (used by the tray icon).
+    /// </summary>
     public static void ShowMenu(IReadOnlyList<TrayMenuEntry> entries, bool isDark, int autoCloseMs = 0)
+    {
+        ShowMenuCore(entries, isDark, anchor: null, autoCloseMs);
+    }
+
+    /// <summary>
+    /// Show a menu anchored below a control (used by the preview window's
+    /// "More" button), right-aligned like a Win11 flyout.
+    /// </summary>
+    public static void ShowMenu(IReadOnlyList<TrayMenuEntry> entries, bool isDark, FrameworkElement anchor,
+        int autoCloseMs = 0)
+    {
+        ShowMenuCore(entries, isDark, anchor, autoCloseMs);
+    }
+
+    private static void ShowMenuCore(IReadOnlyList<TrayMenuEntry> entries, bool isDark, FrameworkElement anchor,
+        int autoCloseMs)
     {
         _current?.CloseMenu();
 
         var menu = new TrayMenuWindow(entries, isDark, autoCloseMs);
         _current = menu;
-        menu.ShowAtCursor();
+
+        if (anchor is not null && TryGetAnchorRect(anchor, out var anchorRect))
+            menu.ShowAt(anchorRect);
+        else
+            menu.ShowAtCursor();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        ApplyBackdrop();
+    }
+
+    protected override void OnContentRendered(EventArgs e)
+    {
+        base.OnContentRendered(e);
+
+        // Re-apply after first paint, like the preview window does; some WPF
+        // windows need the DWM backdrop attribute set once the window is
+        // actually visible for it to take effect reliably.
         ApplyBackdrop();
     }
 
@@ -169,6 +245,18 @@ internal sealed class TrayMenuWindow : Window
 
     private Border BuildItem(TrayMenuEntry entry)
     {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var icon = BuildIcon(entry.Icon, entry.IsEnabled);
+        if (icon is not null)
+        {
+            Grid.SetColumn(icon, 0);
+            grid.Children.Add(icon);
+        }
+
         var text = new TextBlock
         {
             Text = entry.Header,
@@ -176,8 +264,10 @@ internal sealed class TrayMenuWindow : Window
             FontWeight = entry.IsBold ? FontWeights.SemiBold : FontWeights.Normal,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 12, 0),
+            Margin = new Thickness(icon is null ? 12 : 8, 0, 12, 0),
         };
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(text);
 
         var check = new TextBlock
         {
@@ -190,13 +280,7 @@ internal sealed class TrayMenuWindow : Window
             Margin = new Thickness(0, 0, 12, 0),
             Visibility = entry.IsChecked ? Visibility.Visible : Visibility.Collapsed,
         };
-
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(text, 0);
-        Grid.SetColumn(check, 1);
-        grid.Children.Add(text);
+        Grid.SetColumn(check, 2);
         grid.Children.Add(check);
 
         var item = new Border
@@ -208,6 +292,7 @@ internal sealed class TrayMenuWindow : Window
             Background = Brushes.Transparent,
             IsEnabled = entry.IsEnabled,
             Opacity = entry.IsEnabled ? 1d : 0.5d,
+            ToolTip = string.IsNullOrEmpty(entry.ToolTip) ? null : entry.ToolTip,
         };
 
         if (entry.IsEnabled)
@@ -226,17 +311,65 @@ internal sealed class TrayMenuWindow : Window
         return item;
     }
 
+    private FrameworkElement BuildIcon(object icon, bool isEnabled)
+    {
+        if (icon is string glyph && !string.IsNullOrWhiteSpace(glyph))
+        {
+            return new TextBlock
+            {
+                Text = glyph,
+                FontFamily = (FontFamily)(Application.Current?.Resources["SymbolThemeFontFamily"]
+                    ?? new FontFamily("Segoe Fluent Icons")),
+                FontSize = 14,
+                Foreground = isEnabled ? _textBrush : _disabledTextBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(12, 0, 0, 0),
+            };
+        }
+
+        if (icon is ImageSource image)
+        {
+            return new Image
+            {
+                Source = image,
+                Width = 16,
+                Height = 16,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(12, 0, 0, 0),
+            };
+        }
+
+        if (icon is FrameworkElement element)
+        {
+            element.Margin = new Thickness(12, 0, 0, 0);
+            element.VerticalAlignment = VerticalAlignment.Center;
+            return element;
+        }
+
+        return null;
+    }
+
     private void ShowAtCursor()
     {
-        _generation++;
-
         if (!GetCursorPos(out var pt))
             return;
+
+        // width == 0 marks cursor placement (as opposed to an anchored menu).
+        ShowAt(new Rect(pt.X, pt.Y, 0, 0));
+    }
+
+    private void ShowAt(Rect anchorPx)
+    {
+        _generation++;
 
         var hwnd = new WindowInteropHelper(this).Handle; // forces HWND creation
         this.SetNoactivate();
 
-        var hMonitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        var hMonitor = MonitorFromPoint(new POINT
+        {
+            X = (int)anchorPx.X,
+            Y = (int)anchorPx.Y,
+        }, MONITOR_DEFAULTTONEAREST);
         GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, out var dpiX, out var dpiY);
 
         var monitor = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
@@ -257,8 +390,24 @@ internal sealed class TrayMenuWindow : Window
         var workRight = monitor.rcWork.Right / scaleX;
         var workBottom = monitor.rcWork.Bottom / scaleY;
 
-        var left = Math.Clamp(pt.X / scaleX, workLeft, Math.Max(workLeft, workRight - menuWidth));
-        var top = Math.Clamp(pt.Y / scaleY, workTop, Math.Max(workTop, workBottom - menuHeight));
+        double left;
+        double top;
+
+        if (anchorPx.Width > 0)
+        {
+            // Anchored below a control, right-aligned (Win11 flyout style).
+            left = (anchorPx.Right / scaleX) - menuWidth;
+            top = (anchorPx.Bottom / scaleY) + (4 / scaleY);
+        }
+        else
+        {
+            // Cursor placement (tray icon).
+            left = anchorPx.X / scaleX;
+            top = anchorPx.Y / scaleY;
+        }
+
+        left = Math.Clamp(left, workLeft, Math.Max(workLeft, workRight - menuWidth));
+        top = Math.Clamp(top, workTop, Math.Max(workTop, workBottom - menuHeight));
 
         Left = left;
         Top = top;
@@ -275,6 +424,27 @@ internal sealed class TrayMenuWindow : Window
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
             true);
+    }
+
+    private static bool TryGetAnchorRect(FrameworkElement anchor, out Rect rect)
+    {
+        rect = default;
+        try
+        {
+            if (anchor.IsLoaded && PresentationSource.FromVisual(anchor) is not null)
+            {
+                var topLeft = anchor.PointToScreen(new Point(0, 0));
+                var bottomRight = anchor.PointToScreen(new Point(anchor.ActualWidth, anchor.ActualHeight));
+                rect = new Rect(topLeft, bottomRight);
+                return true;
+            }
+        }
+        catch
+        {
+            // Fall back to cursor placement below.
+        }
+
+        return false;
     }
 
     private void ApplyBackdrop()
@@ -494,6 +664,9 @@ internal sealed class TrayMenuWindow : Window
 
     [DllImport("user32.dll")]
     private static extern bool MoveWindow(nint hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmGetWindowAttribute(nint hwnd, uint dwAttribute, ref int pvAttribute, int cbAttribute);
 }
 
 /// <summary>
@@ -507,6 +680,8 @@ internal sealed record TrayMenuEntry
     public bool IsChecked { get; init; }
     public bool IsEnabled { get; init; } = true;
     public bool IsBold { get; init; }
+    public object Icon { get; init; }
+    public string ToolTip { get; init; }
 
     public static TrayMenuEntry Separator => new() { IsSeparator = true };
 }

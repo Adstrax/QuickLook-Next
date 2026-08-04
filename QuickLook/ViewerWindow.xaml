@@ -134,34 +134,7 @@
                             Content="&#xE712;"
                             DockPanel.Dock="Right"
                             Style="{StaticResource CaptionButtonStyle}"
-                            ToolTip="More">
-                        <Button.ContextMenu>
-                            <ContextMenu FontSize="12">
-                                <MenuItem x:Name="moreItemReload" Tag="PinMenu" InputGestureText="F5">
-                                    <MenuItem.Icon>
-                                        <ui:FontIcon FontFamily="{DynamicResource SymbolThemeFontFamily}" Glyph="{x:Static ui:FontSymbols.Refresh}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem x:Name="moreItemCopyAsPath" Tag="PinMenu">
-                                    <MenuItem.Icon>
-                                        <ui:FontIcon FontFamily="{DynamicResource SymbolThemeFontFamily}" Glyph="{x:Static ui:FontSymbols.Copy}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <Separator Tag="PinMenu" Visibility="Collapsed" />
-                                <MenuItem x:Name="moreItemOpenSettings"
-                                          Header="Settings"
-                                          Tag="PinMenu"
-                                          Visibility="Collapsed">
-                                    <MenuItem.Icon>
-                                        <ui:FontIcon FontFamily="{DynamicResource SymbolThemeFontFamily}" Glyph="{x:Static ui:FontSymbols.Settings}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                            </ContextMenu>
-                        </Button.ContextMenu>
-                        <i:Interaction.Behaviors>
-                            <controls:LeftContextMenuBehavior />
-                        </i:Interaction.Behaviors>
-                    </Button>
+                            ToolTip="More" />
                     <Button x:Name="buttonTop"
                             DockPanel.Dock="Left"
                             Tag="Auto"

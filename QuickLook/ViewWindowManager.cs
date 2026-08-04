@@ -37,6 +37,8 @@ public class ViewWindowManager : IDisposable
         InitNewViewerWindow();
     }
 
+    internal ViewerWindow CurrentViewerWindow => _viewerWindow;
+
     public void Dispose()
     {
         StopFocusMonitor();
