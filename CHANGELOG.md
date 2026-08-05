@@ -2,6 +2,14 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.16
+
+- Fix the broken startup shortcut: `Assembly.Location` resolves to QuickLook.dll
+  under the .NET apphost, so the auto-start shortcut (and the shell
+  context-menu command / restart) pointed at the DLL - Windows then tried to
+  "open" the DLL after every restart. The executable path is now resolved
+  explicitly, so auto-start launches QuickLook.exe properly
+
 ## QuickLook Lite 1.2.15
 
 - Video previews show the file's thumbnail while the media opens, so the start

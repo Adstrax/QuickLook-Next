@@ -70,7 +70,9 @@ public partial class PluginInfoPanel : UserControl
             {
                 StartInfo = new ProcessStartInfo()
                 {
-                    FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName),
+                    // v1.2.16: restart through the apphost .exe, not the dll.
+                    FileName = Environment.ProcessPath ??
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName),
                     WorkingDirectory = Environment.CurrentDirectory,
                     UseShellExecute = true,
                 },

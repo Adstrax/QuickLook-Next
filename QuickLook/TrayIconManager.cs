@@ -1,4 +1,4 @@
-// Copyright © 2017-2026 QL-Win Contributors
+﻿// Copyright © 2017-2026 QL-Win Contributors
 //
 // This file is part of QuickLook program.
 //
@@ -242,7 +242,8 @@ internal partial class TrayIconManager : IDisposable
             {
                 StartInfo = new ProcessStartInfo()
                 {
-                    FileName = fileName ?? Path.Combine(dir ?? AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName),
+                    // v1.2.16: AppFullPath is the .exe, not the managed .dll.
+                    FileName = fileName ?? App.AppFullPath,
                     WorkingDirectory = dir ?? Environment.CurrentDirectory,
                     UseShellExecute = true,
                 },

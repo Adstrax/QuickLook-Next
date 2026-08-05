@@ -39,7 +39,16 @@ public partial class App : Application
 {
     public static readonly string LocalDataPath = SettingHelper.LocalDataPath;
     public static readonly string UserPluginPath = Path.Combine(SettingHelper.LocalDataPath, @"QuickLook.Plugin\");
-    public static readonly string AppFullPath = Assembly.GetExecutingAssembly().Location;
+    // v1.2.16: Assembly.Location points at QuickLook.dll under the .NET apphost,
+    // but everything that launches the app (startup shortcut, shell command,
+    // restart) must target the executable. Resolve the .exe next to it.
+    private static readonly string AssemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+    public static readonly string AppFullPath =
+        Path.ChangeExtension(AssemblyLocation, ".exe") is { } exePath && File.Exists(exePath)
+            ? exePath
+            : AssemblyLocation;
+
     public static readonly string AppPath = Path.GetDirectoryName(AppFullPath);
     public static readonly bool Is64Bit = Environment.Is64BitProcess;
     public static readonly bool IsArm64 = RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
