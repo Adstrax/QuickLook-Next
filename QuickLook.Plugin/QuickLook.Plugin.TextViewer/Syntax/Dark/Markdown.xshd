@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="Markdown" extensions=".md;.markdown;.mdx;.mmd;.mkd;.mdwn;.mdown;.mdc;.qmd;.rmd;.rmarkdown;.apib;.mdtxt;.mdtext">
+
+    <RuleSets>
+        <RuleSet name="CSharpRef" reference="C#"/>
+
+        <RuleSet ignorecase="true">
+            <Span name="CodeBlock" rule="CSharpRef" stopateol="false" color="#CE9178" bold="false" italic="false">
+                <Begin>```</Begin>
+                <End>```</End>
+            </Span>
+            <Span name="CodeIndentTab" rule="CSharpRef" stopateol="false" color="#CE9178" bold="false" italic="false">
+                <Begin></Begin>
+                <End>^(?!)</End>
+            </Span>
+            <Span name="Heading" stopateol="true" color="#FF00C0FF" bold="true" italic="false">
+                <Begin>#</Begin>
+            </Span>
+            <Span name="Bold" stopateol="true" color="White" bold="true" italic="false">
+                <Begin>\*\*</Begin>
+                <End>\*\*</End>
+            </Span>
+            <Span name="BoldUnderscore" stopateol="true" color="White" bold="true" italic="false">
+                <Begin>__</Begin>
+                <End>__</End>
+            </Span>
+            <Span name="InlineCode" stopateol="true" color="#D0D0D0" bold="false" italic="false">
+                <Begin>`</Begin>
+                <End>`</End>
+            </Span>
+            <Span name="BlockQuote" stopateol="true" color="#FF55FF00" bold="false" italic="false">
+                <Begin>&gt;</Begin>
+            </Span>
+            <Span name="Link" stopateol="true" color="#FF4080FF" bold="false" italic="false">
+                <Begin>\[</Begin>
+                <End>)</End>
+            </Span>
+            <Span name="Image" stopateol="true" color="#FF4080FF" bold="false" italic="false">
+                <Begin>!\[</Begin>
+                <End>]</End>
+            </Span>
+            <Span name="Think" stopateol="false" color="#999999" bold="false" italic="false">
+                <Begin>&lt;think&gt;</Begin>
+                <End>&lt;/think&gt;</End>
+            </Span>
+        </RuleSet>
+    </RuleSets>
+</SyntaxDefinition>

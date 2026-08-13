@@ -1,0 +1,69 @@
+name: build
+
+on:
+  push:
+    branches: [ "main", "v1.*" ]
+  pull_request:
+    branches: [ "main", "v1.*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SOLUTION_FILE_PATH: ./QuickLook.slnx
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        working-directory: ${{ github.workspace }}
+        run: dotnet restore ${{ env.SOLUTION_FILE_PATH }}
+
+      - name: Build
+        working-directory: ${{ github.workspace }}
+        run: dotnet build ${{ env.SOLUTION_FILE_PATH }} -c ${{ env.BUILD_CONFIGURATION }} --no-restore -m
+
+      - name: Package (portable zip)
+        shell: pwsh
+        run: |
+          Compress-Archive -Path Build\Release\* -DestinationPath Build\QuickLook-Lite.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quicklook-lite
+          path: Build/QuickLook-Lite.zip
+
+  publish:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: quicklook-lite
+
+      - name: Update latest release
+        uses: pyTooling/Actions/releaser@r6
+        with:
+          tag: latest
+          rm: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: QuickLook-Lite.zip

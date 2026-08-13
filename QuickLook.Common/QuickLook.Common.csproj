@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <RootNamespace>QuickLook.Common</RootNamespace>
+        <AssemblyName>QuickLook.Common</AssemblyName>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <UseWPF>true</UseWPF>
+        <UseWindowsForms>true</UseWindowsForms>
+        <LangVersion>latest</LangVersion>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <ProjectGuid>{85FDD6BA-871D-46C8-BD64-F6BB0CB5EA95}</ProjectGuid>
+        <Authors>QL-Win</Authors>
+        <Company>QL-Win</Company>
+        <Description>This repository holds the common library of QuickLook. The library is shared among all QuickLook projects.</Description>
+        <PackageProjectUrl>https://github.com/QL-Win/QuickLook</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/QL-Win/QuickLook</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>QuickLook</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>app.png</PackageIcon>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <Platforms>AnyCPU;x64;ARM64</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>..\Build\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>..\Build\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+        <DebugType>portable</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>..\Build\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <DebugType>portable</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>..\Build\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <ItemGroup>
+        </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\GitVersion.cs">
+            <Link>Properties\GitVersion.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include=".\README.md" Pack="true" PackagePath="" />
+        <None Include=".\app.png" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+    <PropertyGroup>
+    </PropertyGroup>
+    <Target Name="UpdateVersion" BeforeTargets="BeforeBuild">
+        <Exec Command="powershell -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\Scripts\update-version.ps1&quot;" />
+    </Target>
+</Project>

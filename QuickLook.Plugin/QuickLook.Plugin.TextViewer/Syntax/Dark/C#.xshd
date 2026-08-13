@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<SyntaxDefinition name="C#" extensions=".cs">
+
+    <Environment>
+        <Default color="#D4D4D4" bgcolor="#1E1E1E"/>
+        <Selection color="#D4D4D4" bgcolor="#264F78"/>
+        <LineNumbers color="#858585" bgcolor="#1E1E1E"/>
+        <CaretMarker color="#AEAFAD"/>
+        <VRuler color="#333337"/>
+
+        <FoldLine color="#444444" bgcolor="#1E1E1E"/>
+        <FoldMarker color="#D4D4D4" bgcolor="#2D2D2D"/>
+        <SelectedFoldLine color="#D4D4D4" bgcolor="#2D2D2D"/>
+
+        <EOLMarkers color="#404040"/>
+        <SpaceMarkers color="#404040"/>
+        <TabMarkers color="#404040"/>
+        <InvalidLines color="#B6B6C0"/>
+    </Environment>
+
+    <Properties>
+        <Property name="LineComment" value="//"/>
+        <Property name="BlockCommentBegin" value="/*"/>
+        <Property name="BlockCommentEnd" value="*/"/>
+    </Properties>
+
+    <Digits name="Digits" color="#B5CEA8"/>
+
+    <RuleSets>
+        <RuleSet ignorecase="false">
+
+            <Delimiters>&amp;&lt;&gt;~!%^*()-+=|\#/{}[]:;"' ,   .?</Delimiters>
+
+            <Span name="DocLineComment" rule="DocCommentSet" stopateol="true" color="#57A64A" bold="false" italic="false" noescapesequences="true">
+                <Begin color="#57A64A" bold="false" italic="false">///@!/@</Begin>
+            </Span>
+
+            <Span name="LineComment" rule="CommentMarkerSet" stopateol="true" color="#57A64A" bold="false" italic="false">
+                <Begin>//@!/@</Begin>
+            </Span>
+            <Span name="LineComment2" rule="CommentMarkerSet" stopateol="true" color="#57A64A" bold="false" italic="false">
+                <Begin>////</Begin>
+            </Span>
+
+            <Span name="BlockComment" rule="CommentMarkerSet" stopateol="false" color="#57A64A" bold="false" italic="false">
+                <Begin>/*</Begin>
+                <End>*/</End>
+            </Span>
+
+            <Span name="String" stopateol="true" color="#CE9178" bold="false" italic="false" escapecharacter="\">
+                <Begin>"</Begin>
+                <End>"</End>
+            </Span>
+
+            <Span name="MultiLineString" stopateol="false" color="#CE9178" bold="false" italic="false" escapecharacter='"'>
+                <Begin>@@"</Begin>
+                <End>"</End>
+            </Span>
+
+            <Span name="InterpolatedString" stopateol="false" color="#CE9178" bold="false" italic="false" escapecharacter="\">
+                <Begin>$"</Begin>
+                <End>"</End>
+            </Span>
+
+            <Span name="Char" stopateol="true" color="#CE9178" bold="false" italic="false" escapecharacter="\">
+                <Begin>'</Begin>
+                <End>'</End>
+            </Span>
+
+            <Span name="Preprocessor" rule="PreprocessorSet" stopateol="true" color="#9B9B9B" bold="false" italic="false">
+                <Begin>#</Begin>
+            </Span>
+
+            <MarkFollowing color="#4EC9B0" bold="false" italic="false">class</MarkFollowing>
+            <MarkFollowing color="#4EC9B0" bold="false" italic="false">interface</MarkFollowing>
+            <MarkFollowing color="#4EC9B0" bold="false" italic="false">struct</MarkFollowing>
+
+            <!-- Keywords: control flow -->
+            <KeyWords name="Keywords1" color="#569CD6" bold="false" italic="false">
+                <Key word="break"/>
+                <Key word="case"/>
+                <Key word="catch"/>
+                <Key word="checked"/>
+                <Key word="continue"/>
+                <Key word="default"/>
+                <Key word="do"/>
+                <Key word="else"/>
+                <Key word="finally"/>
+                <Key word="fixed"/>
+                <Key word="for"/>
+                <Key word="foreach"/>
+                <Key word="goto"/>
+                <Key word="if"/>
+                <Key word="in"/>
+                <Key word="lock"/>
+                <Key word="return"/>
+                <Key word="switch"/>
+                <Key word="throw"/>
+                <Key word="try"/>
+                <Key word="unchecked"/>
+                <Key word="unsafe"/>
+                <Key word="while"/>
+                <Key word="yield"/>
+                <Key word="async"/>
+                <Key word="await"/>
+                <Key word="when"/>
+            </KeyWords>
+
+            <!-- Keywords: type / declaration -->
+            <KeyWords name="Keywords2" color="#569CD6" bold="false" italic="false">
+                <Key word="abstract"/>
+                <Key word="as"/>
+                <Key word="base"/>
+                <Key word="class"/>
+                <Key word="const"/>
+                <Key word="delegate"/>
+                <Key word="enum"/>
+                <Key word="event"/>
+                <Key word="explicit"/>
+                <Key word="extern"/>
+                <Key word="false"/>
+                <Key word="from"/>
+                <Key word="get"/>
+                <Key word="global"/>
+                <Key word="implicit"/>
+                <Key word="interface"/>
+                <Key word="internal"/>
+                <Key word="is"/>
+                <Key word="let"/>
+                <Key word="namespace"/>
+                <Key word="new"/>
+                <Key word="null"/>
+                <Key word="object"/>
+                <Key word="operator"/>
+                <Key word="out"/>
+                <Key word="override"/>
+                <Key word="params"/>
+                <Key word="partial"/>
+                <Key word="private"/>
+                <Key word="protected"/>
+                <Key word="public"/>
+                <Key word="readonly"/>
+                <Key word="ref"/>
+                <Key word="remove"/>
+                <Key word="sealed"/>
+                <Key word="set"/>
+                <Key word="sizeof"/>
+                <Key word="stackalloc"/>
+                <Key word="static"/>
+                <Key word="this"/>
+                <Key word="true"/>
+                <Key word="typeof"/>
+                <Key word="using"/>
+                <Key word="var"/>
+                <Key word="virtual"/>
+                <Key word="void"/>
+                <Key word="volatile"/>
+                <Key word="where"/>
+                <Key word="with"/>
+                <Key word="add"/>
+                <Key word="and"/>
+                <Key word="ascending"/>
+                <Key word="by"/>
+                <Key word="descending"/>
+                <Key word="dynamic"/>
+                <Key word="equals"/>
+                <Key word="file"/>
+                <Key word="group"/>
+                <Key word="init"/>
+                <Key word="into"/>
+                <Key word="join"/>
+                <Key word="managed"/>
+                <Key word="nameof"/>
+                <Key word="not"/>
+                <Key word="on"/>
+                <Key word="or"/>
+                <Key word="orderby"/>
+                <Key word="record"/>
+                <Key word="required"/>
+                <Key word="scoped"/>
+                <Key word="select"/>
+                <Key word="unmanaged"/>
+                <Key word="value"/>
+            </KeyWords>
+
+            <!-- Value types -->
+            <KeyWords name="Keywords3" color="#4EC9B0" bold="false" italic="false">
+                <Key word="bool"/>
+                <Key word="byte"/>
+                <Key word="char"/>
+                <Key word="decimal"/>
+                <Key word="double"/>
+                <Key word="float"/>
+                <Key word="int"/>
+                <Key word="long"/>
+                <Key word="nint"/>
+                <Key word="nuint"/>
+                <Key word="sbyte"/>
+                <Key word="short"/>
+                <Key word="string"/>
+                <Key word="struct"/>
+                <Key word="uint"/>
+                <Key word="ulong"/>
+                <Key word="ushort"/>
+            </KeyWords>
+
+        </RuleSet>
+
+        <RuleSet name="CommentMarkerSet" ignorecase="false">
+            <Delimiters>&lt;&gt;~!@%^*()-+=|\#/{}[]:;"' ,   .?</Delimiters>
+
+            <KeyWords name="Markers" color="#FF8C00" bold="true" italic="false">
+                <Key word="TODO"/>
+                <Key word="FIXME"/>
+                <Key word="HACK"/>
+                <Key word="UNDONE"/>
+                <Key word="NOTE"/>
+                <Key word="BUG"/>
+            </KeyWords>
+        </RuleSet>
+
+        <RuleSet name="DocCommentSet" ignorecase="false">
+            <Delimiters>&lt;&gt;~!@%^*()-+=|\#/{}[]:;"' ,   .?</Delimiters>
+
+            <Span name="XmlTag" rule="XmlDocSet" stopateol="true" color="#9B9B9B" bold="false" italic="false">
+                <Begin>&lt;</Begin>
+                <End>&gt;</End>
+            </Span>
+
+            <KeyWords name="Markers" color="#FF8C00" bold="true" italic="false">
+                <Key word="TODO"/>
+                <Key word="FIXME"/>
+                <Key word="HACK"/>
+                <Key word="UNDONE"/>
+                <Key word="NOTE"/>
+                <Key word="BUG"/>
+            </KeyWords>
+        </RuleSet>
+
+        <RuleSet name="PreprocessorSet" ignorecase="false">
+            <Delimiters>&amp;&lt;&gt;~!%^*()-+=|\#/{}[]:;"' ,   .?</Delimiters>
+
+            <KeyWords name="Preprocessor" color="#9B9B9B" bold="false" italic="false">
+                <Key word="if"/>
+                <Key word="else"/>
+                <Key word="elif"/>
+                <Key word="endif"/>
+                <Key word="define"/>
+                <Key word="undef"/>
+                <Key word="warning"/>
+                <Key word="error"/>
+                <Key word="line"/>
+                <Key word="region"/>
+                <Key word="endregion"/>
+                <Key word="pragma"/>
+                <Key word="nullable"/>
+            </KeyWords>
+        </RuleSet>
+
+        <RuleSet name="XmlDocSet" ignorecase="false">
+            <Delimiters>/=</Delimiters>
+
+            <Span name="String" stopateol="true" bold="false" italic="false" color="#CE9178">
+                <Begin color="#9B9B9B">&quot;</Begin>
+                <End color="#9B9B9B">&quot;</End>
+            </Span>
+
+            <Span name="Char" stopateol="true" color="#CE9178" bold="false" italic="false">
+                <Begin color="#9B9B9B">&apos;</Begin>
+                <End color="#9B9B9B">&apos;</End>
+            </Span>
+        </RuleSet>
+
+    </RuleSets>
+</SyntaxDefinition>
