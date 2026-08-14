@@ -2,6 +2,12 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.30
+
+- Image previews no longer show the top-right action icons (copy / metadata /
+  background) or the image-info tag that appeared on hover; the image area is
+  now completely clean
+
 ## QuickLook Lite 1.2.16
 
 - Fix the broken startup shortcut: `Assembly.Location` resolves to QuickLook.dll

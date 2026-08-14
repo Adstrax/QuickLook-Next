@@ -95,7 +95,8 @@
         <StackPanel Margin="0,40,0,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Visibility="Collapsed">
             <Button x:Name="buttonCopy"
                     Width="24"
                     Height="24"
@@ -136,6 +137,7 @@
                     Style="{StaticResource CaptionButtonStyle}"
                     Visibility="{Binding ElementName=imagePanel, Path=BackgroundVisibility}" />
         </StackPanel>
+        <!-- v1.2.30: the image-info tag is hidden (no hover trigger) -->
         <TextBlock x:Name="textMeta"
                    Margin="0,40,8,0"
                    Padding="5,5,5,5"
@@ -144,24 +146,13 @@
                    Background="{DynamicResource CaptionBackground}"
                    FontSize="11"
                    Foreground="{DynamicResource WindowTextForeground}"
-                   IsHitTestVisible="False">
+                   IsHitTestVisible="False"
+                   Visibility="Collapsed">
             <TextBlock.Inlines>
                 <Run FontWeight="SemiBold">Camera maker</Run>
                 <Run>:&#160;</Run>
                 <Run>SONY</Run>
             </TextBlock.Inlines>
-            <TextBlock.Style>
-                <Style>
-                    <Style.Setters>
-                        <Setter Property="TextBlock.Visibility" Value="Collapsed" />
-                    </Style.Setters>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding ElementName=buttonMeta, Path=IsMouseOver}" Value="True">
-                            <Setter Property="TextBlock.Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
         </TextBlock>
     </Grid>
 </UserControl>
