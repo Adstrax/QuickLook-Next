@@ -1,0 +1,22 @@
+<Application x:Class="QuickLook.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:QuickLook"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vio="http://schemas.lepo.co/wpfui/2022/xaml/violeta"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary />
+                <ui:ControlsDictionary />
+                <vio:ThemesDictionary />
+                <vio:ControlsDictionary />
+                <ResourceDictionary Source="/QuickLook.Common;component/Styles/ScrollBarStyleDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!--  Even though Segoe MDL2 Assets is obsoleted, retain it here for compatibility with legacy plugins.  -->
+            <FontFamily x:Key="SegoeMDL2">./Fonts/#Segoe MDL2 Assets</FontFamily>
+            <FontFamily x:Key="SegoeFluent">./Fonts/#Segoe Fluent Icons</FontFamily>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
