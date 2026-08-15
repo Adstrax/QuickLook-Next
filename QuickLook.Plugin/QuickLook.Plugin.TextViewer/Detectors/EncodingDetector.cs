@@ -16,6 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.ComponentModel.Composition;
+using System;
 using System.Linq;
 using System.Text;
 using UtfUnknown;
@@ -27,8 +28,14 @@ public class EncodingDetector
 {
     public static Encoding DetectFromBytes(byte[] bytes)
     {
-        var result = CharsetDetector.DetectFromBytes(bytes);
-        var encoding = result.DoubleDetectFromResult(bytes); // Fix issues
+        // v1.2.35: chardet-style detection is O(n) with heavy per-byte work
+        // and gets slow on multi-MB files (e.g. package-lock.json). Encoding
+        // is uniform across a file, so a bounded head sample is enough to
+        // classify it (BOM and heuristic evidence live at the start).
+        const int sampleSize = 256 * 1024;
+        var sample = bytes.Length > sampleSize ? bytes.AsSpan(0, sampleSize).ToArray() : bytes;
+        var result = CharsetDetector.DetectFromBytes(sample);
+        var encoding = result.DoubleDetectFromResult(sample); // Fix issues
 
         return encoding;
     }

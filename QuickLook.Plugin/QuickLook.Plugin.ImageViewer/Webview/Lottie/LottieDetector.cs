@@ -17,6 +17,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace QuickLook.Plugin.ImageViewer.Webview.Lottie;
 
@@ -26,7 +27,15 @@ internal static class LottieDetector
     {
         try
         {
-            var jsonString = File.ReadAllText(path);
+            // v1.2.35: never read + parse the whole file on the UI thread for
+            // every .json preview. Lottie's top-level keys live in the first
+            // bytes, so a bounded read is enough to classify and bounds the
+            // parse cost for large non-Lottie JSON files.
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            const int maxRead = 256 * 1024;
+            byte[] buffer = new byte[maxRead];
+            int size = fs.Read(buffer, 0, maxRead);
+            var jsonString = Encoding.UTF8.GetString(buffer, 0, size);
             return IsVaildContent(jsonString);
         }
         catch

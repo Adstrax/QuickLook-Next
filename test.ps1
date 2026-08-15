@@ -71,6 +71,7 @@ $bmp.Save((Join-Path $smoke 'test.png'), [System.Drawing.Imaging.ImageFormat]::P
 $bmp.Dispose()
 Set-Content -Path (Join-Path $smoke 'test.txt') -Value "QuickLook smoke test`r`nLine 2" -Encoding UTF8
 Set-Content -Path (Join-Path $smoke 'test.md') -Value "# Markdown`n`n这是 **测试**。" -Encoding UTF8
+Set-Content -Path (Join-Path $smoke 'test.json') -Value '{"name":"ql-smoke","version":"1.0.0","scripts":{}}' -Encoding UTF8
 Compress-Archive -Path (Join-Path $smoke 'test.txt') -DestinationPath (Join-Path $smoke 'test.zip') -Force
 Copy-Item -LiteralPath "$env:WINDIR\Fonts\arial.ttf" -Destination (Join-Path $smoke 'test.ttf') -Force
 if (-not (Test-Path (Join-Path $smoke 'test.mp4'))) {
@@ -109,6 +110,7 @@ $previews = @(
     @{ File = 'test.png'; Title = 'test.png' },
     @{ File = 'test.txt'; Title = 'test.txt' },
     @{ File = 'test.md'; Title = 'test.md' },
+    @{ File = 'test.json'; Title = 'test.json' },
     @{ File = 'test.zip'; Title = 'test.zip' },
     @{ File = 'test.ttf'; Title = 'test.ttf' }
 )

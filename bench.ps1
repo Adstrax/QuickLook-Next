@@ -21,7 +21,7 @@ if (-not (Test-Path $exe)) {
     throw "未找到 $exe，请先运行 test.ps1 完成构建"
 }
 
-$fileNames = @('test.png', 'test.txt', 'test.md', 'test.zip', 'test.ttf', 'test.pdf')
+$fileNames = @('test.png', 'test.txt', 'test.md', 'test.json', 'test.zip', 'test.ttf', 'test.pdf')
 $files = $fileNames | ForEach-Object { Join-Path $smoke $_ } |
     Where-Object { Test-Path -LiteralPath $_ }
 if ($files.Count -eq 0) {

@@ -68,8 +68,11 @@ public partial class TextViewerPanel : TextEditor, IDisposable
             Application.Current.Resources.MergedDictionaries.Add(groupDictionary);
         }
 
-        // Initialize the Highlighting Theme Manager
-        HighlightingThemeManager.Initialize();
+        // v1.2.35: normally already initialized from Plugin.Init on the
+        // background plugin-load task; this is only a fallback for paths that
+        // skip plugin loading, so it never re-runs on the UI thread.
+        if (HighlightingThemeManager.Light is null)
+            HighlightingThemeManager.Initialize();
     }
 
     public TextViewerPanel()
@@ -378,8 +381,8 @@ public partial class TextViewerPanel : TextEditor, IDisposable
                 Encoding = encoding;
                 SyntaxHighlighting = bufferCopy.Length > maxHighlightingLength
                     ? null
-                    : highlighting.SyntaxHighlighting;
-                Document = doc;
+                : highlighting.SyntaxHighlighting;
+            Document = doc;
 
                 if (SyntaxHighlighting is ICustomHighlightingDefinition custom)
                 {
@@ -423,7 +426,7 @@ public partial class TextViewerPanel : TextEditor, IDisposable
                     }
                 }
 
-                context.IsBusy = false;
+            context.IsBusy = false;
             }, DispatcherPriority.Render);
         });
     }

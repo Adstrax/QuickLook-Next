@@ -332,14 +332,14 @@ public partial class ViewerWindow
             }), DispatcherPriority.Render);
             if (!SettingHelper.Get("ShowWindowTransition", true, "QuickLook"))
                 this.ShowWithoutTransition();
-            else
-                Show();
+        else
+            Show();
         }
 
         // Get the content size (and do any slow prepare work).
         try
         {
-            Plugin.Prepare(path, ContextObject);
+        Plugin.Prepare(path, ContextObject);
         }
         catch (Exception e)
         {

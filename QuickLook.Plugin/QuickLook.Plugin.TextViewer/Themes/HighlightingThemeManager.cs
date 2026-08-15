@@ -47,6 +47,15 @@ public class HighlightingThemeManager
         if (Light is null || Dark is null) return HighlightingTheme.Default;
 
         var useFormatDetector = SettingHelper.Get("UseFormatDetector", true, "QuickLook.Plugin.TextViewer");
+        // v1.2.35: the format-detector pass scans the whole text and is only
+        // meaningful when syntax highlighting will actually be applied.
+        // TextViewer disables highlighting above 0.5 MB, so skip the expensive
+        // scan for large files (e.g. package-lock.json) instead of walking MBs
+        // of text on the UI thread for a result that is thrown away.
+        const int MaxHighlightingLength = 512 * 1024;
+        if (text is { Length: > MaxHighlightingLength })
+            useFormatDetector = false;
+
         var highlightingTheme = GetDefinitionByExtension(nameof(Dark), extension);
 
         if (useFormatDetector && FormatDetector.Confuse(path, text) is IFormatDetector confusedFormatDetector)

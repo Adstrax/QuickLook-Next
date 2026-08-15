@@ -40,22 +40,29 @@ public sealed class Plugin : IViewer
     {
     }
 
-    public bool CanHandle(string path)
-    {
-        if (Directory.Exists(path))
-            return false;
+public bool CanHandle(string path)
+{
+    if (Directory.Exists(path))
+        return false;
 
-        if (File.Exists(path) && Path.GetExtension(path).EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-            return true;
+    var extension = Path.GetExtension(path);
+    if (extension.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        return true;
 
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        byte[] buffer = new byte[4];
-        if (fs.Read(buffer, 0, 4) < 4) return false;
-        return buffer[0] == (byte)'%' &&
-               buffer[1] == (byte)'P' &&
-               buffer[2] == (byte)'D' &&
-               buffer[3] == (byte)'F';
-    }
+    // v1.2.35: files with a known extension are matched by extension only, so
+    // previewing e.g. txt/zip files no longer opens the file on the UI thread
+    // for nothing. Magic-number detection is reserved for extensionless files.
+    if (extension.Length > 0)
+        return false;
+
+    using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+    byte[] buffer = new byte[4];
+    if (fs.Read(buffer, 0, 4) < 4) return false;
+    return buffer[0] == (byte)'%' &&
+    buffer[1] == (byte)'P' &&
+    buffer[2] == (byte)'D' &&
+    buffer[3] == (byte)'F';
+}
 
     public void Prepare(string path, ContextObject context)
     {

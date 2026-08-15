@@ -18,6 +18,7 @@
 using QuickLook.Common.Plugin;
 using QuickLook.Common.Plugin.MoreMenu;
 using QuickLook.Plugin.TextViewer.Detectors;
+using QuickLook.Plugin.TextViewer.Themes;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -45,6 +46,11 @@ public partial class Plugin : IViewer, IMoreMenu
 
     public void Init()
     {
+        // v1.2.35: loading all syntax-highlighting definitions takes a few
+        // hundred ms. Do it during background plugin loading (which always
+        // finishes before the first preview can start) instead of paying it
+        // on the UI thread at the first text preview.
+        HighlightingThemeManager.Initialize();
     }
 
     public bool CanHandle(string path)

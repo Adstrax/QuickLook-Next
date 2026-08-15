@@ -2,6 +2,20 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.35
+
+- 预览延迟优化（大文件 / JSON 场景提速明显）：
+  - PDFViewer 只对无扩展名文件做魔数检测，其他文件按扩展名匹配，每次预览
+    不再为无关格式白开一次文件（慢盘/网络盘受益明显）
+  - `.json` 的 Lottie 检测从"整文件读取 + 解析"改为只读前 256KB，大 JSON
+    （如 package-lock.json）预览不再卡顿（4.3MB JSON 从约 1.8 秒降到约 0.9 秒）
+  - 文本编码检测改为对文件头 256KB 采样（chardet 类算法在大输入上极慢）
+  - 超过 0.5MB 的文本跳过格式检测器扫描（该大小下高亮本已禁用，扫描结果
+    用不上）
+  - 语法高亮定义加载从"首次文本预览的 UI 线程"挪到后台插件加载阶段，
+    首次文本预览再省约 500ms
+- 冒烟测试与 `bench.ps1` 新增 test.json 覆盖
+
 ## QuickLook Lite 1.2.34
 
 - 启动再提速：移除已废弃的 TrayIconWindow 预热窗口（原生托盘右键菜单早在
