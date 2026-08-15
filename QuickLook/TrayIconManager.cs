@@ -302,8 +302,9 @@ internal partial class TrayIconManager : IDisposable
 
     public static void Start()
     {
-        using TrayIconWindow window = new();
-        window.Show(); // Speeds up the initialization of the tray ContextMenu
+        // v1.2.34: the native tray context menu is disabled (Menu = null), so
+        // the TrayIconWindow warm-up is obsolete - the TrayIconHost creates
+        // its own hidden window. Skipping the extra window saves startup time.
         _ = GetInstance();
     }
 }

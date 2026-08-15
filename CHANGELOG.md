@@ -2,6 +2,16 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.34
+
+- 启动再提速：移除已废弃的 TrayIconWindow 预热窗口（原生托盘右键菜单早在
+  v1.2.8 已停用，该窗口只剩开销）；启动（UI + 插件就绪）从约 0.35 秒进一步
+  降到约 0.08 秒（热缓存下稳定 ~75 ms）
+- `test.ps1` / `build.ps1` 改为一次并行构建整个解决方案（原来 16 个项目
+  逐个编译），冒烟测试总耗时显著下降
+- 移除 NuGet 包复制进输出的 win-x86 / win-arm64 运行时副本
+  （WebView2Loader 等，新增共享清理目标），发布体积再减约 1 MB（170.5 MB）
+
 ## QuickLook Lite 1.2.33
 
 - 启动提速：MessageBox 的 Harmony 补丁（.NET 10 下耗时约 1.2 秒）从启动

@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Win11 x64-only build: drop the win-x86 and win-arm64 runtimes folders that
+    NuGet packages (e.g. Microsoft.Web.WebView2) copy for every architecture.
+    The 64-bit process only ever loads runtimes\win-x64\native\*.
+  -->
+  <Target Name="RemoveNonX64Runtimes" AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="$(OutputPath)runtimes\win-x86"
+               Condition="Exists('$(OutputPath)runtimes\win-x86')" />
+    <RemoveDir Directories="$(OutputPath)runtimes\win-arm64"
+               Condition="Exists('$(OutputPath)runtimes\win-arm64')" />
+  </Target>
+</Project>

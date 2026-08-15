@@ -51,17 +51,11 @@ Start-Sleep -Seconds 3
 Write-Host "== 2/6 全量构建 ==" -ForegroundColor Cyan
 Get-ChildItem (Join-Path $root 'Build\Release') -Force -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force
-$projects = @(
-    (Join-Path $root 'QuickLook.Common\QuickLook.Common.csproj'),
-    (Join-Path $root 'QuickLook\QuickLook.csproj')
-)
-$projects += Get-ChildItem (Join-Path $root 'QuickLook.Plugin') -Recurse -Filter *.csproj |
-    Select-Object -ExpandProperty FullName
-foreach ($p in $projects) {
-    & dotnet build $p -c Release -v minimal --nologo *> $null
-    Assert ($LASTEXITCODE -eq 0) "构建 $([IO.Path]::GetFileName($p))"
-    if ($LASTEXITCODE -ne 0) { exit 1 }
-}
+# v1.2.34: build the whole solution in one parallel invocation instead of
+# compiling the 16 projects one by one - roughly halves the test time.
+& dotnet build (Join-Path $root 'QuickLook.slnx') -c Release -v minimal --nologo *> $null
+Assert ($LASTEXITCODE -eq 0) '构建 QuickLook.slnx'
+if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # ---------- 3. 准备测试文件 ----------
 Write-Host "== 3/6 准备测试文件 ==" -ForegroundColor Cyan
