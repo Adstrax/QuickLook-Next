@@ -82,6 +82,9 @@ Copy-Item -LiteralPath "$env:WINDIR\Fonts\arial.ttf" -Destination (Join-Path $sm
 if (-not (Test-Path (Join-Path $smoke 'test.mp4'))) {
     curl.exe -sL -o (Join-Path $smoke 'test.mp4') "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
 }
+if (-not (Test-Path (Join-Path $smoke 'test.pdf'))) {
+    curl.exe -sL -o (Join-Path $smoke 'test.pdf') "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf"
+}
 
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
@@ -117,6 +120,9 @@ $previews = @(
 )
 if (Test-Path (Join-Path $smoke 'test.mp4')) {
     $previews += @{ File = 'test.mp4'; Title = 'test.mp4' }
+}
+if (Test-Path (Join-Path $smoke 'test.pdf')) {
+    $previews += @{ File = 'test.pdf'; Title = 'test.pdf' }
 }
 foreach ($pv in $previews) {
     $before = Get-LogLength

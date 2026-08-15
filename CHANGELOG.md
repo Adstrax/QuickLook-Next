@@ -2,6 +2,18 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.32
+
+- PDF 预览瘦身：PDFium 由带 JavaScript 引擎的 V8 版换成普通版
+  （`bblanchon.PDFium.Win32` 153.0），`pdfium.dll` 从 28.9 MB 降至 6.9 MB；
+  预览渲染不受影响（预览不需要 PDF 的 JS 交互能力）
+- 冒烟测试新增 PDF 预览覆盖（14 页示例文档），PDFViewer 变更后全绿
+- 修复 SQLite 高危漏洞警告：`Microsoft.Data.Sqlite` 升到 10.0.11，
+  消除 NU1903（GHSA-2m69-gcr7-jv3q）
+- 新增 `bench.ps1` 预览延迟基准（基于内置 `/test-timing` 钩子）；
+  首次基线（含进程启动与管道开销）：png 0.73s / txt 1.02s / md 0.40s /
+  zip 0.43s / ttf 0.69s / pdf 0.45s
+
 ## QuickLook Lite 1.2.31
 
 - Release 体积瘦身（仅保留 64 位）：移除视频插件的 LAVFilters-x86（约 24 MB）

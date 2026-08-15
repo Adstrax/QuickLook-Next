@@ -85,7 +85,7 @@
         <PackageReference Include="fo-dicom.Imaging.Desktop" Version="5.2.6">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10">
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0">
