@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.2.32
+# QuickLook Lite（精简版）v1.2.33
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰

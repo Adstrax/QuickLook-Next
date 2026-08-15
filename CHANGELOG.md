@@ -2,6 +2,14 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.33
+
+- 启动提速：MessageBox 的 Harmony 补丁（.NET 10 下耗时约 1.2 秒）从启动
+  同步执行改为延迟 3 秒后台执行；启动（UI + 插件就绪）从约 1.64 秒降到约
+  0.35 秒（快约 78%）。补丁未完成时消息框使用默认样式，功能不受影响
+- 新增隐藏 `/test-startup` 诊断钩子，记录各启动阶段耗时；
+  `bench.ps1` 现在同时输出启动耗时与预览延迟
+
 ## QuickLook Lite 1.2.32
 
 - PDF 预览瘦身：PDFium 由带 JavaScript 引擎的 V8 版换成普通版

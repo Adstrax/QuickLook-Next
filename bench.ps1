@@ -15,6 +15,7 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exe = Join-Path $root 'Build\Release\QuickLook.exe'
 $smoke = Join-Path $env:TEMP 'ql-smoke'
 $timing = Join-Path $smoke 'timing.txt'
+$startup = Join-Path $smoke 'startup.txt'
 
 if (-not (Test-Path $exe)) {
     throw "未找到 $exe，请先运行 test.ps1 完成构建"
@@ -30,8 +31,11 @@ if ($files.Count -eq 0) {
 if (Test-Path -LiteralPath $timing) {
     Remove-Item -LiteralPath $timing -Force
 }
+if (Test-Path -LiteralPath $startup) {
+    Remove-Item -LiteralPath $startup -Force
+}
 
-$p = Start-Process -FilePath $exe -ArgumentList '/autorun', '/test-timing' -PassThru
+$p = Start-Process -FilePath $exe -ArgumentList '/autorun', '/test-timing', '/test-startup' -PassThru
 $requests = [System.Collections.Generic.List[object]]::new()
 try {
     Start-Sleep -Seconds 14   # 等插件加载完成
@@ -95,3 +99,16 @@ $results | Group-Object File | ForEach-Object {
         最慢 = if ($lats.Count) { ($lats | Measure-Object -Maximum).Maximum } else { 'N/A' }
     }
 } | Format-Table -AutoSize
+
+if (Test-Path -LiteralPath $startup) {
+    $startupLines = Get-Content -LiteralPath $startup
+    $end = $startupLines | Where-Object { $_ -match '\|onstartup-end$' } |
+        ForEach-Object { $_.Split('|')[0] } | Select-Object -First 1
+    $plugins = $startupLines | Where-Object { $_ -match '\|plugins-inited$' } |
+        ForEach-Object { $_.Split('|')[0] } | Select-Object -First 1
+    Write-Host "启动耗时（ms）：" -ForegroundColor Cyan
+    [pscustomobject]@{
+        UI就绪 = if ($end) { "$end ms" } else { 'N/A' }
+        插件就绪 = if ($plugins) { "$plugins ms" } else { 'N/A' }
+    } | Format-Table -AutoSize
+}

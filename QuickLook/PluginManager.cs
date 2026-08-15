@@ -103,6 +103,7 @@ public sealed class PluginManager
             var loaded = new List<IViewer>();
             LoadPlugins(App.UserPluginPath, loaded);
             LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), loaded);
+            App.RecordStartupPhase("plugins-assemblies-loaded");
             loaded.Sort(static (a, b) => b.Priority.CompareTo(a.Priority));
 
             foreach (var plugin in loaded)
@@ -118,6 +119,7 @@ public sealed class PluginManager
             }
 
             LoadedPlugins = loaded;
+            App.RecordStartupPhase("plugins-inited");
         }
         catch (Exception e)
         {

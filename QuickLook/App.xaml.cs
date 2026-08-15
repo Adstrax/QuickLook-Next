@@ -62,6 +62,12 @@ public partial class App : Application
     // can measure the real "spinner until content shows" latency.
     internal static bool IsTimingEnabled { get; private set; }
 
+    // Hidden test hook (/test-startup): record the elapsed time of each
+    // startup phase to %TEMP%\ql-smoke\startup.txt so startup bottlenecks can
+    // be measured instead of guessed.
+    internal static bool IsStartupTimingEnabled { get; private set; }
+    private static readonly Stopwatch StartupSw = new();
+
     // Hidden test hook (/test-no-focusmonitor): disables the selection-follow
     // polling so automated preview benches are not disturbed by Explorer's
     // current selection.
@@ -149,7 +155,13 @@ public partial class App : Application
         _ = Task.Run(() => _ = _gpuInBlacklist.Value);
 
         IsTimingEnabled = e.Args.Contains("/test-timing");
+        IsStartupTimingEnabled = e.Args.Contains("/test-startup");
         DisableFocusMonitor = e.Args.Contains("/test-no-focusmonitor");
+        if (IsStartupTimingEnabled)
+        {
+            StartupSw.Start();
+            RecordStartupPhase("onstartup-begin");
+        }
 
         if (!EnsureOSVersion()
          || !EnsureFirstInstance(e.Args)
@@ -161,6 +173,7 @@ public partial class App : Application
         }
 
         RunListener(e);
+        RecordStartupPhase("after-runlistener");
 
         // Hidden test hook: open the tray menu once so the smoke test can
         // verify the Mica tray menu renders without errors.
@@ -270,16 +283,47 @@ public partial class App : Application
         // We should improve the performance of the CLI application
         // Therefore, the time-consuming initialization code can't be placed before `OnStartup`
         base.OnStartup(e);
+        RecordStartupPhase("after-base-onstartup");
 
         // Set initial theme based on system settings
         ThemeManager.Apply(OSThemeHelper.AppsUseDarkTheme() ? ApplicationTheme.Dark : ApplicationTheme.Light);
+        RecordStartupPhase("after-theme");
 
-        // Initialize MessageBox patching
-        MessageBoxPatcher.Initialize();
+        // v1.2.33: MessageBox patching (Harmony/MonoMod) costs ~1.2 s of UI
+        // thread time on .NET 10, blocking the tray from becoming responsive.
+        // Defer it to a background task: until the patch lands, MessageBox
+        // calls simply use the default WPF dialog (same behavior, different
+        // look), and the patch is process-wide once applied.
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            MessageBoxPatcher.Initialize();
+            RecordStartupPhase("messagebox-patch-done");
+        });
+        RecordStartupPhase("after-messagebox-patch-deferred");
 
         CheckUpdate();
 
         CheckAndRegisterPluginIcon();
+        RecordStartupPhase("onstartup-end");
+    }
+
+    internal static void RecordStartupPhase(string phase)
+    {
+        if (!IsStartupTimingEnabled)
+            return;
+
+        try
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "ql-smoke");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(
+                Path.Combine(dir, "startup.txt"),
+                $"{StartupSw.ElapsedMilliseconds}|{phase}{Environment.NewLine}");
+        }
+        catch
+        {
+            // The hook is for measurement only; never break startup.
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
