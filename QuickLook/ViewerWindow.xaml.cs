@@ -49,6 +49,7 @@ public partial class ViewerWindow : Window
     private int _lastCursorX;
     private int _lastCursorY;
     private bool _hasLastCursor;
+    private bool _warmShown;
 
     internal ViewerWindow()
     {
@@ -156,6 +157,30 @@ public partial class ViewerWindow : Window
         buttonShare.ToolTip = TranslationHelper.Get("MW_Share");
         buttonReload.ToolTip = TranslationHelper.Get("MW_Reload", failsafe: "Reload");
         buttonMore.ToolTip = TranslationHelper.Get("MW_More", failsafe: "More");
+    }
+
+    /// <summary>
+    /// v1.2.36: pay the one-time first-Show cost (HWND creation, layout, DWM
+    /// backdrop) during startup idle, off-screen. The window stays "visible"
+    /// off-screen; the first real preview re-positions it as a new window so
+    /// it is centered correctly and never inherits the warm-up size.
+    /// </summary>
+    internal void WarmUp()
+    {
+        if (IsVisible)
+            return;
+
+        _warmShown = true;
+        // The warm-up Show fires SizeChanged; do not persist that default
+        // size as the user's custom window size.
+        _ignoreNextWindowSizeChange = true;
+
+        var restoreActivated = ShowActivated;
+        ShowActivated = false;
+        Left = -32000;
+        Top = -32000;
+        Show();
+        ShowActivated = restoreActivated;
     }
 
     public new void Close()

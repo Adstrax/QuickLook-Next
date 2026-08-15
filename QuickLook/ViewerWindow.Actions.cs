@@ -168,7 +168,12 @@ public partial class ViewerWindow
 
         size = new Size(Math.Max(MinWidth, size.Width), Math.Max(MinHeight, size.Height));
 
-        var newRect = IsLoaded ? ResizeAndCentreExistingWindow(size) : ResizeAndCentreNewWindow(size);
+        // v1.2.36: the first real preview after the off-screen warm-up must
+        // still use new-window centering (the warm-up rect is off-screen and
+        // must not become the "old centre" for the resize math).
+        var newRect = IsLoaded && !_warmShown
+            ? ResizeAndCentreExistingWindow(size)
+            : ResizeAndCentreNewWindow(size);
 
         this.MoveWindow(newRect.Left, newRect.Top, newRect.Width, newRect.Height);
     }
@@ -312,7 +317,10 @@ public partial class ViewerWindow
         // v1.2.27: show the window right away (before the potentially slow
         // Prepare) so previews feel instant. Prepare can still block briefly,
         // but the window is already on screen.
-        if (!IsVisible)
+        // v1.2.36: after the off-screen warm-up the window is already
+        // "visible"; still run the initial centering, but as a new-window
+        // placement so it lands on screen centered, not on the warm-up spot.
+        if (!IsVisible || _warmShown)
         {
             if (_customWindowSize != Size.Empty)
             {
@@ -324,16 +332,21 @@ public partial class ViewerWindow
                 PositionWindow(ComputeWindowSize());
             }
 
-            Dispatcher.BeginInvoke(new Action(() =>
+            _warmShown = false;
+
+            if (!IsVisible)
             {
-                this.BringToFront(Topmost);
-                if (SettingHelper.Get("FocusWindowOnOpen", false))
-                    Activate();
-            }), DispatcherPriority.Render);
-            if (!SettingHelper.Get("ShowWindowTransition", true, "QuickLook"))
-                this.ShowWithoutTransition();
-        else
-            Show();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    this.BringToFront(Topmost);
+                    if (SettingHelper.Get("FocusWindowOnOpen", false))
+                        Activate();
+                }), DispatcherPriority.Render);
+                if (!SettingHelper.Get("ShowWindowTransition", true, "QuickLook"))
+                    this.ShowWithoutTransition();
+                else
+                    Show();
+            }
         }
 
         // Get the content size (and do any slow prepare work).

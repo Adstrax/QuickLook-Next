@@ -277,10 +277,10 @@ public class ViewWindowManager : IDisposable
             e.Throw();
     }
 
-    private void InitNewViewerWindow()
-    {
-        _viewerWindow = new ViewerWindow();
-        _viewerWindow.Closed += (sender, e) =>
+private void InitNewViewerWindow()
+{
+    _viewerWindow = new ViewerWindow();
+    _viewerWindow.Closed += (sender, e) =>
         {
             if (ProcessHelper.IsShuttingDown())
                 return;
@@ -290,10 +290,14 @@ public class ViewWindowManager : IDisposable
             // which sets Pinned=true AND replaces _viewerWindow with a new instance.
             if (w.Pinned && _viewerWindow != w)
                 return;
-            StopFocusMonitor();
-            InitNewViewerWindow();
-        };
-    }
+        StopFocusMonitor();
+        InitNewViewerWindow();
+    };
+
+    // v1.2.36: warm up the first Show during startup idle, off-screen, so the
+    // first preview appears instantly instead of waiting ~200 ms.
+    _viewerWindow.WarmUp();
+}
 
     public static ViewWindowManager GetInstance()
     {
