@@ -4,6 +4,7 @@
 # 用法: .\test.ps1
 
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Windows.Forms
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exe = Join-Path $root 'Build\Release\QuickLook.exe'
 $log = Join-Path $env:APPDATA 'pooi.moe\QuickLook\QuickLook.Exception.log'
@@ -40,6 +41,32 @@ public class WinEnum3 {
 "@
     }
     [WinEnum3]::Titles($targetPid)
+}
+
+function Get-QuickLookWindowRect([int]$targetPid, [string]$titleMatch) {
+    if (-not ('WinEnumRect' -as [type])) {
+        Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public class WinEnumRect {
+  [DllImport("user32.dll")] static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
+  [DllImport("user32.dll")] static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hWnd);
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
+  delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+  static string result = "";
+  public static string Rect(uint targetPid, string titleMatch) {
+    result = "";
+    EnumWindows((h, l) => { uint pid; GetWindowThreadProcessId(h, out pid); if (pid == targetPid && IsWindowVisible(h)) { var sb = new StringBuilder(512); GetWindowText(h, sb, 512); if (sb.Length > 0 && sb.ToString().Contains(titleMatch)) { RECT r; GetWindowRect(h, out r); result = r.Left + "|" + r.Top + "|" + (r.Right - r.Left) + "|" + (r.Bottom - r.Top); return false; } } return true; }, IntPtr.Zero);
+    return result;
+  }
+}
+"@
+    }
+    [WinEnumRect]::Rect($targetPid, $titleMatch)
 }
 
 # ---------- 1. 清理旧实例 ----------
@@ -129,6 +156,30 @@ foreach ($pv in $previews) {
     $titles = Get-QuickLookWindows $p.Id
     Assert (($titles -join ' ') -match [regex]::Escape($pv.Title)) "预览窗口出现: $($pv.Title)"
     Assert ((Get-LogLength) -eq $before) "预览 $($pv.File) 无错误（日志零新增）"
+
+    # v1.2.36: regression guard - the preview window must be centered on the
+    # screen that contains it (the off-screen warm-up once broke this).
+    if ($pv.File -eq 'test.png') {
+        $rectStr = Get-QuickLookWindowRect $p.Id $pv.Title
+        if ($rectStr) {
+            $rp = $rectStr.Split('|')
+            $winCenter = [System.Drawing.Point]::new(
+                [int]$rp[0] + [int]$rp[2] / 2,
+                [int]$rp[1] + [int]$rp[3] / 2)
+            $screen = [System.Windows.Forms.Screen]::AllScreens |
+                Where-Object { $_.WorkingArea.Contains($winCenter) } |
+                Select-Object -First 1
+            if ($null -eq $screen) { $screen = [System.Windows.Forms.Screen]::PrimaryScreen }
+            $wa = $screen.WorkingArea
+            $cx = $wa.Left + $wa.Width / 2
+            $cy = $wa.Top + $wa.Height / 2
+            Assert ([math]::Abs($winCenter.X - $cx) -lt $wa.Width * 0.15) "预览窗口水平居中: $($pv.Title)"
+            Assert ([math]::Abs($winCenter.Y - $cy) -lt $wa.Height * 0.15) "预览窗口垂直居中: $($pv.Title)"
+        }
+        else {
+            Assert $false "预览窗口矩形可读取: $($pv.Title)"
+        }
+    }
 }
 
 # ---------- 6. 清理 ----------

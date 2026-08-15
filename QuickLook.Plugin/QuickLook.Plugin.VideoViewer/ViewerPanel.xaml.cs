@@ -56,6 +56,7 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
     private bool _shouldLoop;
     private bool _useHardwareAcceleration;
     private bool _disposed;
+    private bool _mediaSettled;
     private string _pendingMetaPath;
     private MediaInfoSnapshot _pendingMetaInfo;
 
@@ -225,6 +226,11 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
         if (mediaElement == null)
             return;
 
+        // v1.2.36: the media is (or failed to become) ready - a slow shell
+        // thumbnail task that completes after this point must not cover the
+        // playing surface with a stale thumbnail.
+        _mediaSettled = true;
+
         // v1.2.15: the playback graph is ready. Reveal the surface under the
         // thumbnail and keep the thumbnail on top for a short grace period, so
         // the renderer's blank surface (gray) is never visible before its first
@@ -264,6 +270,8 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
 
     private void MediaFailed(object sender, MediaFailedEventArgs e)
     {
+        _mediaSettled = true;
+
         videoThumbnail.Source = null;
         videoThumbnail.Visibility = Visibility.Collapsed;
 
@@ -554,7 +562,11 @@ public partial class ViewerPanel : UserControl, IDisposable, INotifyPropertyChan
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (_disposed)
+                    // v1.2.36: if the media already opened (or failed) while
+                    // the thumbnail was still being extracted, the playing
+                    // surface / error text is already visible - do not cover
+                    // it with a late thumbnail.
+                    if (_disposed || _mediaSettled)
                         return;
 
                     videoThumbnail.Source = source;

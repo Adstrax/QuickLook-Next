@@ -64,6 +64,9 @@ public class ViewWindowManager : IDisposable
 
     public void RunAndClosePreview()
     {
+        if (string.IsNullOrEmpty(_invokedPath))
+            return;
+
         var window = EnsureViewerWindow();
         if (!window.IsVisible)
             return;
@@ -87,6 +90,9 @@ public class ViewWindowManager : IDisposable
 
     public void ClosePreview()
     {
+        if (string.IsNullOrEmpty(_invokedPath))
+            return;
+
         var window = EnsureViewerWindow();
         if (!window.IsVisible)
             return;
@@ -103,10 +109,17 @@ public class ViewWindowManager : IDisposable
         if (!string.IsNullOrEmpty(options))
             InvokePreviewWithOption(path, options);
         else
-            if (EnsureViewerWindow().IsVisible && (string.IsNullOrEmpty(path) || path == _invokedPath))
+        {
+            // v1.2.36: the warm-shown preview window is always "visible";
+            // decide open/close from the tracked preview state instead of
+            // window visibility.
+            var hasActivePreview = !string.IsNullOrEmpty(_invokedPath)
+                && (string.IsNullOrEmpty(path) || path == _invokedPath);
+            if (hasActivePreview)
                 ClosePreview();
             else
                 InvokePreview(path);
+        }
     }
 
     private void RunFocusMonitor()
@@ -290,6 +303,11 @@ private void InitNewViewerWindow()
             // which sets Pinned=true AND replaces _viewerWindow with a new instance.
             if (w.Pinned && _viewerWindow != w)
                 return;
+        // v1.2.36: the warm-shown preview window is always "visible", so the
+        // toggle state must be tracked via _invokedPath; reset it when the
+        // window closes so the next Space reopens the preview instead of
+        // "closing" the off-screen warm window again.
+        _invokedPath = string.Empty;
         StopFocusMonitor();
         InitNewViewerWindow();
     };
