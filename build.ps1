@@ -1,5 +1,5 @@
-# Builds every QuickLook .NET project against .NET 8 (net8.0-windows).
-# Usage: .\build-net8.ps1
+# Builds every QuickLook .NET project against .NET 10 (net10.0-windows).
+# Usage: .\build.ps1
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path

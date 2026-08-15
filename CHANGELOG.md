@@ -2,6 +2,16 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.31
+
+- Release 体积瘦身（仅保留 64 位）：移除视频插件的 LAVFilters-x86（约 24 MB）
+  与 MediaInfo win-x86（约 7 MB）、图片插件的 exiv2-ql-32、字体插件的
+  freetype win-x86 等全部 32 位运行时副本，发布目录从约 227 MB 降至约 194 MB
+  （-15%）。本版本仅面向 64 位 Windows（Win11）
+- 图片 exiv2 元数据读取精简为纯 64 位路径，删除 x86 分支代码
+- 修复插件加载失败警告框在无窗口启动（开机自启/托盘模式）时因 Owner 未显示
+  而崩溃的问题：现在只在存在可见窗口时弹窗，否则仅写日志
+
 ## QuickLook Lite 1.2.30
 
 - Image previews no longer show the top-right action icons (copy / metadata /

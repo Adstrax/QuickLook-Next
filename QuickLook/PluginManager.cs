@@ -172,8 +172,30 @@ public sealed class PluginManager
                 string.Join("\n", failedPlugins.Select(f => $"• {f.Plugin}"));
 
             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                MessageBox.Show(message, "Some Plugins Failed to Load",
-                    MessageBoxButton.OK, MessageBoxImage.Warning)));
+            {
+                try
+                {
+                    // The warning needs a visible owner window: during an
+                    // auto-start / tray-only startup no window has been shown
+                    // yet, and setting an unshown Owner crashes the process.
+                    var owner = Application.Current.Windows
+                        .OfType<Window>()
+                        .FirstOrDefault(w => w.IsLoaded && w.IsVisible);
+                    if (owner is null)
+                    {
+                        ProcessHelper.WriteLog(
+                            $"Some plugins failed to load (no window to show warning): {message}");
+                        return;
+                    }
+
+                    MessageBox.Show(owner, message, "Some Plugins Failed to Load",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                catch (Exception ex)
+                {
+                    ProcessHelper.WriteLog(ex.ToString());
+                }
+            }));
         }
     }
 

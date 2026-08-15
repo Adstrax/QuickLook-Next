@@ -146,18 +146,16 @@ public partial class MetaProvider
 
 file static class NativeMethods
 {
-    private static readonly bool Is64 = Environment.Is64BitProcess;
-
     public static string GetExif(string file)
     {
         try
         {
-            var len = Is64 ? GetExif_64(file, null) : GetExif_32(file, null);
+            var len = GetExif_64(file, null);
             if (len <= 0)
                 return string.Empty;
 
             var sb = new StringBuilder(len + 1);
-            var _ = Is64 ? GetExif_64(file, sb) : GetExif_32(file, sb);
+            var _ = GetExif_64(file, sb);
 
             return sb.ToString();
         }
@@ -172,12 +170,12 @@ file static class NativeMethods
     {
         try
         {
-            var len = Is64 ? GetThumbnail_64(file, null) : GetThumbnail_32(file, null);
+            var len = GetThumbnail_64(file, null);
             if (len <= 0)
                 return null;
 
             var buffer = new byte[len];
-            var _ = Is64 ? GetThumbnail_64(file, buffer) : GetThumbnail_32(file, buffer);
+            var _ = GetThumbnail_64(file, buffer);
 
             return buffer;
         }
@@ -192,7 +190,7 @@ file static class NativeMethods
     {
         try
         {
-            return Is64 ? GetOrientation_64(file) : GetOrientation_32(file);
+            return GetOrientation_64(file);
         }
         catch (Exception e)
         {
@@ -200,17 +198,6 @@ file static class NativeMethods
             return 0;
         }
     }
-
-    [DllImport("exiv2-ql-32.dll", EntryPoint = "GetExif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int GetExif_32([MarshalAs(UnmanagedType.LPWStr)] string file,
-        [MarshalAs(UnmanagedType.LPStr)] StringBuilder sb);
-
-    [DllImport("exiv2-ql-32.dll", EntryPoint = "GetThumbnail", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int GetThumbnail_32([MarshalAs(UnmanagedType.LPWStr)] string file,
-        [MarshalAs(UnmanagedType.LPArray)] byte[] buffer);
-
-    [DllImport("exiv2-ql-32.dll", EntryPoint = "GetOrientation", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int GetOrientation_32([MarshalAs(UnmanagedType.LPWStr)] string file);
 
     [DllImport("exiv2-ql-64.dll", EntryPoint = "GetExif", CallingConvention = CallingConvention.Cdecl)]
     private static extern int GetExif_64([MarshalAs(UnmanagedType.LPWStr)] string file,

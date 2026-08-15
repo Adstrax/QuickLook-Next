@@ -123,9 +123,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="exiv2-ql-32.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
         <Content Include="exiv2-ql-64.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
