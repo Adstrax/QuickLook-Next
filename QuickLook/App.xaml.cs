@@ -68,6 +68,14 @@ public partial class App : Application
     internal static bool IsStartupTimingEnabled { get; private set; }
     private static readonly Stopwatch StartupSw = new();
 
+    // Smoke-test / bench diagnostics directory. The test scripts redirect it
+    // into the repository (E:\Codex\QK-Lite\<version>\ql-smoke) with the
+    // QL_SMOKE_DIR environment variable; standalone use keeps the default
+    // %TEMP%\ql-smoke.
+    internal static string SmokeDir =>
+        Environment.GetEnvironmentVariable("QL_SMOKE_DIR")
+        ?? Path.Combine(Path.GetTempPath(), "ql-smoke");
+
     // Hidden test hook (/test-no-focusmonitor): disables the selection-follow
     // polling so automated preview benches are not disturbed by Explorer's
     // current selection.
@@ -314,7 +322,7 @@ public partial class App : Application
 
         try
         {
-            var dir = Path.Combine(Path.GetTempPath(), "ql-smoke");
+            var dir = SmokeDir;
             Directory.CreateDirectory(dir);
             File.AppendAllText(
                 Path.Combine(dir, "startup.txt"),

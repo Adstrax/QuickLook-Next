@@ -8,7 +8,11 @@ Add-Type -AssemblyName System.Windows.Forms
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exe = Join-Path $root 'Build\Release\QuickLook.exe'
 $log = Join-Path $env:APPDATA 'pooi.moe\QuickLook\QuickLook.Exception.log'
-$smoke = Join-Path $env:TEMP 'ql-smoke'
+# v1.2.36: keep the smoke-test files inside the repository
+# (E:\Codex\QK-Lite\<version>\ql-smoke) instead of the C: temp folder; the
+# app's diagnostics (timing/startup/tray-menu) follow via QL_SMOKE_DIR.
+$smoke = Join-Path $root 'ql-smoke'
+$env:QL_SMOKE_DIR = $smoke
 $failed = $false
 
 function Assert([bool]$cond, [string]$msg) {
@@ -125,7 +129,7 @@ Start-Sleep -Seconds 15
 $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
 Assert ($null -ne $alive) '启动后进程存活'
 Assert $trayMenuSeen '托盘菜单窗口出现并自动关闭'
-$diagFile = Join-Path $env:TEMP 'ql-smoke\tray-menu-dwm.txt'
+$diagFile = Join-Path $smoke 'tray-menu-dwm.txt'
 $dwmDiag = if (Test-Path $diagFile) { Get-Content $diagFile -Raw } else { '' }
 Assert ($dwmDiag -match 'systembackdrop=3 \(Acrylic\)') '托盘菜单 DWM 回读确认 Acrylic 已启用'
 Assert ($dwmDiag -match 'more-menu-opened=true') 'More 菜单复用同一 Acrylic 菜单路径'

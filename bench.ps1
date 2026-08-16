@@ -13,7 +13,10 @@ param([int]$Rounds = 2)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $exe = Join-Path $root 'Build\Release\QuickLook.exe'
-$smoke = Join-Path $env:TEMP 'ql-smoke'
+# v1.2.36: keep bench files inside the repository instead of the C: temp
+# folder; the app's diagnostics follow via QL_SMOKE_DIR.
+$smoke = Join-Path $root 'ql-smoke'
+$env:QL_SMOKE_DIR = $smoke
 $timing = Join-Path $smoke 'timing.txt'
 $startup = Join-Path $smoke 'startup.txt'
 

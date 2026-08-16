@@ -191,7 +191,7 @@ internal partial class TrayIconManager : IDisposable
 
         try
         {
-            var diagDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ql-smoke");
+            var diagDir = App.SmokeDir;
             var diagFile = System.IO.Path.Combine(diagDir, "tray-menu-dwm.txt");
 
             // Wait until the tray menu is on screen, dump the DWM backdrop

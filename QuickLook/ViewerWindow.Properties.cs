@@ -143,7 +143,7 @@ public partial class ViewerWindow : INotifyPropertyChanged
                 {
                     try
                     {
-                        var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ql-smoke");
+                        var dir = App.SmokeDir;
                         System.IO.Directory.CreateDirectory(dir);
                         System.IO.File.AppendAllText(
                             System.IO.Path.Combine(dir, "timing.txt"),
