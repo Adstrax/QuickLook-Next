@@ -166,10 +166,10 @@ public static class WindowHelper
 
         User32.SetWindowCompositionAttribute(new WindowInteropHelper(window).Handle, ref data);
 
-        Marshal.FreeHGlobal(accentPtr);
-    }
+Marshal.FreeHGlobal(accentPtr);
+}
 
-    public static void EnableAcrylicBlur(Window window, Color tintColor, bool isDarkTheme, double tintOpacity = 0.7d)
+    public static bool EnableAcrylicBlur(Window window, Color tintColor, bool isDarkTheme, double tintOpacity = 0.7d)
     {
         window.Background = Brushes.Transparent;
 
@@ -206,9 +206,11 @@ public static class WindowHelper
             Data = accentPtr
         };
 
-        User32.SetWindowCompositionAttribute(hwnd, ref data);
+        // SetWindowCompositionAttribute returns a Win32 BOOL: nonzero = success.
+        var ok = User32.SetWindowCompositionAttribute(hwnd, ref data) != 0;
 
         Marshal.FreeHGlobal(accentPtr);
+        return ok;
     }
 
     public static void DisableDwmBlur(Window window)

@@ -2,6 +2,21 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.37
+
+- 设置界面（托盘菜单 / More 菜单）适配 Win11 圆角与毛玻璃：
+  - 改用 `SetWindowCompositionAttribute`（TranslucentTB 同款 API），对
+    无边框弹出窗口稳定生效；不再用 DWM `SystembackdropType`（该方案在
+    无边框窗口上会静默失效、渲染成一片死色）
+  - 窗口改为分层窗口，圆角、1px 边框、投影由 WPF 绘制（圆角 8px、
+    深色 55% 半透明叠加 / 亮色浅色叠加、投影 24px 模糊）
+  - 亮色 / 暗色主题适配：叠加色与文字颜色随主题切换（暗色深蓝灰、亮色
+    浅色），两种模式都有毛玻璃效果
+- 冒烟测试断言改为验证 Acrylic API 调用成功（WCA 回读不可靠）
+- 修复设置界面"两层"观感：WCA 毛玻璃会模糊整个窗口矩形，之前内容四周
+  的透明边距会形成外层直角毛玻璃框；圆角面板改为铺满整个窗口（与 E-Tab
+  一致），投影调小避免边缘裁切（12px 模糊、4px 深度）
+
 ## QuickLook Lite 1.2.36
 
 - 预览窗口首次展示提速：窗口在启动空闲时离屏预热一次（不激活、不显示在

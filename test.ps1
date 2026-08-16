@@ -131,7 +131,7 @@ Assert ($null -ne $alive) '启动后进程存活'
 Assert $trayMenuSeen '托盘菜单窗口出现并自动关闭'
 $diagFile = Join-Path $smoke 'tray-menu-dwm.txt'
 $dwmDiag = if (Test-Path $diagFile) { Get-Content $diagFile -Raw } else { '' }
-Assert ($dwmDiag -match 'systembackdrop=3 \(Acrylic\)') '托盘菜单 DWM 回读确认 Acrylic 已启用'
+Assert ($dwmDiag -match 'accent-applied=True') '托盘菜单 Acrylic 已应用（WCA 调用成功）'
 Assert ($dwmDiag -match 'more-menu-opened=true') 'More 菜单复用同一 Acrylic 菜单路径'
 Assert ((Get-LogLength) -eq $before) '插件加载无失败（日志零新增）'
 

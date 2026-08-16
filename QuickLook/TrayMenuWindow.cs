@@ -26,6 +26,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
 namespace QuickLook;
@@ -62,6 +63,7 @@ internal sealed class TrayMenuWindow : Window
     private readonly DispatcherTimer _autoCloseTimer;
     private long _generation;
     private bool _closing;
+    private bool _accentApplied;
 
     private TrayMenuWindow(IReadOnlyList<TrayMenuEntry> entries, bool isDark, int autoCloseMs)
     {
@@ -69,7 +71,9 @@ internal sealed class TrayMenuWindow : Window
 
         Title = "QuickLook Tray Menu";
         WindowStyle = WindowStyle.None;
-        AllowsTransparency = false;
+        // v1.2.37: layered window - the acrylic (SetWindowCompositionAttribute)
+        // and the WPF-drawn corners/shadow rely on per-pixel transparency.
+        AllowsTransparency = true;
         ShowInTaskbar = false;
         ShowActivated = false;
         ResizeMode = ResizeMode.NoResize;
@@ -86,19 +90,28 @@ internal sealed class TrayMenuWindow : Window
         _separatorBrush = CreateBrush(isDark ? "#14FFFFFF" : "#10000000");
         _borderBrush = CreateBrush(isDark ? "#26FFFFFF" : "#26000000");
         _checkBrush = CreateBrush(isDark ? "#60CDFF" : "#005FB8");
-        // Win11-style Mica panel: a translucent tint layered over the Mica
-        // backdrop gives the menu a definite surface while the wallpaper tint
-        // still shows through (Mica itself is a subtle wallpaper-derived tint).
-        _tintBrush = CreateBrush(isDark ? "#B3202020" : "#D9F9F9F9");
+        // v1.2.37: translucent overlay over the frosted acrylic - keep the
+        // alpha moderate so the blur shows through while text stays readable.
+        _tintBrush = CreateBrush(isDark ? "#8C20242A" : "#B8F8F6F4");
 
         _root = BuildMenu(entries);
 
         Content = new Border
         {
+            // v1.2.37: the rounded panel fills the window exactly - the WCA
+            // acrylic blurs the whole window rect, so a transparent margin
+            // would show a square frosted frame around the rounded panel.
             Background = _tintBrush,
             BorderBrush = _borderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
+            Effect = new DropShadowEffect
+            {
+                BlurRadius = 12,
+                ShadowDepth = 4,
+                Direction = 270,
+                Opacity = 0.30,
+            },
             Child = _root,
         };
 
@@ -130,25 +143,8 @@ internal sealed class TrayMenuWindow : Window
             return "no menu window open";
 
         var hwnd = new WindowInteropHelper(menu).Handle;
-        var backdropType = 0;
-        var micaEffect = 0;
-        DwmGetWindowAttribute(hwnd, (uint)Dwmapi.WindowAttribute.SystembackdropType,
-            ref backdropType, Marshal.SizeOf<int>());
-        DwmGetWindowAttribute(hwnd, (uint)Dwmapi.WindowAttribute.MicaEffect,
-            ref micaEffect, Marshal.SizeOf<int>());
-
-        return $"hwnd=0x{hwnd.ToInt64():X} systembackdrop={backdropType} ({BackdropName(backdropType)}) micaEffect={micaEffect}";
+        return $"hwnd=0x{hwnd.ToInt64():X} accent-applied={menu._accentApplied}";
     }
-
-    private static string BackdropName(int type) => type switch
-    {
-        0 => "None",
-        1 => "Auto",
-        2 => "Mica",
-        3 => "Acrylic",
-        4 => "Tabbed",
-        _ => "Unknown",
-    };
 
     /// <summary>
     /// Show the tray menu at the current cursor position. Any previously open
@@ -449,33 +445,16 @@ internal sealed class TrayMenuWindow : Window
 
     private void ApplyBackdrop()
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
-        if (HwndSource.FromHwnd(hwnd) is HwndSource source)
-        {
-            source.CompositionTarget.BackgroundColor = Colors.Transparent;
-        }
-
-        // v1.2.10: the startup notification popup (a Windows 11 toast card) is
-        // rendered with Acrylic (frosted glass), not Mica. Menus now use the
-        // same Acrylic backdrop so every popup shares the notification look.
-        if (App.IsWin11)
-        {
-            WindowHelper.SetWindowCorner(this, Dwmapi.WindowCornerStyle.Round);
-
-            if (Environment.OSVersion.Version >= new Version(10, 0, 22523))
-                WindowHelper.EnableBackdropAcrylicBlur(this, _isDark);
-            else
-                WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.8d);
-        }
-        else
-        {
-            WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.8d);
-        }
+        // v1.2.37: the DWM SystembackdropType variant silently renders a dead
+        // color on borderless popup windows, so always use the
+        // SetWindowCompositionAttribute acrylic (TranslucentTB-style), which
+        // is reliable on layered windows. Corners/shadow are drawn by WPF.
+        _accentApplied = WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.3d);
     }
 
     private Color GetTintColor()
     {
-        return _isDark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3);
+        return _isDark ? Color.FromRgb(0x2A, 0x24, 0x20) : Color.FromRgb(0xF8, 0xF6, 0xF4);
     }
 
     private void InstallHooks()
