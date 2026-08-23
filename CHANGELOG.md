@@ -2,6 +2,15 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.9
+
+- 托盘菜单（含二级子菜单）改为非分层 WCA Acrylic + WindowChrome：DWM 圆角直接
+  作用到整窗（毛玻璃一起圆角），不再有方形毛玻璃边角；原生窗口框同时恢复
+  Win11 投影，去掉 WPF 自绘阴影的裁切问题
+- 修复「Find new & Plugins...」无法打开网站：.NET Core 下 URL 必须走
+  `UseShellExecute=true` 才会调用默认浏览器；「检查更新」的 Store/Releases
+  链接同步修复
+
 ## QuickLook Lite 1.3.8
 
 - 修复托盘菜单外圈直角边框：托盘菜单与二级子菜单都是分层窗口，WCA Acrylic 的

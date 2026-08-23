@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.3.8
+# QuickLook Lite（精简版）v1.3.9
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰
@@ -38,6 +38,17 @@
   避免与已安装的完整版冲突
 - 修复第二实例挂起：管道连接加 2 秒超时
 - 测试覆盖：png/txt/md/zip/ttf/mp4 预览 + Shell 选区读取链路（test.ps1，提交前必须全绿）
+
+## v1.3.9 更新内容
+
+- **彻底修复托盘菜单方形毛玻璃与投影**：托盘菜单（含二级子菜单）从分层窗口改为
+  与预览窗口一致的非分层 WCA Acrylic 方案，配合 WindowChrome 保留原生窗口框，
+  由 DWM 把圆角直接作用到整窗（毛玻璃一起圆角），并恢复 Win11 原生投影；
+  之前 `SetWindowRgn` 只能裁内容、裁不掉 WCA 毛玻璃的方形区域，所以改用
+  非分层方案彻底解决
+- **修复「Find new & Plugins...」打不开网站**：.NET Core 下
+  `Process.Start(url)` 默认不再调用 Shell，改为 `UseShellExecute=true` 打开
+  默认浏览器；「检查更新」里的 Store 与 Releases 链接同步修复
 
 ## v1.3.8 更新内容
 

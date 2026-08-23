@@ -156,7 +156,10 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_GetPlugin"),
-                Command = () => Process.Start("https://github.com/QL-Win/QuickLook/wiki/Available-Plugins"),
+                // v1.3.9: .NET Core no longer shells out by default, so a
+                // bare Process.Start(url) throws; UseShellExecute opens the
+                // default browser instead.
+                Command = () => OpenUrl("https://github.com/QL-Win/QuickLook/wiki/Available-Plugins"),
             },
             new TrayMenuEntry
             {
@@ -175,6 +178,23 @@ internal partial class TrayIconManager : IDisposable
                 Command = () => System.Windows.Application.Current.Shutdown(),
             },
         ];
+    }
+
+    /// <summary>
+    /// v1.3.9: opens a URL in the default browser. Process.Start(string) on
+    /// .NET Core tries to execute the URL as a file, so UseShellExecute must
+    /// be set explicitly.
+    /// </summary>
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Win32Exception)
+        {
+            // No default browser / shell unavailable; keep the menu usable.
+        }
     }
 
     // v1.2.14: backdrop choices offered in the tray menu, matching the

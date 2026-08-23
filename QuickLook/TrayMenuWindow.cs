@@ -27,16 +27,19 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
+using System.Windows.Shell;
 using System.Windows.Threading;
 
 namespace QuickLook;
 
 /// <summary>
-/// A Mica-backed, self-drawn context menu used by the system tray icon.
+/// An Acrylic-backed, self-drawn context menu used by the system tray icon.
 /// The built-in TrayIconHost menu is a native Win32 popup which cannot render
-/// Mica, so it is replaced by this borderless WPF window that reuses the same
-/// backdrop pipeline as the preview window.
+/// Acrylic, so it is replaced by this borderless WPF window that reuses the
+/// same backdrop pipeline as the preview window.
+/// v1.3.9: the window is non-layered (AllowsTransparency=false) and keeps the
+/// native frame through WindowChrome, so DWM rounds the whole window - blur
+/// and content together - and draws the native flyout shadow.
 /// The window is intentionally non-activating (WS_EX_NOACTIVATE), so opening
 /// or using the tray menu never steals focus from a live preview. A low-level
 /// mouse hook dismisses the menu on outside clicks and a keyboard hook closes
@@ -75,19 +78,31 @@ internal sealed class TrayMenuWindow : Window
         _isDark = isDark;
 
         Title = "QuickLook Tray Menu";
-        WindowStyle = WindowStyle.None;
-        // v1.2.37: layered window - the acrylic (SetWindowCompositionAttribute)
-        // and the WPF-drawn corners/shadow rely on per-pixel transparency.
-        AllowsTransparency = true;
+        // v1.3.9: non-layered window. The layered path can never remove the
+        // square WCA blur (SetWindowRgn clips content, not the blur), so the
+        // menu follows the preview window's recipe: DWM rounds the window
+        // (blur included) and WindowChrome keeps the native shadow.
+        AllowsTransparency = false;
         ShowInTaskbar = false;
         ShowActivated = false;
-        ResizeMode = ResizeMode.NoResize;
+        // CanResize keeps the native frame styles that DWM uses for the
+        // shadow; the zero-thickness resize border makes it non-resizable.
+        ResizeMode = ResizeMode.CanResize;
         Topmost = true;
         SizeToContent = SizeToContent.WidthAndHeight;
         UseLayoutRounding = true;
         Background = Brushes.Transparent;
         FontFamily = new FontFamily(TranslationHelper.Get("UI_FontFamily", failsafe: "Segoe UI"));
         FontSize = 13;
+
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 0,
+            CornerRadius = new CornerRadius(0),
+            GlassFrameThickness = new Thickness(1),
+            ResizeBorderThickness = new Thickness(0),
+            UseAeroCaptionButtons = false,
+        });
 
         _textBrush = CreateBrush(isDark ? "#F5F5F5" : "#1A1A1A");
         _disabledTextBrush = CreateBrush(isDark ? "#9E9E9E" : "#7A7A7A");
@@ -103,20 +118,13 @@ internal sealed class TrayMenuWindow : Window
 
         Content = new Border
         {
-            // v1.2.37: the rounded panel fills the window exactly - the WCA
-            // acrylic blurs the whole window rect, so a transparent margin
-            // would show a square frosted frame around the rounded panel.
+            // v1.3.9: the rounded panel fills the window exactly; DWM rounds
+            // the window itself, so the acrylic blur follows the rounded
+            // corners and the native window frame provides the shadow.
             Background = _tintBrush,
             BorderBrush = _borderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Effect = new DropShadowEffect
-            {
-                BlurRadius = 12,
-                ShadowDepth = 4,
-                Direction = 270,
-                Opacity = 0.30,
-            },
             Child = _root,
         };
 
@@ -224,11 +232,6 @@ internal sealed class TrayMenuWindow : Window
         // windows need the DWM backdrop attribute set once the window is
         // actually visible for it to take effect reliably.
         ApplyBackdrop();
-
-        // v1.3.8: clip the layered window to rounded corners after the final
-        // layout pass so the WCA acrylic does not leave a square frosted
-        // frame around the rounded panel.
-        ApplyWindowRegion();
     }
 
     private static Brush CreateBrush(string hex)
@@ -498,22 +501,6 @@ internal sealed class TrayMenuWindow : Window
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
             true);
-
-        // v1.3.8: same rounded-region clip as the preview window's layered
-        // path; keeps the window shape in sync immediately after placement.
-        ApplyWindowRegion();
-    }
-
-    /// <summary>
-    /// v1.3.8: gives the layered tray menu true rounded corners by clipping
-    /// the HWND with a rounded region. DWM corner preference does not apply
-    /// to layered windows, and without the clip the WCA acrylic blurs the
-    /// whole window rectangle, leaving a square frosted frame around the
-    /// rounded panel.
-    /// </summary>
-    private void ApplyWindowRegion()
-    {
-        WindowHelper.SetRoundedWindowRegion(this, 8);
     }
 
     /// <summary>
@@ -570,10 +557,6 @@ internal sealed class TrayMenuWindow : Window
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
             true);
-
-        // v1.3.8: submenu flyouts are separate layered windows and need the
-        // same rounded-region clip as the parent menu.
-        ApplyWindowRegion();
     }
 
     private static bool TryGetAnchorRect(FrameworkElement anchor, out Rect rect)
@@ -599,10 +582,15 @@ internal sealed class TrayMenuWindow : Window
 
     private void ApplyBackdrop()
     {
-        // v1.2.37: the DWM SystembackdropType variant silently renders a dead
-        // color on borderless popup windows, so always use the
-        // SetWindowCompositionAttribute acrylic (TranslucentTB-style), which
-        // is reliable on layered windows. Corners/shadow are drawn by WPF.
+        // v1.3.9: same non-layered recipe as the preview window - flatten the
+        // 1px WindowChrome glass frame (it would render as a dark outline),
+        // clear any DWM backdrop and restore rounded corners, then enable the
+        // WCA acrylic. DWM keeps the native shadow and rounds the blur with
+        // the window, so there is no square frosted frame.
+        if (WindowChrome.GetWindowChrome(this) is { } chrome)
+            chrome.GlassFrameThickness = new Thickness(0);
+
+        WindowHelper.DisableDwmBlur(this);
         _accentApplied = WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.3d);
     }
 

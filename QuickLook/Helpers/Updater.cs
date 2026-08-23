@@ -18,6 +18,7 @@
 using Newtonsoft.Json;
 using QuickLook.Common.Helpers;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -50,7 +51,20 @@ internal class Updater
         if (App.IsUWP)
         {
             if (!silent)
-                Process.Start("ms-windows-store://pdp/?productid=9NV4BS3L1H4S");
+            {
+                // v1.3.9: shell URIs need UseShellExecute on .NET Core.
+                try
+                {
+                    Process.Start(new ProcessStartInfo("ms-windows-store://pdp/?productid=9NV4BS3L1H4S")
+                    {
+                        UseShellExecute = true,
+                    });
+                }
+                catch (Win32Exception)
+                {
+                    // Store not available; ignore.
+                }
+            }
 
             return;
         }
@@ -86,7 +100,20 @@ internal class Updater
                         string.Format(TranslationHelper.Get("Update_Found"), nVersion),
                         timeout: 20000,
                         clickEvent: () =>
-                            Process.Start("https://github.com/QL-Win/QuickLook/releases/latest"));
+                        {
+                            // v1.3.9: shell URIs need UseShellExecute on .NET Core.
+                            try
+                            {
+                                Process.Start(new ProcessStartInfo("https://github.com/QL-Win/QuickLook/releases/latest")
+                                {
+                                    UseShellExecute = true,
+                                });
+                            }
+                            catch (Win32Exception)
+                            {
+                                // No default browser; ignore.
+                            }
+                        });
                 });
             }
             catch (Exception e)
