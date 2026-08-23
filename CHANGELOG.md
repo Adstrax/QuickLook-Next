@@ -2,6 +2,12 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.8
+
+- 修复托盘菜单外圈直角边框：托盘菜单与二级子菜单都是分层窗口，WCA Acrylic 的
+  模糊区域是整窗矩形，圆角面板外的四个角会残留方形毛玻璃边框；改用预览窗口同款
+  `SetWindowRgn` 8px 圆角裁剪，让窗口本身（含毛玻璃）与圆角面板完全一致
+
 ## QuickLook Lite 1.3.7
 
 - 托盘右键菜单精简：主题模式（跟随系统/亮色/暗色）、背景模式（7 种）、选项

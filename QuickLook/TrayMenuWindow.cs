@@ -224,6 +224,11 @@ internal sealed class TrayMenuWindow : Window
         // windows need the DWM backdrop attribute set once the window is
         // actually visible for it to take effect reliably.
         ApplyBackdrop();
+
+        // v1.3.8: clip the layered window to rounded corners after the final
+        // layout pass so the WCA acrylic does not leave a square frosted
+        // frame around the rounded panel.
+        ApplyWindowRegion();
     }
 
     private static Brush CreateBrush(string hex)
@@ -493,6 +498,22 @@ internal sealed class TrayMenuWindow : Window
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
             true);
+
+        // v1.3.8: same rounded-region clip as the preview window's layered
+        // path; keeps the window shape in sync immediately after placement.
+        ApplyWindowRegion();
+    }
+
+    /// <summary>
+    /// v1.3.8: gives the layered tray menu true rounded corners by clipping
+    /// the HWND with a rounded region. DWM corner preference does not apply
+    /// to layered windows, and without the clip the WCA acrylic blurs the
+    /// whole window rectangle, leaving a square frosted frame around the
+    /// rounded panel.
+    /// </summary>
+    private void ApplyWindowRegion()
+    {
+        WindowHelper.SetRoundedWindowRegion(this, 8);
     }
 
     /// <summary>
@@ -549,6 +570,10 @@ internal sealed class TrayMenuWindow : Window
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
             true);
+
+        // v1.3.8: submenu flyouts are separate layered windows and need the
+        // same rounded-region clip as the parent menu.
+        ApplyWindowRegion();
     }
 
     private static bool TryGetAnchorRect(FrameworkElement anchor, out Rect rect)
