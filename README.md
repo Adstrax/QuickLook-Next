@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）v1.3.11
+# QuickLook Lite（精简版）v1.3.12
 
 基于 QuickLook 4.5.0 的 .NET 10 迁移版（net10.0 分支）精简而来，只保留常用格式，
 默认开启 Win11 Mica 背景效果。独立分支 `lite`、独立文件夹，与完整版互不干扰
@@ -38,6 +38,13 @@
   避免与已安装的完整版冲突
 - 修复第二实例挂起：管道连接加 2 秒超时
 - 测试覆盖：png/txt/md/zip/ttf/mp4 预览 + Shell 选区读取链路（test.ps1，提交前必须全绿）
+
+## v1.3.12 更新内容
+
+- **插件管理面板改用与托盘菜单一致的 Acrylic 效果**：面板改为无边框非分层窗口
+  （`WindowStyle=None` + `AllowsTransparency=false`），WCA Acrylic 毛玻璃铺满
+  整窗，DWM 圆角（含毛玻璃）8px，跟随亮/暗主题；头部区域可拖动窗口，右上角
+  新增关闭按钮
 
 ## v1.3.11 更新内容
 

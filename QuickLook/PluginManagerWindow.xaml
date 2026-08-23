@@ -4,16 +4,17 @@
         Title="Manage Plugins"
         Width="700"
         Height="500"
-        MinWidth="600"
-        MinHeight="400"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource WindowBgBrush}"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        Background="Transparent"
         Foreground="{DynamicResource TextBrush}"
         FontFamily="Segoe UI"
         FontSize="13"
         UseLayoutRounding="True">
     <Window.Resources>
-        <SolidColorBrush x:Key="WindowBgBrush" Color="#FFF8F6F4" />
+        <SolidColorBrush x:Key="TintBrush" Color="#B8F8F6F4" />
+        <SolidColorBrush x:Key="PanelBorderBrush" Color="#26000000" />
         <SolidColorBrush x:Key="TextBrush" Color="#FF1A1A1A" />
         <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FF7A7A7A" />
         <SolidColorBrush x:Key="RowHoverBrush" Color="#10000000" />
@@ -55,47 +56,66 @@
         </Style>
     </Window.Resources>
 
-    <DockPanel Margin="14">
-        <TextBlock x:Name="headerText"
-                   DockPanel.Dock="Top"
-                   FontSize="15"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,12" />
-
-        <Border DockPanel.Dock="Bottom"
-                BorderBrush="{DynamicResource SeparatorBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="0,10,0,0"
-                Margin="0,12,0,0">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button x:Name="btnOpenFolder"
-                            Content="Open Plugin Folder"
-                            Padding="12,6"
-                            Margin="0,0,8,0"
-                            Click="BtnOpenFolder_Click"
-                            Style="{DynamicResource PanelButtonStyle}" />
-                    <Button x:Name="btnRefresh"
-                            Content="Refresh"
-                            Padding="12,6"
-                            Margin="0,0,8,0"
-                            Click="BtnRefresh_Click"
-                            Style="{DynamicResource PanelButtonStyle}" />
-                    <Button x:Name="btnClose"
-                            Content="Close"
-                            Padding="12,6"
-                            Click="BtnClose_Click"
-                            Style="{DynamicResource PanelButtonStyle}" />
-                </StackPanel>
-                <TextBlock x:Name="statusText"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+    <!-- v1.3.12: same look as the tray menu - non-layered WCA acrylic fills
+         the whole rounded panel, DWM rounds the window including the blur. -->
+    <Border x:Name="rootPanel"
+            Background="{DynamicResource TintBrush}"
+            BorderBrush="{DynamicResource PanelBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+        <DockPanel Margin="14">
+            <DockPanel x:Name="headerBar"
+                       DockPanel.Dock="Top"
+                       Margin="0,0,0,12">
+                <Button x:Name="btnHeaderClose"
+                        DockPanel.Dock="Right"
+                        Content="&#xE711;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="12"
+                        Padding="8,4"
+                        Style="{DynamicResource PanelButtonStyle}"
+                        Click="BtnHeaderClose_Click" />
+                <TextBlock x:Name="headerText"
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
             </DockPanel>
-        </Border>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="pluginList" />
-        </ScrollViewer>
-    </DockPanel>
+            <Border DockPanel.Dock="Bottom"
+                    BorderBrush="{DynamicResource SeparatorBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="0,10,0,0"
+                    Margin="0,12,0,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="btnOpenFolder"
+                                Content="Open Plugin Folder"
+                                Padding="12,6"
+                                Margin="0,0,8,0"
+                                Click="BtnOpenFolder_Click"
+                                Style="{DynamicResource PanelButtonStyle}" />
+                        <Button x:Name="btnRefresh"
+                                Content="Refresh"
+                                Padding="12,6"
+                                Margin="0,0,8,0"
+                                Click="BtnRefresh_Click"
+                                Style="{DynamicResource PanelButtonStyle}" />
+                        <Button x:Name="btnClose"
+                                Content="Close"
+                                Padding="12,6"
+                                Click="BtnClose_Click"
+                                Style="{DynamicResource PanelButtonStyle}" />
+                    </StackPanel>
+                    <TextBlock x:Name="statusText"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="pluginList" />
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
 </Window>

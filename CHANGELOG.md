@@ -2,6 +2,11 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.12
+
+- 插件管理面板背景改为与托盘菜单一致：无边框非分层窗口 + WCA Acrylic 毛玻璃 +
+  DWM 8px 圆角（毛玻璃一起圆角），跟随亮/暗主题；面板头部可拖动，右上角加关闭按钮
+
 ## QuickLook Lite 1.3.11
 
 - 新增插件管理面板（托盘菜单「管理插件...」）：枚举用户安装与内置插件，显示

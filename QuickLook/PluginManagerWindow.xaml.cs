@@ -37,6 +37,7 @@ public partial class PluginManagerWindow : Window
 {
     private readonly bool _isDark;
     private readonly List<PluginEntry> _entries = [];
+    private bool _accentApplied;
 
     public PluginManagerWindow()
     {
@@ -51,6 +52,21 @@ public partial class PluginManagerWindow : Window
         btnClose.Content = Tr("PM_Close", "Close");
 
         RefreshList();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplyBackdrop();
+    }
+
+    protected override void OnContentRendered(EventArgs e)
+    {
+        base.OnContentRendered(e);
+
+        // Re-apply after first paint, like the tray menu and the preview
+        // window do; some windows need the attribute set once visible.
+        ApplyBackdrop();
     }
 
     /// <summary>
@@ -78,6 +94,12 @@ public partial class PluginManagerWindow : Window
     {
         return string.Join("|", _entries.Select(e => e.Name + (e.IsUserPlugin ? "*" : string.Empty)));
     }
+
+    /// <summary>
+    /// Test hook: reports whether the WCA acrylic call succeeded, matching the
+    /// tray menu's diagnostics so the smoke test can assert the same backdrop.
+    /// </summary>
+    internal string DiagnoseBackdrop() => $"accent-applied={_accentApplied}";
 
     private void RefreshList()
     {
@@ -241,21 +263,43 @@ public partial class PluginManagerWindow : Window
         Close();
     }
 
+    private void BtnHeaderClose_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
     private void ApplyTheme()
     {
-        if (!_isDark)
-            return;
+        if (_isDark)
+        {
+            SetBrush("TintBrush", "#8C20242A");
+            SetBrush("PanelBorderBrush", "#26FFFFFF");
+            SetBrush("TextBrush", "#FFF5F5F5");
+            SetBrush("SecondaryTextBrush", "#FF9E9E9E");
+            SetBrush("RowHoverBrush", "#14FFFFFF");
+            SetBrush("SeparatorBrush", "#14FFFFFF");
+            SetBrush("BadgeBrush", "#1860CDFF");
+            SetBrush("BadgeTextBrush", "#FF60CDFF");
+            SetBrush("ButtonBgBrush", "#14FFFFFF");
+            SetBrush("ButtonHoverBrush", "#24FFFFFF");
+            SetBrush("DangerBrush", "#FFFF7B72");
+        }
 
-        SetBrush("WindowBgBrush", "#FF20242A");
-        SetBrush("TextBrush", "#FFF5F5F5");
-        SetBrush("SecondaryTextBrush", "#FF9E9E9E");
-        SetBrush("RowHoverBrush", "#14FFFFFF");
-        SetBrush("SeparatorBrush", "#14FFFFFF");
-        SetBrush("BadgeBrush", "#1860CDFF");
-        SetBrush("BadgeTextBrush", "#FF60CDFF");
-        SetBrush("ButtonBgBrush", "#14FFFFFF");
-        SetBrush("ButtonHoverBrush", "#24FFFFFF");
-        SetBrush("DangerBrush", "#FFFF7B72");
+        // Dragging a borderless window: the header bar acts as the caption.
+        headerBar.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                try
+                {
+                    DragMove();
+                }
+                catch
+                {
+                    // Ignore drags that start during window activation.
+                }
+            }
+        };
     }
 
     private void SetBrush(string key, string hex)
@@ -268,5 +312,20 @@ public partial class PluginManagerWindow : Window
     private static string Tr(string key, string failsafe)
     {
         return TranslationHelper.Get(key, failsafe: failsafe);
+    }
+
+    /// <summary>
+    /// v1.3.12: same non-layered recipe as the tray menu - clear any DWM
+    /// backdrop and restore rounded corners, then enable the WCA acrylic.
+    /// </summary>
+    private void ApplyBackdrop()
+    {
+        WindowHelper.DisableDwmBlur(this);
+        _accentApplied = WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.3d);
+    }
+
+    private Color GetTintColor()
+    {
+        return _isDark ? Color.FromRgb(0x2A, 0x24, 0x20) : Color.FromRgb(0xF8, 0xF6, 0xF4);
     }
 }

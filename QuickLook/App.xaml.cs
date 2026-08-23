@@ -227,7 +227,8 @@ public partial class App : Application
                         Directory.CreateDirectory(SmokeDir);
                         File.WriteAllText(
                             Path.Combine(SmokeDir, "plugin-manager.txt"),
-                            $"title={managerWindow.Title}\nplugins={managerWindow.DiagnosePlugins()}\nuserPath={App.UserPluginPath}");
+                            $"title={managerWindow.Title}\nplugins={managerWindow.DiagnosePlugins()}\n" +
+                            $"backdrop={managerWindow.DiagnoseBackdrop()}\nuserPath={App.UserPluginPath}");
                     }
                     catch
                     {
