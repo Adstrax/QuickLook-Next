@@ -172,6 +172,19 @@ public partial class App : Application
         IsStartupTimingEnabled = e.Args.Contains("/test-startup");
         DisableFocusMonitor = e.Args.Contains("/test-no-focusmonitor");
         IsPreviewDiagEnabled = e.Args.Contains("/test-preview-diag");
+        if (IsPreviewDiagEnabled)
+        {
+            try
+            {
+                Directory.CreateDirectory(SmokeDir);
+                File.AppendAllText(Path.Combine(SmokeDir, "topbar-hook.txt"),
+                    $"{DateTime.Now:HH:mm:ss.fff} diag-flag-on{Environment.NewLine}");
+            }
+            catch
+            {
+                // diagnostics must never affect startup
+            }
+        }
         if (IsStartupTimingEnabled)
         {
             StartupSw.Start();

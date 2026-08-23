@@ -67,6 +67,7 @@ internal partial class TrayIconManager : IDisposable
     {
         var currentBackdrop = SettingHelper.Get(
             "WindowBackdrop", nameof(Dwmapi.SystembackdropType.Acrylic), "QuickLook")?.Trim();
+        var currentTheme = (Themes)SettingHelper.Get("LastTheme", (int)Themes.None, "QuickLook");
 
         return
         [
@@ -105,6 +106,12 @@ internal partial class TrayIconManager : IDisposable
                 Command = ToggleCloseOnLostFocus,
                 IsChecked = SettingHelper.Get("CloseOnLostFocus", false),
             },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_HideTopBarByDefault", failsafe: "Hide Top Bar by Default"),
+                Command = ToggleHideTopBarByDefault,
+                IsChecked = SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"),
+            },
             TrayMenuEntry.Separator,
             new TrayMenuEntry
             {
@@ -117,6 +124,19 @@ internal partial class TrayIconManager : IDisposable
                 Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
                 Command = () => SetBackdropMode(mode.Name),
                 IsChecked = string.Equals(currentBackdrop, mode.Name, StringComparison.OrdinalIgnoreCase),
+            }),
+            TrayMenuEntry.Separator,
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_ThemeMode", failsafe: "Theme Mode"),
+                IsEnabled = false,
+                IsBold = true,
+            },
+            ..ThemeModes.Select(mode => new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
+                Command = () => SetThemeMode(mode.Theme),
+                IsChecked = currentTheme == mode.Theme,
             }),
             TrayMenuEntry.Separator,
             new TrayMenuEntry
@@ -145,6 +165,15 @@ internal partial class TrayIconManager : IDisposable
         (nameof(Dwmapi.SystembackdropType.Tabbed), "Icon_Backdrop_Tabbed"),
     ];
 
+    // v1.3.6: theme choices offered in the tray menu, matching the LastTheme
+    // setting read by ViewerWindow (None = follow the system light/dark).
+    private static readonly (Themes Theme, string Name, string Key)[] ThemeModes =
+    [
+        (Themes.None, "System", "Icon_Theme_System"),
+        (Themes.Light, "Light", "Icon_Theme_Light"),
+        (Themes.Dark, "Dark", "Icon_Theme_Dark"),
+    ];
+
     private static void SetBackdropMode(string mode)
     {
         SettingHelper.Set("WindowBackdrop", mode, "QuickLook");
@@ -168,6 +197,34 @@ internal partial class TrayIconManager : IDisposable
     {
         var current = SettingHelper.Get("CloseOnLostFocus", false);
         SettingHelper.Set("CloseOnLostFocus", !current);
+    }
+
+    // v1.3.6: apply a light/dark/system theme from the tray menu and persist
+    // it; an open preview switches immediately.
+    private static void SetThemeMode(Themes theme)
+    {
+        var manager = ViewWindowManager.GetInstance();
+        if (manager.CurrentViewerWindow is { IsVisible: true } w)
+        {
+            w.ApplyTheme(theme);
+            return;
+        }
+
+        SettingHelper.Set("LastTheme", (int)theme, "QuickLook");
+        SettingHelper.Set("LastTheme", (int)theme, "QuickLook.Plugin.ImageViewer");
+    }
+
+    // v1.3.6: 顶部状态栏默认隐藏开关 - 开启后鼠标移入内容区不再弹出顶栏，
+    // 只有移到窗口顶部标题栏区域才显示（可随时在托盘菜单切回旧行为）。
+    private static void ToggleHideTopBarByDefault()
+    {
+        var current = SettingHelper.Get("HideTopBarByDefault", true, "QuickLook");
+        SettingHelper.Set("HideTopBarByDefault", !current, "QuickLook");
+
+        // Apply to the open preview immediately.
+        var manager = ViewWindowManager.GetInstance();
+        if (manager.CurrentViewerWindow is { IsVisible: true } w)
+            w.ApplyTopBarMode();
     }
 
     private static bool IsDarkTheme()
@@ -201,7 +258,7 @@ internal partial class TrayIconManager : IDisposable
                 {
                     System.IO.Directory.CreateDirectory(diagDir);
                     System.IO.File.WriteAllText(diagFile,
-                        $"{TrayMenuWindow.DiagnoseBackdrop()}\nmore-menu-opened=false");
+                        $"{TrayMenuWindow.DiagnoseBackdrop()}\nentries={TrayMenuWindow.DiagnoseEntries()}\nmore-menu-opened=false");
                 }));
 
             // After the tray menu auto-closed, exercise the same unified menu

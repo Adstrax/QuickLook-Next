@@ -20,6 +20,7 @@ using QuickLook.Common.NativeMethods;
 using QuickLook.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,6 +46,7 @@ internal sealed class TrayMenuWindow : Window
 {
     private static TrayMenuWindow _current;
 
+    private readonly IReadOnlyList<TrayMenuEntry> _entries;
     private readonly bool _isDark;
     private readonly StackPanel _root;
 
@@ -67,6 +69,7 @@ internal sealed class TrayMenuWindow : Window
 
     private TrayMenuWindow(IReadOnlyList<TrayMenuEntry> entries, bool isDark, int autoCloseMs)
     {
+        _entries = entries;
         _isDark = isDark;
 
         Title = "QuickLook Tray Menu";
@@ -144,6 +147,19 @@ internal sealed class TrayMenuWindow : Window
 
         var hwnd = new WindowInteropHelper(menu).Handle;
         return $"hwnd=0x{hwnd.ToInt64():X} accent-applied={menu._accentApplied}";
+    }
+
+    /// <summary>
+    /// v1.3.6: test hook - dump the headers of the currently open menu so the
+    /// smoke test can assert the theme/backdrop entries are present.
+    /// </summary>
+    public static string DiagnoseEntries()
+    {
+        var menu = _current;
+        if (menu is null)
+            return string.Empty;
+
+        return string.Join("|", menu._entries.Select(e => e.Header));
     }
 
     /// <summary>

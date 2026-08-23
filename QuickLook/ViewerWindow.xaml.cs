@@ -56,13 +56,22 @@ public partial class ViewerWindow : Window
     // backdrop is an acrylic material on Win11, so the WCA acrylic renders
     // from the very first frame (see ShouldUseLayeredAcrylic).
     private readonly bool _layeredAcrylic;
-    // v1.3.5: layered windows never receive the WM_MOUSEWHEEL that Windows
-    // forwards from the focus window to the window under the cursor, so a
-    // low-level mouse hook re-delivers wheel input to the preview window
-    // (only needed while the window is layered; the non-layered acrylic path
-    // keeps the native routing).
-    private LowLevelMouseProc _wheelMouseProc;
-    private nint _wheelMouseHook;
+    // v1.3.6: one low-level mouse hook serves two jobs:
+    // - 1.3.5 fallback: layered windows never receive the WM_MOUSEWHEEL that
+    //   Windows forwards from the focus window to the window under the cursor,
+    //   so the hook re-delivers wheel input to the preview window (only while
+    //   the window is layered; the non-layered acrylic path keeps the native
+    //   routing).
+    // - 1.3.6: "顶部状态栏默认隐藏" - the top caption zone is the draggable
+    //   WindowChrome region (HTCAPTION), so WPF gets no MouseMove there; the
+    //   hook watches the cursor and reveals the bar when it enters the zone.
+    private LowLevelMouseProc _mouseProc;
+    private nint _mouseHook;
+    // v1.3.6: polls the cursor while the preview is open so the top bar can be
+    // revealed when the cursor enters the top caption zone (the zone is the
+    // draggable WindowChrome region, so WPF gets no MouseMove there and a
+    // low-level hook turned out unreliable in this app).
+    private DispatcherTimer _topBarPollTimer;
     // v1.3.5: last WCA acrylic result, reported by DiagnoseBackdrop so the
     // smoke tests can assert the acrylic call really succeeded.
     private bool _lastAcrylicOk;
@@ -133,7 +142,11 @@ public partial class ViewerWindow : Window
             }, DispatcherPriority.ContextIdle);
         };
 
-        Closed += (_, _) => UninstallWheelHook();
+        Closed += (_, _) =>
+        {
+            UninstallMouseHook();
+            StopTopBarPolling();
+        };
 
         buttonTop.Click += (_, _) =>
         {
@@ -251,7 +264,12 @@ public partial class ViewerWindow : Window
         ApplyWindowBackgroundEffects();
 
         if (_layeredAcrylic)
-            InstallWheelHook();
+            InstallMouseHook();
+        if (SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"))
+            StartTopBarPolling();
+
+        WriteTopBarDiag($"source-init hook={(_mouseHook != IntPtr.Zero)} layered={_layeredAcrylic} " +
+            $"setting={SettingHelper.Get("HideTopBarByDefault", true, "QuickLook")} polling={_topBarPollTimer != null}");
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -573,8 +591,16 @@ public partial class ViewerWindow : Window
 
     private void ToggleTheme(object sender, RoutedEventArgs e)
     {
-        var newTheme = CurrentTheme == Themes.Dark ? Themes.Light : Themes.Dark;
+        ApplyTheme(CurrentTheme == Themes.Dark ? Themes.Light : Themes.Dark);
+    }
 
+    /// <summary>
+    /// v1.3.6: apply a theme choice (System/Light/Dark) to the open preview
+    /// and persist it for future previews. Used by the tray menu's theme
+    /// section and the caption-bar toggle button.
+    /// </summary>
+    internal void ApplyTheme(Themes newTheme)
+    {
         // ContextObject.Theme triggers SwitchTheme (window + backdrop + theme state).
         ContextObject.Theme = newTheme;
 
@@ -584,7 +610,8 @@ public partial class ViewerWindow : Window
 
         // Re-render the current preview so web content (WebView2) picks up the
         // new PreferredColorScheme / theme.
-        ViewWindowManager.GetInstance().ReloadPreview();
+        if (IsVisible)
+            ViewWindowManager.GetInstance().ReloadPreview();
     }
 
     private void ShowWindowCaptionContainer(object sender, MouseEventArgs e)
@@ -608,10 +635,41 @@ public partial class ViewerWindow : Window
         _lastCursorX = pt.X;
         _lastCursorY = pt.Y;
 
+        // v1.3.6: "顶部状态栏默认隐藏"（托盘菜单可开关，默认开启）——鼠标在内容区
+        // 移动不再弹出顶栏；进入窗口顶部标题栏区域由低层鼠标钩子检测并显示
+        // （顶部 32px 是 WindowChrome 可拖动区，WPF 收不到那里的 MouseMove）。
+        // 关闭该选项后恢复旧行为（任意鼠标移动即显示）。
+        if (SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"))
+            return;
+
         var show = (Storyboard)windowCaptionContainer.FindResource("ShowCaptionContainerStoryboard");
 
         if (windowCaptionContainer.Opacity == 0 || windowCaptionContainer.Opacity == 1)
             show.Begin();
+    }
+
+    /// <summary>
+    /// v1.3.6: apply the "顶部状态栏默认隐藏" mode to the open preview right
+    /// away (used by the tray menu toggle). Plugin-driven always-visible bars
+    /// (e.g. paused video controls) are left alone.
+    /// </summary>
+    internal void ApplyTopBarMode()
+    {
+        if (!ContextObject.TitlebarAutoHide)
+            return;
+
+        if (SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"))
+        {
+            StartTopBarPolling();
+            var hide = (Storyboard)windowCaptionContainer.FindResource("HideCaptionContainerStoryboard");
+            hide.Begin();
+        }
+        else
+        {
+            StopTopBarPolling();
+            if (!_layeredAcrylic)
+                UninstallMouseHook();
+        }
     }
 
     // ---- v1.3.5: mouse-wheel forwarding for the layered fallback ----------
@@ -622,6 +680,8 @@ public partial class ViewerWindow : Window
     // input straight to the window under the cursor when it belongs to the
     // preview, and consumes the original message so it does not reach the
     // focused window (e.g. an Explorer list behind the preview).
+    // ---- v1.3.6: the same hook reveals the top bar when the cursor enters
+    // the top caption zone while "顶部状态栏默认隐藏" is enabled.
 
     private const int WH_MOUSE_LL = 14;
     private const uint WM_MOUSEWHEEL = 0x020A;
@@ -639,35 +699,36 @@ public partial class ViewerWindow : Window
         public nint dwExtraInfo;
     }
 
-    private void InstallWheelHook()
+    private void InstallMouseHook()
     {
-        if (_wheelMouseHook != IntPtr.Zero)
+        if (_mouseHook != IntPtr.Zero)
             return;
 
-        _wheelMouseProc = WheelMouseHookProc;
+        _mouseProc = MouseHookProc;
         var hMod = Kernel32.LoadLibrary("user32.dll");
-        _wheelMouseHook = SetWindowsHookEx(WH_MOUSE_LL, _wheelMouseProc, hMod, 0);
+        _mouseHook = SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, hMod, 0);
     }
 
-    private void UninstallWheelHook()
+    private void UninstallMouseHook()
     {
-        if (_wheelMouseHook != IntPtr.Zero)
+        if (_mouseHook != IntPtr.Zero)
         {
-            UnhookWindowsHookEx(_wheelMouseHook);
-            _wheelMouseHook = IntPtr.Zero;
+            UnhookWindowsHookEx(_mouseHook);
+            _mouseHook = IntPtr.Zero;
         }
 
-        _wheelMouseProc = null;
+        _mouseProc = null;
     }
 
-    private nint WheelMouseHookProc(int nCode, nint wParam, nint lParam)
+    private nint MouseHookProc(int nCode, nint wParam, nint lParam)
     {
         if (nCode >= 0 && IsVisible)
         {
             var message = (uint)wParam.ToInt64();
-            if (message is WM_MOUSEWHEEL or WM_MOUSEHWHEEL)
+            var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+
+            if (message is WM_MOUSEWHEEL or WM_MOUSEHWHEEL && _layeredAcrylic)
             {
-                var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
                 if (TryGetWheelTarget(data.pt.X, data.pt.Y, out var targetHwnd))
                 {
                     var delta = (short)((data.mouseData >> 16) & 0xFFFF);
@@ -682,7 +743,113 @@ public partial class ViewerWindow : Window
             }
         }
 
-        return CallNextHookEx(_wheelMouseHook, nCode, wParam, lParam);
+        return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+    }
+
+    /// <summary>
+    /// v1.3.6: start polling the cursor so the top bar can reveal when the
+    /// cursor enters the top caption zone (the "顶部状态栏默认隐藏" mode). The
+    /// poll only runs while the preview window is visible, so its cost is a
+    /// single GetCursorPos + rect check every 100 ms.
+    /// </summary>
+    private void StartTopBarPolling()
+    {
+        if (_topBarPollTimer != null)
+            return;
+
+        _topBarPollTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(100),
+        };
+        _topBarPollTimer.Tick += (_, _) =>
+        {
+            if (!IsVisible || !SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"))
+                return;
+
+            if (GetCursorPos(out var pt) && IsPointInTopZone(pt.X, pt.Y))
+                RevealTopBar();
+        };
+        _topBarPollTimer.Start();
+    }
+
+    private void StopTopBarPolling()
+    {
+        _topBarPollTimer?.Stop();
+        _topBarPollTimer = null;
+    }
+
+    /// <summary>
+    /// v1.3.6: reveals the top bar (only when the plugin allows auto-hide).
+    /// Called from the mouse hook, which runs on the UI thread; the animation
+    /// is dispatched at Render priority so it starts on the next frame.
+    /// </summary>
+    private void RevealTopBar()
+    {
+        if (!ContextObject.TitlebarAutoHide)
+        {
+            WriteTopBarDiag("reveal-skip no-autohide");
+            return;
+        }
+
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (windowCaptionContainer.Opacity >= 1)
+            {
+                WriteTopBarDiag("reveal-skip already-visible");
+                return;
+            }
+
+            WriteTopBarDiag("reveal-begin-storyboard");
+            var show = (Storyboard)windowCaptionContainer.FindResource("ShowCaptionContainerStoryboard");
+            show.Begin();
+            WriteTopBarDiag($"geo h={windowCaptionContainer.Height} ah={windowCaptionContainer.ActualHeight} " +
+                $"w={windowCaptionContainer.ActualWidth} vis={windowCaptionContainer.IsVisible} " +
+                $"render={windowCaptionContainer.RenderSize} root={new WindowInteropHelper(this).Handle.ToInt64():X}");
+        }, DispatcherPriority.Render);
+    }
+
+    /// <summary>
+    /// v1.3.6: test hook - append a top-bar reveal diagnostic line (only when
+    /// /test-preview-diag is active; writes are throttled to avoid spam).
+    /// </summary>
+    private void WriteTopBarDiag(string line)
+    {
+        if (!App.IsPreviewDiagEnabled)
+            return;
+
+        try
+        {
+            var file = System.IO.Path.Combine(App.SmokeDir, "topbar-hook.txt");
+            System.IO.File.AppendAllText(file, $"{DateTime.Now:HH:mm:ss.fff} {line}{Environment.NewLine}");
+        }
+        catch
+        {
+            // diagnostics must never affect the preview
+        }
+    }
+
+    /// <summary>
+    /// v1.3.6: whether the cursor is inside the window's top caption zone
+    /// (the bar height plus a small tolerance, DPI-aware).
+    /// </summary>
+    private bool IsPointInTopZone(int x, int y)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero || !User32.GetWindowRect(hwnd, out var rect))
+            return false;
+
+        if (x < rect.Left || x > rect.Right || y < rect.Top || y > rect.Bottom)
+            return false;
+
+        var scale = User32.GetDpiForWindow(hwnd) / 96d;
+        // Use the configured Height instead of ActualHeight: the bar starts at
+        // opacity 0 and ActualHeight can report 0 before/while hidden, which
+        // would shrink the reveal zone to almost nothing.
+        var barHeight = double.IsNaN(windowCaptionContainer.Height)
+            ? windowCaptionContainer.ActualHeight
+            : windowCaptionContainer.Height;
+        var zoneHeight = (barHeight + 12) * scale;
+        return y <= rect.Top + zoneHeight;
     }
 
     private bool TryGetWheelTarget(int x, int y, out nint targetHwnd)
