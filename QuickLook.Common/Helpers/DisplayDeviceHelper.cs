@@ -17,6 +17,7 @@
 
 using QuickLook.Common.ExtensionMethods;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -30,6 +31,15 @@ namespace QuickLook.Common.Helpers;
 public static class DisplayDeviceHelper
 {
     public const int DefaultDpi = 96;
+
+    // v1.3.0: the WCS color-profile query runs on the UI thread for every
+    // preview, even though only ImageMagickProvider (and only with the
+    // UseColorProfile option enabled) ever consumes the result. Cache it per
+    // monitor with a short TTL; profiles change rarely (color re-calibration
+    // or monitor re-plug) so a 30 s window is invisible in practice.
+    private static readonly object ProfileCacheLock = new();
+    private static readonly Dictionary<nint, (string Profile, long WrittenAtMs)> ProfileCache = new();
+    private const long ProfileCacheTtlMs = 30_000;
 
     public static ScaleFactor GetScaleFactorFromWindow(Window window)
     {
@@ -81,7 +91,7 @@ public static class DisplayDeviceHelper
         try
         {
             var hMonitor = MonitorFromWindow(new WindowInteropHelper(window).EnsureHandleSafe(), MonitorDefaults.TONEAREST);
-            return GetMonitorColorProfile(hMonitor);
+            return GetMonitorColorProfileCached(hMonitor);
         }
         catch (COMException ex) when (ex.HResult == unchecked((int)0x80263001))
         {
@@ -94,6 +104,33 @@ public static class DisplayDeviceHelper
             ProcessHelper.WriteLog($"Failed to get monitor color profile: {ex}");
             return null;
         }
+    }
+
+    private static string GetMonitorColorProfileCached(nint hMonitor)
+    {
+        var now = Environment.TickCount64;
+
+        lock (ProfileCacheLock)
+        {
+            if (ProfileCache.TryGetValue(hMonitor, out var cached)
+                && now - cached.WrittenAtMs < ProfileCacheTtlMs)
+            {
+                return cached.Profile;
+            }
+        }
+
+        var profile = GetMonitorColorProfile(hMonitor);
+
+        lock (ProfileCacheLock)
+        {
+            ProfileCache[hMonitor] = (profile, now);
+            // Bound the cache: at most one entry per monitor, plus a few stale
+            // handles that no longer correspond to connected displays.
+            if (ProfileCache.Count > 16)
+                ProfileCache.Clear();
+        }
+
+        return profile;
     }
 
     public static string GetMonitorColorProfile(nint hMonitor)

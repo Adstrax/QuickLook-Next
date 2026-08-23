@@ -181,6 +181,17 @@
   
   
   <Target Name="FlattenRuntimeNative" AfterTargets="Build">
-    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="powershell -NoProfile -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\..\Scripts\flatten-native.ps1&quot; -AssetsPath &quot;$(MSBuildProjectDirectory)\obj\project.assets.json&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(Configuration)&quot; -Platform &quot;$(Platform)&quot;" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="powershell -NoProfile -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\..\Scripts\flatten-native.ps1&quot; -AssetsPath &quot;$(MSBuildProjectDirectory)\obj\project.assets.json&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(Configuration)&quot; -Platform &quot;$(Platform)&quot; -SkipNames &quot;MediaInfo.dll&quot;" />
+  </Target>
+
+  <!--
+    v1.3.0: the plugin loads MediaInfo from runtimes\win-x64\native\
+    explicitly (see Plugin static ctor), so the flatten-native copy at the
+    plugin root is skipped entirely (-8 MB); this delete is a safety net for
+    stale copies left by older builds.
+  -->
+  <Target Name="RemoveRedundantRootMediaInfo" AfterTargets="FlattenRuntimeNative">
+    <Delete Files="$(OutputPath)MediaInfo.dll"
+            Condition="Exists('$(OutputPath)MediaInfo.dll') And Exists('$(OutputPath)runtimes\win-x64\native\MediaInfo.dll')" />
   </Target>
 </Project>

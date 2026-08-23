@@ -43,6 +43,33 @@ public sealed class Plugin : IViewer
         ".mid", ".midi", ".ape", ".wv", ".aiff", ".amr", ".mka", ".mp2",
     };
 
+    // v1.3.0: CanHandle used to run a native MediaInfo sniff on every file
+    // whose extension is not a known media one - including txt/md/json/zip
+    // that another plugin is guaranteed to claim anyway. That open ran on the
+    // UI thread for every distinct previewed file. Skip the sniff for
+    // extensions that are definitely handled elsewhere; genuinely unusual
+    // media extensions (e.g. .ts, .rm, .asf) still go through the sniff.
+    // Deliberately NOT included: ".ts" (TypeScript vs MPEG-TS), ".m3u".
+    private static readonly HashSet<string> NonMediaExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // text / code / data (TextViewer, MarkdownViewer, CsvViewer)
+        ".txt", ".log", ".md", ".markdown", ".mdown", ".json", ".xml", ".csv", ".tsv", ".psv",
+        ".ini", ".cfg", ".config", ".yaml", ".yml", ".toml", ".ipynb", ".adoc", ".rst",
+        // office (OfficeViewer)
+        ".doc", ".docx", ".docm", ".dotx", ".xls", ".xlsx", ".xlsm", ".ppt", ".pptx", ".pptm",
+        ".odt", ".ods", ".odp", ".rtf", ".vsd", ".vsdx",
+        // archives (ArchiveViewer)
+        ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".cbz", ".cbr", ".jar", ".apk", ".msi",
+        // images (ImageViewer)
+        ".png", ".jpg", ".jpeg", ".jfif", ".gif", ".bmp", ".webp", ".tif", ".tiff", ".svg", ".ico",
+        ".psd", ".raw", ".heic", ".jxl", ".jxr", ".dcm", ".dicom", ".cur", ".ani", ".icns", ".clip",
+        // fonts (FontViewer)
+        ".ttf", ".otf", ".woff", ".woff2", ".ttc",
+        // pdf / html / app packages / executables
+        ".pdf", ".html", ".htm", ".url", ".appx", ".appxbundle", ".msix", ".msixbundle",
+        ".deb", ".rpm", ".ipa", ".dmg", ".appimage", ".hap", ".wgt", ".exe", ".dll", ".qlplugin",
+    };
+
     private ViewerPanel _vp;
 
     public int Priority => -3;
@@ -69,8 +96,14 @@ public sealed class Plugin : IViewer
         if (Directory.Exists(path))
             return false;
 
-        if (KnownMediaExtensions.Contains(Path.GetExtension(path)))
+        var extension = Path.GetExtension(path);
+        if (KnownMediaExtensions.Contains(extension))
             return true;
+
+        // Extension is definitely handled by another plugin - sniffing would
+        // only cost a native open on the UI thread for a file we cannot claim.
+        if (NonMediaExtensions.Contains(extension))
+            return false;
 
         var info = GetInfo(path);
         return info is not null && (info.HasVideo || info.HasAudio);

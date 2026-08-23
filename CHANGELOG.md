@@ -2,6 +2,30 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.0
+
+大版本更新：预览调用链路与构建体积全面优化，并恢复预览窗口的 DWM Acrylic
+背景（与 v1.2.38 一致，不再使用未激活即失效的 WCA 实验方案）。
+
+- 预览调用大提速：第二实例不再初始化 WPF（此前每次空格预览都要付约 400ms 的
+  PresentationFramework/XAML 加载成本），改为入口处先检查互斥体、直接通过命名
+  管道把请求转发给常驻实例，转发失败才走完整启动。实测第二实例进程开销从约
+  404ms 降到约 75ms
+- 恢复预览窗口 Acrylic 背景：改用 DWM `SystembackdropType.Acrylic`（Win11
+  原生方案），文本类预览点击/激活后即显示毛玻璃，不再出现「背景直接透出桌面、
+  无任何模糊」的问题；托盘菜单仍使用已验证的 WCA 方案，不受影响
+- 显示器色彩配置改为按显示器缓存（30s TTL）：该 WCS 查询原本每次预览都在 UI
+  线程执行，但默认配置下只有 ImageMagick 色彩管理（UseColorProfile）才会用到
+  结果，缓存后预览不再重复支付这段开销
+- VideoViewer 匹配时跳过对明确由其他插件处理的扩展名（txt/md/json/zip/pdf/字体/
+  图片/Office 等）的 MediaInfo 原生嗅探，非媒体文件预览不再在 UI 线程白白打开
+  一次原生库；.ts/.rm/.asf 等非常规媒体扩展仍走嗅探，不受影响
+- 构建体积 -8MB：VideoViewer 显式从 `runtimes\win-x64\native` 加载 MediaInfo，
+  flatten-native 在插件根目录复制的 `MediaInfo.dll` 是冗余副本，构建后自动删除
+
+基准（bench.ps1，稳态即第二轮）：png 88ms / txt 78ms / md 70ms / json 124ms /
+zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330ms）
+
 ## QuickLook Lite 1.2.38
 
 - 首次图片预览提速：启动后后台预热图片解码管线（WPF/WIC + ImageMagick

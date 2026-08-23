@@ -10,7 +10,8 @@ param(
     [Parameter(Mandatory = $true)][string]$AssetsPath,
     [Parameter(Mandatory = $true)][string]$ProjectDir,
     [Parameter(Mandatory = $true)][string]$Configuration,
-    [string]$Platform = ''
+    [string]$Platform = '',
+    [string]$SkipNames = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,12 @@ $rid = switch ($Platform) {
     'x86'   { 'win-x86' }
     default { 'win-x64' }
 }
+
+# v1.3.0: file names (case-insensitive) that must NOT be flattened into the
+# plugin root - some plugins load natives from runtimes\... explicitly and the
+# root copy would only bloat the package.
+$skipSet = @($SkipNames.Split(',', [System.StringSplitOptions]::RemoveEmptyEntries) |
+    ForEach-Object { $_.Trim().ToLowerInvariant() })
 
 if (-not (Test-Path $AssetsPath)) {
     Write-Host "flatten-native: assets not found, skip: $AssetsPath"
@@ -57,9 +64,15 @@ foreach ($target in $ridTargets) {
                     $pkgVer = $parts[1].ToLowerInvariant()
                     $src = Join-Path $nugetRoot (Join-Path $pkgId (Join-Path $pkgVer $rel))
                     if (Test-Path -LiteralPath $src) {
-                        $dest = Join-Path $OutputPath ([IO.Path]::GetFileName($rel))
-                        Copy-Item -LiteralPath $src -Destination $dest -Force
-                        $copied++
+                        $fileName = [IO.Path]::GetFileName($rel)
+                        if ($skipSet -contains $fileName.ToLowerInvariant()) {
+                            Write-Host "flatten-native: skip $fileName"
+                        }
+                        else {
+                            $dest = Join-Path $OutputPath $fileName
+                            Copy-Item -LiteralPath $src -Destination $dest -Force
+                            $copied++
+                        }
                     }
                     else {
                         Write-Host "flatten-native: source missing: $src"

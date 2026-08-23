@@ -85,7 +85,8 @@ public class PipeServerManager : IDisposable
     }
 
     [SuppressMessage("Style", "IDE0063:Use simple 'using' statement")]
-    public static void PostMessage(string pipeMessage, string path = null, string[] options = null)
+    public static bool PostMessage(string pipeMessage, string path = null, string[] options = null,
+        int timeoutMs = 2000)
     {
         path ??= string.Empty;
         options ??= [];
@@ -94,7 +95,7 @@ public class PipeServerManager : IDisposable
         {
             using (var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
             {
-                client.Connect(2000);
+                client.Connect(timeoutMs);
 
                 using (var writer = new StreamWriter(client))
                 {
@@ -102,10 +103,13 @@ public class PipeServerManager : IDisposable
                     writer.Flush();
                 }
             }
+
+            return true;
         }
         catch (Exception e)
         {
             Debug.WriteLine(e.ToString());
+            return false;
         }
     }
 
