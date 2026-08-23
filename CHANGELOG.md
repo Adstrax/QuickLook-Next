@@ -2,6 +2,21 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.5
+
+基于 1.3.2 的「一打开即 Acrylic + 跟随壁纸」效果重构，修复分层窗口的两个遗留
+缺陷，放弃 1.3.3/1.3.4 的激活抢焦点与 Mica 方案。
+
+- 文本预览恢复上下滚动：分层窗口收不到系统转发给光标下窗口的滚轮消息
+  （`WM_MOUSEWHEEL` 只发给焦点窗口，转发链路跳过分层窗口）。Acrylic 改在普通
+  窗口上直接走 WCA（`SetWindowCompositionAttribute`）渲染，滚轮恢复原生路由，
+  txt/log/json/代码等文本类预览可正常滚动
+- 恢复 Win11 原生圆角：WCA 毛玻璃模糊区域固定为整窗矩形（`SetWindowRgn` 只能
+  裁剪内容、裁不掉模糊区域，1.3.2 因此仍有方形毛玻璃边角）。普通窗口下 DWM
+  `WindowCornerPreference` 重新生效，毛玻璃与内容一起圆角，最大化/全屏自动直角
+- WCA 毛玻璃不依赖激活状态，一打开即显示、跟随壁纸变化，且不再抢占焦点
+- 保留分层 + 滚轮钩子的兜底路径（`ShouldUseLayeredAcrylic` 开关），便于回归
+
 ## QuickLook Lite 1.3.2
 
 - 修复分层窗口边缘黑线：1px 的窗口边框（深色 BorderBrush）与 WindowChrome

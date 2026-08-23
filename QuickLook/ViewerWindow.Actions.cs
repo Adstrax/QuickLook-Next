@@ -404,6 +404,22 @@ public partial class ViewerWindow
         // cached at startup).
         ApplyWindowBackgroundEffects();
 
+        // v1.3.5: hidden test hook (/test-preview-diag) - write the backdrop
+        // render path so automated checks can assert acrylic is really on.
+        if (App.IsPreviewDiagEnabled)
+        {
+            try
+            {
+                var diagDir = App.SmokeDir;
+                Directory.CreateDirectory(diagDir);
+                File.WriteAllText(Path.Combine(diagDir, "preview-backdrop.txt"), DiagnoseBackdrop());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
         if (_autoReload && File.Exists(path))
         {
             _autoReloadWatcher?.Dispose();

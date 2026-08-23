@@ -81,6 +81,12 @@ public partial class App : Application
     // current selection.
     internal static bool DisableFocusMonitor { get; private set; }
 
+    // Hidden test hook (/test-preview-diag): the preview window writes
+    // preview-backdrop.txt (layered flag + WCA accent result) into SmokeDir
+    // after every backdrop application, so tests can assert the acrylic
+    // render path really succeeded instead of guessing from pixels.
+    internal static bool IsPreviewDiagEnabled { get; private set; }
+
     // The WMI video-controller query used by the blacklist check can take
     // hundreds of milliseconds on some machines. Compute it lazily on a
     // background thread (kicked off in OnStartup) so it never blocks the
@@ -165,6 +171,7 @@ public partial class App : Application
         IsTimingEnabled = e.Args.Contains("/test-timing");
         IsStartupTimingEnabled = e.Args.Contains("/test-startup");
         DisableFocusMonitor = e.Args.Contains("/test-no-focusmonitor");
+        IsPreviewDiagEnabled = e.Args.Contains("/test-preview-diag");
         if (IsStartupTimingEnabled)
         {
             StartupSw.Start();

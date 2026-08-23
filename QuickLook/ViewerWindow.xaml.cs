@@ -17,6 +17,7 @@
 
 using QuickLook.Common.ExtensionMethods;
 using QuickLook.Common.Helpers;
+using QuickLook.Common.NativeMethods;
 using QuickLook.Common.Plugin;
 using QuickLook.Helpers;
 using System;
@@ -25,6 +26,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shell;
@@ -54,6 +56,16 @@ public partial class ViewerWindow : Window
     // backdrop is an acrylic material on Win11, so the WCA acrylic renders
     // from the very first frame (see ShouldUseLayeredAcrylic).
     private readonly bool _layeredAcrylic;
+    // v1.3.5: layered windows never receive the WM_MOUSEWHEEL that Windows
+    // forwards from the focus window to the window under the cursor, so a
+    // low-level mouse hook re-delivers wheel input to the preview window
+    // (only needed while the window is layered; the non-layered acrylic path
+    // keeps the native routing).
+    private LowLevelMouseProc _wheelMouseProc;
+    private nint _wheelMouseHook;
+    // v1.3.5: last WCA acrylic result, reported by DiagnoseBackdrop so the
+    // smoke tests can assert the acrylic call really succeeded.
+    private bool _lastAcrylicOk;
 
     internal ViewerWindow()
     {
@@ -120,6 +132,8 @@ public partial class ViewerWindow : Window
                     Close();
             }, DispatcherPriority.ContextIdle);
         };
+
+        Closed += (_, _) => UninstallWheelHook();
 
         buttonTop.Click += (_, _) =>
         {
@@ -235,6 +249,9 @@ public partial class ViewerWindow : Window
         }
 
         ApplyWindowBackgroundEffects();
+
+        if (_layeredAcrylic)
+            InstallWheelHook();
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -348,24 +365,23 @@ public partial class ViewerWindow : Window
                 break;
 
             case SystembackdropType.Acrylic:
-                if (_layeredAcrylic)
+                if (App.IsWin11)
                 {
-                    // v1.3.1: layered window - WCA acrylic works while the
-                    // window is inactive, so the frosted glass shows on open.
-                    SetGlassFrameThickness(1d);
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
-                    Background = Brushes.Transparent;
-                }
-                else if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
-                {
-                    SetGlassFrameThickness(1d);
-                    WindowHelper.EnableBackdropAcrylicBlur(this, CurrentTheme == Themes.Dark);
+                    // v1.3.5: WCA acrylic on the normal (non-layered) window.
+                    // It blurs regardless of the activation state, unlike DWM
+                    // SystembackdropType.Acrylic which turns into a solid tint
+                    // while the preview is inactive. DWM keeps the native
+                    // rounded corners, and the mouse wheel keeps its native
+                    // routing, so both 1.3.2 defects are fixed at once.
+                    SetGlassFrameThickness(0d);
+                    WindowHelper.DisableDwmBlur(this); // clear previous DWM backdrop, restore rounded corners
+                    _lastAcrylicOk = WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
                     Background = Brushes.Transparent;
                 }
                 else if (App.IsWin10)
                 {
                     SetGlassFrameThickness(0d);
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
+                    _lastAcrylicOk = WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
                     Background = Brushes.Transparent;
                 }
                 else
@@ -380,7 +396,7 @@ public partial class ViewerWindow : Window
                 {
                     SetGlassFrameThickness(0d);
                     WindowHelper.DisableDwmBlur(this); // Restore rounded corners on Windows 11
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylic10TintColor(), CurrentTheme == Themes.Dark, GetAcrylic10TintOpacity());
+                    _lastAcrylicOk = WindowHelper.EnableAcrylicBlur(this, GetAcrylic10TintColor(), CurrentTheme == Themes.Dark, GetAcrylic10TintOpacity());
                     Background = GetAcrylic10TintLuminosityOpacityBackground(CurrentTheme == Themes.Dark);
                 }
                 else
@@ -391,29 +407,18 @@ public partial class ViewerWindow : Window
                 break;
 
             case SystembackdropType.Acrylic11:
-                if (_layeredAcrylic)
+                if (App.IsWin11)
                 {
-                    SetGlassFrameThickness(1d);
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
-                    Background = Brushes.Transparent;
-                }
-                else if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
-                {
-                    SetGlassFrameThickness(1d);
-                    WindowHelper.EnableBackdropAcrylicBlur(this, CurrentTheme == Themes.Dark);
-                    Background = Brushes.Transparent;
-                }
-                else if (App.IsWin11)
-                {
+                    // v1.3.5: same non-layered WCA recipe as Acrylic.
                     SetGlassFrameThickness(0d);
-                    WindowHelper.DisableDwmBlur(this); // Restore rounded corners on Windows 11
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
+                    WindowHelper.DisableDwmBlur(this);
+                    _lastAcrylicOk = WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
                     Background = Brushes.Transparent;
                 }
                 else if (App.IsWin10)
                 {
                     SetGlassFrameThickness(0d);
-                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
+                    _lastAcrylicOk = WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
                     Background = Brushes.Transparent;
                 }
                 else
@@ -522,23 +527,15 @@ public partial class ViewerWindow : Window
     }
 
     /// <summary>
-    /// v1.3.1: acrylic materials cannot render while the preview window is
-    /// inactive through the DWM backdrop API (Win11 limitation). Creating the
-    /// window as a layered window lets the WCA acrylic show immediately; Mica,
-    /// Tabbed and the other backdrops render fine on a normal window and stay
-    /// non-layered (hardware-accelerated).
+    /// v1.3.5: acrylic now renders through WCA
+    /// (SetWindowCompositionAttribute) on a normal, non-layered window - the
+    /// frosted glass shows while the window is inactive (the DWM backdrop API
+    /// limitation that started the 1.3.1 layered experiment), while DWM's
+    /// native rounded corners and the native WM_MOUSEWHEEL routing are kept.
+    /// The 1.3.2 layered path remains in the code as a fallback (flip this to
+    /// true) with a low-level mouse hook re-delivering wheel input.
     /// </summary>
-    private static bool ShouldUseLayeredAcrylic()
-    {
-        if (!App.IsWin11)
-            return false;
-
-        return GetBackdropOption() switch
-        {
-            SystembackdropType.Acrylic or SystembackdropType.Acrylic10 or SystembackdropType.Acrylic11 => true,
-            _ => false,
-        };
-    }
+    private static bool ShouldUseLayeredAcrylic() => false;
 
     private void SaveWindowSizeOnSizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -616,6 +613,128 @@ public partial class ViewerWindow : Window
         if (windowCaptionContainer.Opacity == 0 || windowCaptionContainer.Opacity == 1)
             show.Begin();
     }
+
+    // ---- v1.3.5: mouse-wheel forwarding for the layered fallback ----------
+    // Windows sends WM_MOUSEWHEEL to the focus window first, and only forwards
+    // it to the window under the cursor when the focus window chain does not
+    // handle it. Layered windows are skipped by that forwarding, so a layered
+    // preview never scrolls. The low-level mouse hook below re-delivers wheel
+    // input straight to the window under the cursor when it belongs to the
+    // preview, and consumes the original message so it does not reach the
+    // focused window (e.g. an Explorer list behind the preview).
+
+    private const int WH_MOUSE_LL = 14;
+    private const uint WM_MOUSEWHEEL = 0x020A;
+    private const uint WM_MOUSEHWHEEL = 0x020E;
+
+    private delegate nint LowLevelMouseProc(int nCode, nint wParam, nint lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MSLLHOOKSTRUCT
+    {
+        public POINT pt;
+        public uint mouseData;
+        public uint flags;
+        public uint time;
+        public nint dwExtraInfo;
+    }
+
+    private void InstallWheelHook()
+    {
+        if (_wheelMouseHook != IntPtr.Zero)
+            return;
+
+        _wheelMouseProc = WheelMouseHookProc;
+        var hMod = Kernel32.LoadLibrary("user32.dll");
+        _wheelMouseHook = SetWindowsHookEx(WH_MOUSE_LL, _wheelMouseProc, hMod, 0);
+    }
+
+    private void UninstallWheelHook()
+    {
+        if (_wheelMouseHook != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_wheelMouseHook);
+            _wheelMouseHook = IntPtr.Zero;
+        }
+
+        _wheelMouseProc = null;
+    }
+
+    private nint WheelMouseHookProc(int nCode, nint wParam, nint lParam)
+    {
+        if (nCode >= 0 && IsVisible)
+        {
+            var message = (uint)wParam.ToInt64();
+            if (message is WM_MOUSEWHEEL or WM_MOUSEHWHEEL)
+            {
+                var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                if (TryGetWheelTarget(data.pt.X, data.pt.Y, out var targetHwnd))
+                {
+                    var delta = (short)((data.mouseData >> 16) & 0xFFFF);
+                    if (delta != 0)
+                    {
+                        var wp = (GetWheelKeyState() << 16) | ((uint)delta & 0xFFFF);
+                        var lp = ((uint)(data.pt.Y & 0xFFFF) << 16) | ((uint)data.pt.X & 0xFFFF);
+                        User32.PostMessage(targetHwnd, message, (nint)wp, (nint)lp);
+                        return (nint)1; // consumed: the preview window is the only recipient
+                    }
+                }
+            }
+        }
+
+        return CallNextHookEx(_wheelMouseHook, nCode, wParam, lParam);
+    }
+
+    private bool TryGetWheelTarget(int x, int y, out nint targetHwnd)
+    {
+        targetHwnd = IntPtr.Zero;
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero)
+            return false;
+
+        var underCursor = User32.WindowFromPoint(new User32.POINT(x, y));
+        if (underCursor == IntPtr.Zero)
+            return false;
+
+        // Only forward when the pointer is over this preview window (or one of
+        // its child windows, e.g. a WebView2 host). Other top-level windows
+        // such as the tray menu keep their normal wheel routing.
+        if (User32.GetAncestor(underCursor, User32.GA_ROOT) != hwnd)
+            return false;
+
+        targetHwnd = underCursor;
+        return true;
+    }
+
+    private static uint GetWheelKeyState()
+    {
+        uint flags = 0;
+        if ((GetKeyState(0x11) & 0x8000) != 0) flags |= 0x0008; // MK_CONTROL
+        if ((GetKeyState(0x10) & 0x8000) != 0) flags |= 0x0004; // MK_SHIFT
+        if ((GetKeyState(0x12) & 0x8000) != 0) flags |= 0x0020; // MK_MENU
+        return flags;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern nint SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, nint hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnhookWindowsHookEx(nint hhk);
+
+    [DllImport("user32.dll")]
+    private static extern nint CallNextHookEx(nint hhk, int nCode, nint wParam, nint lParam);
+
+    [DllImport("user32.dll")]
+    private static extern short GetKeyState(int nVirtKey);
+
+    /// <summary>
+    /// v1.3.5: test hook - reports the backdrop render path used by the last
+    /// ApplyBackdrop call so smoke tests can assert the WCA acrylic succeeded
+    /// and the window stayed non-layered (rounded corners + wheel routing).
+    /// </summary>
+    internal string DiagnoseBackdrop() =>
+        $"layered={_layeredAcrylic} accent-ok={_lastAcrylicOk}";
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);

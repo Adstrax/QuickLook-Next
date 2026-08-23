@@ -58,6 +58,13 @@ public static class User32
     public static extern nint GetAncestor(nint hwnd, uint gaFlags);
 
     [DllImport("user32.dll")]
+    public static extern nint WindowFromPoint(POINT pt);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool PostMessage(nint hWnd, uint Msg, nint wParam, nint lParam);
+
+    [DllImport("user32.dll")]
     public static extern nint GetForegroundWindow();
 
     [DllImport("user32.dll")]
@@ -147,6 +154,19 @@ public static class User32
         public int flags;
         public int time;
         public int dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+
+        public POINT(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
