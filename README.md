@@ -1,4 +1,4 @@
-# QuickLook Lite（精简版）
+# QuickLook-Next（精简版）
 
 基于 [QL-Win/QuickLook](https://github.com/QL-Win/QuickLook) 4.5.0 的 .NET 10 迁移精简版：
 保留日常最常用的文件类型预览，并把预览背景、主题、托盘菜单、插件管理等体验全面打磨。
@@ -9,7 +9,7 @@
 ### 预览体验
 
 - **Acrylic 一打开即生效、跟随壁纸**：原版在 Win11 上使用 DWM Acrylic，而预览窗口从不
-  抢焦点，导致文本 / 代码等内容打开时是纯色、点击后才出现毛玻璃。Lite 改用 WCA 方案，
+  抢焦点，导致文本 / 代码等内容打开时是纯色、点击后才出现毛玻璃。QuickLook-Next 改用 WCA 方案，
   打开即是毛玻璃，且桌面壁纸变化时背景同步变化
 - **Win11 原生圆角**：毛玻璃与内容一起 8px 圆角，没有方形毛玻璃边角
 - **文本预览可上下滚动**：修复分层窗口收不到滚轮消息的问题，txt / log / json / 代码等
@@ -47,7 +47,7 @@
 
 ## 安装与使用
 
-1. 从 [Releases](https://github.com/Adstrax/QuickLook-Lite/releases) 下载最新版，解压后运行
+1. 从 [Releases](https://github.com/Adstrax/QuickLook-Next/releases) 下载最新版，解压后运行
    `QuickLook.exe`
 2. 选中文件按 **空格** 预览，**Esc** 关闭；预览窗口支持置顶、跨预览拖拽内容
 3. 托盘图标右键可切换主题 / 背景 / 语言、管理插件、检查更新等
@@ -85,4 +85,4 @@ dotnet build QuickLook.slnx -c Release
 
 ## 更新历史
 
-详细更新记录见 [CHANGELOG.md](CHANGELOG.md) 与 GitHub [Releases](https://github.com/Adstrax/QuickLook-Lite/releases)。
+详细更新记录见 [CHANGELOG.md](CHANGELOG.md) 与 GitHub [Releases](https://github.com/Adstrax/QuickLook-Next/releases)。

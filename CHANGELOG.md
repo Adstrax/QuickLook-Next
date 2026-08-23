@@ -2,31 +2,31 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
-## QuickLook Lite 1.5.0
+## QuickLook-Next 1.5.0
 
 - 新增语言切换：托盘菜单「语言」子菜单，支持跟随系统 + 全部支持语言（约 25 种，
   按母语名称显示），选择持久化到 Language 设置，菜单/窗口下次打开生效
 - 长菜单（语言列表）改用 ScrollViewer 限高滚动，避免超出屏幕
 
-## QuickLook Lite 1.3.12
+## QuickLook-Next 1.3.12
 
 - 插件管理面板背景改为与托盘菜单一致：无边框非分层窗口 + WCA Acrylic 毛玻璃 +
   DWM 8px 圆角（毛玻璃一起圆角），跟随亮/暗主题；面板头部可拖动，右上角加关闭按钮
 
-## QuickLook Lite 1.3.11
+## QuickLook-Next 1.3.11
 
 - 新增插件管理面板（托盘菜单「管理插件...」）：枚举用户安装与内置插件，显示
   名称/版本/说明/来源；用户插件可直接卸载（立即从匹配列表移除，文件被占用时
   标记为待删除、下次启动清理），内置插件仅展示
 - 面板支持刷新与打开用户插件文件夹；新增 /test-plugin-manager 测试钩子
 
-## QuickLook Lite 1.3.10
+## QuickLook-Next 1.3.10
 
 - 修复托盘菜单外圈第二层背景：1.3.9 保留原生窗口框后 DWM 会画一层很大的原生
   投影；改为 `WindowStyle=None` 的无边框非分层窗口，DWM 圆角（含毛玻璃）不变，
   原生大投影消失，菜单恢复单层观感
 
-## QuickLook Lite 1.3.9
+## QuickLook-Next 1.3.9
 
 - 托盘菜单（含二级子菜单）改为非分层 WCA Acrylic + WindowChrome：DWM 圆角直接
   作用到整窗（毛玻璃一起圆角），不再有方形毛玻璃边角；原生窗口框同时恢复
@@ -35,20 +35,20 @@
   `UseShellExecute=true` 才会调用默认浏览器；「检查更新」的 Store/Releases
   链接同步修复
 
-## QuickLook Lite 1.3.8
+## QuickLook-Next 1.3.8
 
 - 修复托盘菜单外圈直角边框：托盘菜单与二级子菜单都是分层窗口，WCA Acrylic 的
   模糊区域是整窗矩形，圆角面板外的四个角会残留方形毛玻璃边框；改用预览窗口同款
   `SetWindowRgn` 8px 圆角裁剪，让窗口本身（含毛玻璃）与圆角面板完全一致
 
-## QuickLook Lite 1.3.7
+## QuickLook-Next 1.3.7
 
 - 托盘右键菜单精简：主题模式（跟随系统/亮色/暗色）、背景模式（7 种）、选项
   （开机自启/失去焦点时关闭/顶栏默认隐藏）收进二级子菜单，分组行显示当前选择；
   顶层保留版本、检查更新、获取插件、打开数据文件夹、重启、退出，菜单长度约减半。
   子菜单沿用同款 Acrylic 自绘菜单与勾选态，点击外部/Esc 联动关闭
 
-## QuickLook Lite 1.3.6
+## QuickLook-Next 1.3.6
 
 - 托盘菜单新增「主题模式」：跟随系统 / 亮色 / 暗色三选一，当前预览立即切换并
   持久化（LastTheme），下次打开沿用；顶栏亮/暗切换按钮逻辑复用同一入口
@@ -57,7 +57,7 @@
   托盘菜单新增「顶部状态栏默认隐藏」开关（默认开启），取消勾选立即恢复旧行为，
   无需重启；顶栏显示区域判断改用固定高度，不再受隐藏态布局影响
 
-## QuickLook Lite 1.3.5
+## QuickLook-Next 1.3.5
 
 基于 1.3.2 的「一打开即 Acrylic + 跟随壁纸」效果重构，修复分层窗口的两个遗留
 缺陷，放弃 1.3.3/1.3.4 的激活抢焦点与 Mica 方案。
@@ -72,7 +72,7 @@
 - WCA 毛玻璃不依赖激活状态，一打开即显示、跟随壁纸变化，且不再抢占焦点
 - 保留分层 + 滚轮钩子的兜底路径（`ShouldUseLayeredAcrylic` 开关），便于回归
 
-## QuickLook Lite 1.3.2
+## QuickLook-Next 1.3.2
 
 - 修复分层窗口边缘黑线：1px 的窗口边框（深色 BorderBrush）与 WindowChrome
   的 1px 玻璃框在分层窗口上没有 DWM 玻璃填充，会渲染成黑色描边；分层模式下
@@ -81,7 +81,7 @@
   `SetWindowRgn` 把窗口本身（含 WCA 毛玻璃）裁成 8px 圆角，随窗口尺寸/状态
   同步；最大化与全屏时自动恢复直角
 
-## QuickLook Lite 1.3.1
+## QuickLook-Next 1.3.1
 
 - 预览窗口一打开就显示 Acrylic 背景：Win11 的 DWM `SystembackdropType.Acrylic`
   只在窗口激活时渲染毛玻璃，而预览窗口从不激活（`ShowActivated=false`），所以
@@ -93,7 +93,7 @@
   视频（D3DImage）与 WebView2 内容渲染经实测正常；如需恢复原生观感，可将
   WindowBackdrop 设为 Mica/Tabbed，或回退到 1.3.0 文件夹
 
-## QuickLook Lite 1.3.0
+## QuickLook-Next 1.3.0
 
 大版本更新：预览调用链路与构建体积全面优化，并恢复预览窗口的 DWM Acrylic
 背景（与 v1.2.38 一致，不再使用未激活即失效的 WCA 实验方案）。
@@ -117,13 +117,13 @@
 基准（bench.ps1，稳态即第二轮）：png 88ms / txt 78ms / md 70ms / json 124ms /
 zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330ms）
 
-## QuickLook Lite 1.2.38
+## QuickLook-Next 1.2.38
 
 - 首次图片预览提速：启动后后台预热图片解码管线（WPF/WIC + ImageMagick
   原生库），首次预览不再支付一次性解码器初始化（灰色背景闪现明显缩短）；
   实测首次 png 预览从约 1260ms 降到约 476ms
 
-## QuickLook Lite 1.2.37
+## QuickLook-Next 1.2.37
 
 - 设置界面（托盘菜单 / More 菜单）适配 Win11 圆角与毛玻璃：
   - 改用 `SetWindowCompositionAttribute`（TranslucentTB 同款 API），对
@@ -138,7 +138,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
   的透明边距会形成外层直角毛玻璃框；圆角面板改为铺满整个窗口（与 E-Tab
   一致），投影调小避免边缘裁切（12px 模糊、4px 深度）
 
-## QuickLook Lite 1.2.36
+## QuickLook-Next 1.2.36
 
 - 预览窗口首次展示提速：窗口在启动空闲时离屏预热一次（不激活、不显示在
   屏幕上），HWND 创建、布局、DWM Mica/Acrylic 背景初始化全部提前到后台
@@ -156,7 +156,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
   视频且不再隐藏（视频其实在播，看起来却像卡住）。现在媒体就绪（或失败）
   后，迟到的缩略图不再显示，播放表面/错误提示优先
 
-## QuickLook Lite 1.2.35
+## QuickLook-Next 1.2.35
 
 - 预览延迟优化（大文件 / JSON 场景提速明显）：
   - PDFViewer 只对无扩展名文件做魔数检测，其他文件按扩展名匹配，每次预览
@@ -170,7 +170,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
     首次文本预览再省约 500ms
 - 冒烟测试与 `bench.ps1` 新增 test.json 覆盖
 
-## QuickLook Lite 1.2.34
+## QuickLook-Next 1.2.34
 
 - 启动再提速：移除已废弃的 TrayIconWindow 预热窗口（原生托盘右键菜单早在
   v1.2.8 已停用，该窗口只剩开销）；启动（UI + 插件就绪）从约 0.35 秒进一步
@@ -180,7 +180,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - 移除 NuGet 包复制进输出的 win-x86 / win-arm64 运行时副本
   （WebView2Loader 等，新增共享清理目标），发布体积再减约 1 MB（170.5 MB）
 
-## QuickLook Lite 1.2.33
+## QuickLook-Next 1.2.33
 
 - 启动提速：MessageBox 的 Harmony 补丁（.NET 10 下耗时约 1.2 秒）从启动
   同步执行改为延迟 3 秒后台执行；启动（UI + 插件就绪）从约 1.64 秒降到约
@@ -188,7 +188,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - 新增隐藏 `/test-startup` 诊断钩子，记录各启动阶段耗时；
   `bench.ps1` 现在同时输出启动耗时与预览延迟
 
-## QuickLook Lite 1.2.32
+## QuickLook-Next 1.2.32
 
 - PDF 预览瘦身：PDFium 由带 JavaScript 引擎的 V8 版换成普通版
   （`bblanchon.PDFium.Win32` 153.0），`pdfium.dll` 从 28.9 MB 降至 6.9 MB；
@@ -200,7 +200,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
   首次基线（含进程启动与管道开销）：png 0.73s / txt 1.02s / md 0.40s /
   zip 0.43s / ttf 0.69s / pdf 0.45s
 
-## QuickLook Lite 1.2.31
+## QuickLook-Next 1.2.31
 
 - Release 体积瘦身（仅保留 64 位）：移除视频插件的 LAVFilters-x86（约 24 MB）
   与 MediaInfo win-x86（约 7 MB）、图片插件的 exiv2-ql-32、字体插件的
@@ -210,13 +210,13 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - 修复插件加载失败警告框在无窗口启动（开机自启/托盘模式）时因 Owner 未显示
   而崩溃的问题：现在只在存在可见窗口时弹窗，否则仅写日志
 
-## QuickLook Lite 1.2.30
+## QuickLook-Next 1.2.30
 
 - Image previews no longer show the top-right action icons (copy / metadata /
   background) or the image-info tag that appeared on hover; the image area is
   now completely clean
 
-## QuickLook Lite 1.2.16
+## QuickLook-Next 1.2.16
 
 - Fix the broken startup shortcut: `Assembly.Location` resolves to QuickLook.dll
   under the .NET apphost, so the auto-start shortcut (and the shell
@@ -224,7 +224,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
   "open" the DLL after every restart. The executable path is now resolved
   explicitly, so auto-start launches QuickLook.exe properly
 
-## QuickLook Lite 1.2.15
+## QuickLook-Next 1.2.15
 
 - Video previews show the file's thumbnail while the media opens, so the start
   of a video no longer shows a blank/gray loading surface or the busy spinner
@@ -237,7 +237,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Video files set HasVideo immediately, so the audio cover panel (music note +
   tags) no longer flashes as a gray area before the video actually opens
 
-## QuickLook Lite 1.2.14
+## QuickLook-Next 1.2.14
 
 - Image previews now decode their first frame before the content is swapped
   in, so switching images never flashes a blank gray panel - the previous
@@ -259,7 +259,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
   Mica / Acrylic / Acrylic 10 / Acrylic 11 / Tabbed; applies to the open
   preview immediately and persists
 
-## QuickLook Lite 1.2.13
+## QuickLook-Next 1.2.13
 
 - Performance: cache the downscaled image decode per file, so re-previewing or
   switching back to an image no longer re-decodes the whole file (spinner goes
@@ -282,17 +282,17 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add a hidden `/test-timing` startup switch that records content-ready
   timestamps for automated preview-latency benches
 
-## QuickLook Lite 1.2.10
+## QuickLook-Next 1.2.10
 
 - Switch tray menu, "More" menu and the preview window default backdrop from Mica to Acrylic - the same frosted-glass effect as the startup notification popup
 - Smoke test now asserts the menu's DWM backdrop is Acrylic (`systembackdrop=3`)
 
-## QuickLook Lite 1.2.9
+## QuickLook-Next 1.2.9
 
 - Unify the tray menu and the preview window's "More" menu into one Mica-backed menu with a Win11-style translucent panel, rounded corners and icons
 - Add automated smoke checks: DWM readback proves Mica is applied to the tray menu, and the "More" menu opens through the same unified path
 
-## QuickLook Lite 1.2.8
+## QuickLook-Next 1.2.8
 
 - Replace the system tray context menu (native Win32 popup) with a self-drawn Mica-backed WPF menu; it follows the app's light/dark theme and never steals focus from a live preview
 - Tray menu now dismisses on outside clicks and Escape, and clamps to the monitor's working area

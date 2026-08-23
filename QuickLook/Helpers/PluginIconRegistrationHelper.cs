@@ -74,7 +74,7 @@ internal static class PluginIconRegistrationHelper
             // Computer\HKEY_CLASSES_ROOT\QuickLook.Plugin
             using (var key = Registry.ClassesRoot.CreateSubKey("QuickLook.Plugin", true))
             {
-                const string fileTypeName = "QuickLook Plugin File";
+            const string fileTypeName = "QuickLook-Next Plugin File";
                 if (key != null && key.GetValue(string.Empty) as string != fileTypeName)
                 {
                     key.SetValue(string.Empty, fileTypeName);

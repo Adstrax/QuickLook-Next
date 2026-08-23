@@ -23,11 +23,11 @@ using System.Windows.Media;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("QuickLook")]
+[assembly: AssemblyTitle("QuickLook-Next")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("pooi.moe")]
-[assembly: AssemblyProduct("QuickLook")]
+[assembly: AssemblyProduct("QuickLook-Next")]
 [assembly: AssemblyCopyright("Copyright © 2017-2026 QL-Win Contributors")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

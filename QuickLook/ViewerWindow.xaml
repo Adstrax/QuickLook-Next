@@ -11,7 +11,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vio="http://schemas.lepo.co/wpfui/2022/xaml/violeta"
         x:Name="mainWindow"
-        Title="QuickLook"
+        Title="QuickLook-Next"
         MinWidth="400"
         MinHeight="200"
         d:DesignHeight="700"
