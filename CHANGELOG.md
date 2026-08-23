@@ -2,6 +2,12 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.10
+
+- 修复托盘菜单外圈第二层背景：1.3.9 保留原生窗口框后 DWM 会画一层很大的原生
+  投影；改为 `WindowStyle=None` 的无边框非分层窗口，DWM 圆角（含毛玻璃）不变，
+  原生大投影消失，菜单恢复单层观感
+
 ## QuickLook Lite 1.3.9
 
 - 托盘菜单（含二级子菜单）改为非分层 WCA Acrylic + WindowChrome：DWM 圆角直接

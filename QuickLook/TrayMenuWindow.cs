@@ -27,7 +27,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Shell;
 using System.Windows.Threading;
 
 namespace QuickLook;
@@ -37,9 +36,9 @@ namespace QuickLook;
 /// The built-in TrayIconHost menu is a native Win32 popup which cannot render
 /// Acrylic, so it is replaced by this borderless WPF window that reuses the
 /// same backdrop pipeline as the preview window.
-/// v1.3.9: the window is non-layered (AllowsTransparency=false) and keeps the
-/// native frame through WindowChrome, so DWM rounds the whole window - blur
-/// and content together - and draws the native flyout shadow.
+/// v1.3.10: the window is non-layered and borderless (WindowStyle=None), so
+/// DWM rounds the whole window - blur and content together - without the
+/// large native frame shadow that wrapped the menu like a second background.
 /// The window is intentionally non-activating (WS_EX_NOACTIVATE), so opening
 /// or using the tray menu never steals focus from a live preview. A low-level
 /// mouse hook dismisses the menu on outside clicks and a keyboard hook closes
@@ -78,31 +77,23 @@ internal sealed class TrayMenuWindow : Window
         _isDark = isDark;
 
         Title = "QuickLook Tray Menu";
-        // v1.3.9: non-layered window. The layered path can never remove the
-        // square WCA blur (SetWindowRgn clips content, not the blur), so the
-        // menu follows the preview window's recipe: DWM rounds the window
-        // (blur included) and WindowChrome keeps the native shadow.
+        // v1.3.10: non-layered + borderless. The layered path can never
+        // remove the square WCA blur (SetWindowRgn clips content, not the
+        // blur), so the menu uses WCA acrylic on a normal window and lets DWM
+        // round the whole window (blur included). WindowStyle=None avoids the
+        // native frame's large DWM shadow, which showed up as an outer
+        // background layer.
+        WindowStyle = WindowStyle.None;
         AllowsTransparency = false;
         ShowInTaskbar = false;
         ShowActivated = false;
-        // CanResize keeps the native frame styles that DWM uses for the
-        // shadow; the zero-thickness resize border makes it non-resizable.
-        ResizeMode = ResizeMode.CanResize;
+        ResizeMode = ResizeMode.NoResize;
         Topmost = true;
         SizeToContent = SizeToContent.WidthAndHeight;
         UseLayoutRounding = true;
         Background = Brushes.Transparent;
         FontFamily = new FontFamily(TranslationHelper.Get("UI_FontFamily", failsafe: "Segoe UI"));
         FontSize = 13;
-
-        WindowChrome.SetWindowChrome(this, new WindowChrome
-        {
-            CaptionHeight = 0,
-            CornerRadius = new CornerRadius(0),
-            GlassFrameThickness = new Thickness(1),
-            ResizeBorderThickness = new Thickness(0),
-            UseAeroCaptionButtons = false,
-        });
 
         _textBrush = CreateBrush(isDark ? "#F5F5F5" : "#1A1A1A");
         _disabledTextBrush = CreateBrush(isDark ? "#9E9E9E" : "#7A7A7A");
@@ -118,9 +109,9 @@ internal sealed class TrayMenuWindow : Window
 
         Content = new Border
         {
-            // v1.3.9: the rounded panel fills the window exactly; DWM rounds
+            // v1.3.10: the rounded panel fills the window exactly; DWM rounds
             // the window itself, so the acrylic blur follows the rounded
-            // corners and the native window frame provides the shadow.
+            // corners. No native frame means no extra outer shadow layer.
             Background = _tintBrush,
             BorderBrush = _borderBrush,
             BorderThickness = new Thickness(1),
@@ -582,14 +573,10 @@ internal sealed class TrayMenuWindow : Window
 
     private void ApplyBackdrop()
     {
-        // v1.3.9: same non-layered recipe as the preview window - flatten the
-        // 1px WindowChrome glass frame (it would render as a dark outline),
-        // clear any DWM backdrop and restore rounded corners, then enable the
-        // WCA acrylic. DWM keeps the native shadow and rounds the blur with
-        // the window, so there is no square frosted frame.
-        if (WindowChrome.GetWindowChrome(this) is { } chrome)
-            chrome.GlassFrameThickness = new Thickness(0);
-
+        // v1.3.10: non-layered WCA acrylic - clear any DWM backdrop and
+        // restore rounded corners, then enable the acrylic. DWM rounds the
+        // blur with the borderless window, so there is no square frosted
+        // frame and no native frame shadow around the menu.
         WindowHelper.DisableDwmBlur(this);
         _accentApplied = WindowHelper.EnableAcrylicBlur(this, GetTintColor(), _isDark, 0.3d);
     }
