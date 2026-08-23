@@ -69,6 +69,23 @@ internal partial class TrayIconManager : IDisposable
             "WindowBackdrop", nameof(Dwmapi.SystembackdropType.Acrylic), "QuickLook")?.Trim();
         var currentTheme = (Themes)SettingHelper.Get("LastTheme", (int)Themes.None, "QuickLook");
 
+        // v1.3.7: group headers show the current selection (e.g. 主题模式：亮色),
+        // and the choices live in a nested flyout to keep the top level short.
+        var themeMode = ThemeModes.FirstOrDefault(m => m.Theme == currentTheme);
+        var themeGroupLabel =
+            $"{TranslationHelper.Get("Icon_ThemeMode", failsafe: "Theme Mode")}：" +
+            (themeMode.Key is not null
+                ? TranslationHelper.Get(themeMode.Key, failsafe: themeMode.Name)
+                : themeMode.Name);
+
+        var backdropMode = BackdropModes.FirstOrDefault(m =>
+            string.Equals(m.Name, currentBackdrop, StringComparison.OrdinalIgnoreCase));
+        var backdropGroupLabel =
+            $"{TranslationHelper.Get("Icon_BackdropMode", failsafe: "Backdrop Mode")}：" +
+            (backdropMode.Key is not null
+                ? TranslationHelper.Get(backdropMode.Key, failsafe: backdropMode.Name)
+                : currentBackdrop);
+
         return
         [
             new TrayMenuEntry
@@ -76,6 +93,59 @@ internal partial class TrayIconManager : IDisposable
                 Header = $"v{Application.ProductVersion}{(App.IsUWP ? " (UWP)" : string.Empty)}",
                 IsEnabled = false,
                 IsBold = true,
+            },
+            TrayMenuEntry.Separator,
+            new TrayMenuEntry
+            {
+                Header = themeGroupLabel,
+                Children =
+                [
+                    ..ThemeModes.Select(mode => new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
+                        Command = () => SetThemeMode(mode.Theme),
+                        IsChecked = currentTheme == mode.Theme,
+                    }),
+                ],
+            },
+            new TrayMenuEntry
+            {
+                Header = backdropGroupLabel,
+                Children =
+                [
+                    ..BackdropModes.Select(mode => new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
+                        Command = () => SetBackdropMode(mode.Name),
+                        IsChecked = string.Equals(currentBackdrop, mode.Name, StringComparison.OrdinalIgnoreCase),
+                    }),
+                ],
+            },
+            new TrayMenuEntry
+            {
+                Header = TranslationHelper.Get("Icon_Settings", failsafe: "Options"),
+                Children =
+                [
+                    new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get("Icon_RunAtStartup"),
+                        Command = ToggleAutorun,
+                        IsChecked = AutoStartupHelper.IsAutorun(),
+                        IsEnabled = !App.IsUWP,
+                    },
+                    new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get("Icon_CloseOnLostFocus"),
+                        Command = ToggleCloseOnLostFocus,
+                        IsChecked = SettingHelper.Get("CloseOnLostFocus", false),
+                    },
+                    new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get("Icon_HideTopBarByDefault", failsafe: "Hide Top Bar by Default"),
+                        Command = ToggleHideTopBarByDefault,
+                        IsChecked = SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"),
+                    },
+                ],
             },
             TrayMenuEntry.Separator,
             new TrayMenuEntry
@@ -93,51 +163,6 @@ internal partial class TrayIconManager : IDisposable
                 Header = TranslationHelper.Get("Icon_OpenDataFolder"),
                 Command = () => Process.Start("explorer.exe", SettingHelper.LocalDataPath),
             },
-            new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get("Icon_RunAtStartup"),
-                Command = ToggleAutorun,
-                IsChecked = AutoStartupHelper.IsAutorun(),
-                IsEnabled = !App.IsUWP,
-            },
-            new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get("Icon_CloseOnLostFocus"),
-                Command = ToggleCloseOnLostFocus,
-                IsChecked = SettingHelper.Get("CloseOnLostFocus", false),
-            },
-            new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get("Icon_HideTopBarByDefault", failsafe: "Hide Top Bar by Default"),
-                Command = ToggleHideTopBarByDefault,
-                IsChecked = SettingHelper.Get("HideTopBarByDefault", true, "QuickLook"),
-            },
-            TrayMenuEntry.Separator,
-            new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get("Icon_BackdropMode", failsafe: "Backdrop Mode"),
-                IsEnabled = false,
-                IsBold = true,
-            },
-            ..BackdropModes.Select(mode => new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
-                Command = () => SetBackdropMode(mode.Name),
-                IsChecked = string.Equals(currentBackdrop, mode.Name, StringComparison.OrdinalIgnoreCase),
-            }),
-            TrayMenuEntry.Separator,
-            new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get("Icon_ThemeMode", failsafe: "Theme Mode"),
-                IsEnabled = false,
-                IsBold = true,
-            },
-            ..ThemeModes.Select(mode => new TrayMenuEntry
-            {
-                Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
-                Command = () => SetThemeMode(mode.Theme),
-                IsChecked = currentTheme == mode.Theme,
-            }),
             TrayMenuEntry.Separator,
             new TrayMenuEntry
             {
@@ -244,7 +269,12 @@ internal partial class TrayIconManager : IDisposable
     /// </summary>
     internal static void ShowTestMenu()
     {
-        TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme(), autoCloseMs: 4000);
+        // QL_TEST_MENU_MS overrides the auto-close delay so automated tests can
+        // interact with the menu (click submenu rows) before it closes.
+        var autoCloseMs = int.TryParse(Environment.GetEnvironmentVariable("QL_TEST_MENU_MS"), out var ms)
+            ? ms
+            : 4000;
+        TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme(), autoCloseMs: autoCloseMs);
 
         try
         {

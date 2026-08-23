@@ -66,6 +66,8 @@ internal sealed class TrayMenuWindow : Window
     private long _generation;
     private bool _closing;
     private bool _accentApplied;
+    // v1.3.7: the flyout opened by a submenu row (theme/backdrop/options).
+    private TrayMenuWindow _childMenu;
 
     private TrayMenuWindow(IReadOnlyList<TrayMenuEntry> entries, bool isDark, int autoCloseMs)
     {
@@ -159,7 +161,10 @@ internal sealed class TrayMenuWindow : Window
         if (menu is null)
             return string.Empty;
 
-        return string.Join("|", menu._entries.Select(e => e.Header));
+        return string.Join("|", menu._entries.Select(e =>
+            e.Children is { Count: > 0 }
+                ? $"{e.Header}[{string.Join("|", e.Children.Select(c => c.Header))}]"
+                : e.Header));
     }
 
     /// <summary>
@@ -262,6 +267,8 @@ internal sealed class TrayMenuWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        var hasChildren = entry.Children is { Count: > 0 };
+
         var icon = BuildIcon(entry.Icon, entry.IsEnabled);
         if (icon is not null)
         {
@@ -290,10 +297,25 @@ internal sealed class TrayMenuWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 0, 12, 0),
-            Visibility = entry.IsChecked ? Visibility.Visible : Visibility.Collapsed,
+            Visibility = entry.IsChecked && !hasChildren ? Visibility.Visible : Visibility.Collapsed,
         };
         Grid.SetColumn(check, 2);
         grid.Children.Add(check);
+
+        // v1.3.7: submenu rows show a chevron instead of a checkmark.
+        var chevron = new TextBlock
+        {
+            Text = "\uE76C", // Segoe MDL2 Assets: ChevronRight
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 10,
+            Foreground = _disabledTextBrush,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 12, 0),
+            Visibility = hasChildren ? Visibility.Visible : Visibility.Collapsed,
+        };
+        Grid.SetColumn(chevron, 2);
+        grid.Children.Add(chevron);
 
         var item = new Border
         {
@@ -314,6 +336,12 @@ internal sealed class TrayMenuWindow : Window
             item.MouseLeave += (_, _) => item.Background = Brushes.Transparent;
             item.MouseLeftButtonUp += (_, _) =>
             {
+                if (hasChildren)
+                {
+                    OpenSubmenu(item, entry.Children);
+                    return;
+                }
+
                 var command = entry.Command;
                 CloseMenu();
                 command?.Invoke();
@@ -321,6 +349,35 @@ internal sealed class TrayMenuWindow : Window
         }
 
         return item;
+    }
+
+    /// <summary>
+    /// v1.3.7: opens a nested flyout to the right of a submenu row. Clicking
+    /// the row again replaces the flyout; clicking anywhere outside (or a
+    /// child item) closes it together with the parent menu.
+    /// </summary>
+    private void OpenSubmenu(Border item, IReadOnlyList<TrayMenuEntry> children)
+    {
+        if (_childMenu != null)
+        {
+            _childMenu.Closed -= ChildMenu_Closed;
+            _childMenu.CloseMenu();
+            _childMenu = null;
+        }
+
+        var child = new TrayMenuWindow(children, _isDark, autoCloseMs: 0);
+        _childMenu = child;
+        child.Closed += ChildMenu_Closed;
+
+        var topLeft = item.PointToScreen(new Point(0, 0));
+        var bottomRight = item.PointToScreen(new Point(item.ActualWidth, item.ActualHeight));
+        child.ShowSubmenuAt(new Rect(topLeft, bottomRight));
+    }
+
+    private void ChildMenu_Closed(object sender, EventArgs e)
+    {
+        _childMenu = null;
+        CloseMenu();
     }
 
     private FrameworkElement BuildIcon(object icon, bool isEnabled)
@@ -430,6 +487,62 @@ internal sealed class TrayMenuWindow : Window
         // Correct to exact physical pixels (handles mixed-DPI monitors where
         // the pre-show DIP placement may have been interpreted on another
         // monitor's scale). Same values in the common case, so no flicker.
+        MoveWindow(hwnd,
+            (int)Math.Round(left * scaleX),
+            (int)Math.Round(top * scaleY),
+            (int)Math.Round(menuWidth * scaleX),
+            (int)Math.Round(menuHeight * scaleY),
+            true);
+    }
+
+    /// <summary>
+    /// v1.3.7: positions a submenu flyout to the right of the parent row,
+    /// aligned with the row top (Win11 flyout style), clamped to the work area.
+    /// </summary>
+    internal void ShowSubmenuAt(Rect rowRectPx)
+    {
+        _generation++;
+
+        var hwnd = new WindowInteropHelper(this).Handle; // forces HWND creation
+        this.SetNoactivate();
+
+        var hMonitor = MonitorFromPoint(new POINT
+        {
+            X = (int)rowRectPx.Left,
+            Y = (int)rowRectPx.Top,
+        }, MONITOR_DEFAULTTONEAREST);
+        GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, out var dpiX, out var dpiY);
+
+        var monitor = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
+        GetMonitorInfo(hMonitor, ref monitor);
+
+        var scaleX = dpiX / 96d;
+        var scaleY = dpiY / 96d;
+
+        var content = (FrameworkElement)Content;
+        content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        content.UpdateLayout();
+        var menuWidth = content.DesiredSize.Width;
+        var menuHeight = content.DesiredSize.Height;
+
+        var workLeft = monitor.rcWork.Left / scaleX;
+        var workTop = monitor.rcWork.Top / scaleY;
+        var workRight = monitor.rcWork.Right / scaleX;
+        var workBottom = monitor.rcWork.Bottom / scaleY;
+
+        var left = (rowRectPx.Right / scaleX) + (4 / scaleX);
+        var top = rowRectPx.Top / scaleY;
+
+        left = Math.Clamp(left, workLeft, Math.Max(workLeft, workRight - menuWidth));
+        top = Math.Clamp(top, workTop, Math.Max(workTop, workBottom - menuHeight));
+
+        Left = left;
+        Top = top;
+
+        InstallHooks();
+        Show();
+
+        // Correct to exact physical pixels (see ShowAt).
         MoveWindow(hwnd,
             (int)Math.Round(left * scaleX),
             (int)Math.Round(top * scaleY),
@@ -569,6 +682,15 @@ internal sealed class TrayMenuWindow : Window
         _generation++;
         UninstallHooks();
 
+        // v1.3.7: close any open submenu flyout together with this menu.
+        if (_childMenu != null)
+        {
+            _childMenu.Closed -= ChildMenu_Closed;
+            var child = _childMenu;
+            _childMenu = null;
+            child.CloseMenu();
+        }
+
         if (IsVisible)
             Close();
     }
@@ -682,6 +804,9 @@ internal sealed record TrayMenuEntry
     public bool IsBold { get; init; }
     public object Icon { get; init; }
     public string ToolTip { get; init; }
+    // v1.3.7: when set, the row opens a nested flyout with these entries
+    // instead of executing a command.
+    public IReadOnlyList<TrayMenuEntry> Children { get; init; }
 
     public static TrayMenuEntry Separator => new() { IsSeparator = true };
 }
