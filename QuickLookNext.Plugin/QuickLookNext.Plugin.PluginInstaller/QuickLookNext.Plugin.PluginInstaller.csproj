@@ -1,0 +1,112 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RuntimeIdentifier Condition="'$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(Platform)' == 'x86'">win-x86</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64' and '$(Platform)' != 'x86'">win-x64</RuntimeIdentifier>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <RootNamespace>QuickLookNext.Plugin.PluginInstaller</RootNamespace>
+        <AssemblyName>QuickLookNext.Plugin.PluginInstaller</AssemblyName>
+        <FileAlignment>512</FileAlignment>
+        <SignAssembly>false</SignAssembly>
+        <UseWPF>true</UseWPF>
+        <LangVersion>latest</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <ProjectGuid>{BD58F3FC-7601-47BA-AAA1-D8A9D54A33DA}</ProjectGuid>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <Platforms>AnyCPU;x64;ARM64</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>..\..\Build\Debug\QuickLookNext.Plugin\QuickLookNext.Plugin.CameraRawViewer\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <PlatformTarget>x86</PlatformTarget>
+        <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>..\..\Build\Release\QuickLookNext.Plugin\QuickLookNext.Plugin.CameraRawViewer\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <PlatformTarget>x86</PlatformTarget>
+        <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>..\..\Build\Debug\QuickLookNext.Plugin\QuickLookNext.Plugin.PluginInstaller\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+      <DebugSymbols>true</DebugSymbols>
+      <DebugType>full</DebugType>
+      <Optimize>false</Optimize>
+      <OutputPath>..\..\Build\Debug\QuickLookNext.Plugin\QuickLookNext.Plugin.PluginInstaller\</OutputPath>
+      <DefineConstants>DEBUG;TRACE</DefineConstants>
+      <PlatformTarget>AnyCPU</PlatformTarget>
+      <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>..\..\Build\Release\QuickLookNext.Plugin\QuickLookNext.Plugin.PluginInstaller\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+      <DebugType>pdbonly</DebugType>
+      <Optimize>true</Optimize>
+      <OutputPath>..\..\Build\Release\QuickLookNext.Plugin\QuickLookNext.Plugin.PluginInstaller\</OutputPath>
+      <DefineConstants>TRACE</DefineConstants>
+      <PlatformTarget>AnyCPU</PlatformTarget>
+      <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+
+    <ItemGroup>
+        </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\QuickLookNext.Common\QuickLookNext.Common.csproj">
+            <Project>{85FDD6BA-871D-46C8-BD64-F6BB0CB5EA95}</Project>
+            <Name>QuickLookNext.Common</Name>
+            <Private>False</Private>
+        </ProjectReference>
+        <!--  Keep QuickLookNext reference here for App testing  -->
+        <!--<ProjectReference Include="..\..\QuickLookNext\QuickLookNext.csproj">
+            <Project>{8B4A9CE5-67B5-4A94-81CB-3771F688FDEB}</Project>
+            <Name>QuickLookNext</Name>
+            <Private>False</Private>
+        </ProjectReference>-->
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\GitVersion.cs">
+            <Link>Properties\GitVersion.cs</Link>
+        </Compile>
+    </ItemGroup>
+  
+  
+  
+  
+  
+  <Target Name="FlattenRuntimeNative" AfterTargets="Build">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="powershell -NoProfile -ExecutionPolicy Bypass -file &quot;$(MSBuildThisFileDirectory)..\..\Scripts\flatten-native.ps1&quot; -AssetsPath &quot;$(MSBuildProjectDirectory)\obj\project.assets.json&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(Configuration)&quot; -Platform &quot;$(Platform)&quot;" />
+  </Target>
+</Project>

@@ -1,4 +1,4 @@
-# QuickLook 冒烟测试：每次提交前必须运行并通过。
+# QuickLookNext 冒烟测试：每次提交前必须运行并通过。
 # 覆盖：全量构建 -> 启动 -> 插件加载无失败 -> PNG/文本/SQLite 预览 -> 窗口断言 -> 日志零新增错误。
 #
 # 用法: .\test.ps1
@@ -6,8 +6,8 @@
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$exe = Join-Path $root 'Build\Release\QuickLook.exe'
-$log = Join-Path $env:APPDATA 'pooi.moe\QuickLook\QuickLook.Exception.log'
+$exe = Join-Path $root 'Build\Release\QuickLook-Next.exe'
+$log = Join-Path $env:APPDATA 'pooi.moe\QuickLookNext\QuickLookNext.Exception.log'
 # v1.2.36: keep the smoke-test files inside the repository
 # (E:\Codex\QK-Lite\<version>\ql-smoke) instead of the C: temp folder; the
 # app's diagnostics (timing/startup/tray-menu) follow via QL_SMOKE_DIR.
@@ -24,7 +24,7 @@ function Get-LogLength {
     if (Test-Path $log) { (Get-Item $log).Length } else { 0 }
 }
 
-function Get-QuickLookWindows([int]$targetPid) {
+function Get-QuickLookNextWindows([int]$targetPid) {
     if (-not ('WinEnum3' -as [type])) {
         Add-Type @"
 using System;
@@ -47,7 +47,7 @@ public class WinEnum3 {
     [WinEnum3]::Titles($targetPid)
 }
 
-function Get-QuickLookWindowRect([int]$targetPid, [string]$titleMatch) {
+function Get-QuickLookNextWindowRect([int]$targetPid, [string]$titleMatch) {
     if (-not ('WinEnumRect' -as [type])) {
         Add-Type @"
 using System;
@@ -75,7 +75,7 @@ public class WinEnumRect {
 
 # ---------- 1. 清理旧实例 ----------
 Write-Host "== 1/6 清理旧实例 ==" -ForegroundColor Cyan
-Get-Process -Name QuickLook -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name QuickLookNext -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 3
 
 # ---------- 2. 构建 ----------
@@ -84,8 +84,8 @@ Get-ChildItem (Join-Path $root 'Build\Release') -Force -ErrorAction SilentlyCont
     Remove-Item -Recurse -Force
 # v1.2.34: build the whole solution in one parallel invocation instead of
 # compiling the 16 projects one by one - roughly halves the test time.
-& dotnet build (Join-Path $root 'QuickLook.slnx') -c Release -v minimal --nologo *> $null
-Assert ($LASTEXITCODE -eq 0) '构建 QuickLook.slnx'
+& dotnet build (Join-Path $root 'QuickLookNext.slnx') -c Release -v minimal --nologo *> $null
+Assert ($LASTEXITCODE -eq 0) '构建 QuickLookNext.slnx'
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # ---------- 3. 准备测试文件 ----------
@@ -100,7 +100,7 @@ $g.DrawString('QL Test', $font, [System.Drawing.Brushes]::White, 40, 100)
 $g.Dispose()
 $bmp.Save((Join-Path $smoke 'test.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()
-Set-Content -Path (Join-Path $smoke 'test.txt') -Value "QuickLook smoke test`r`nLine 2" -Encoding UTF8
+Set-Content -Path (Join-Path $smoke 'test.txt') -Value "QuickLookNext smoke test`r`nLine 2" -Encoding UTF8
 Set-Content -Path (Join-Path $smoke 'test.md') -Value "# Markdown`n`n这是 **测试**。" -Encoding UTF8
 Set-Content -Path (Join-Path $smoke 'test.json') -Value '{"name":"ql-smoke","version":"1.0.0","scripts":{}}' -Encoding UTF8
 Compress-Archive -Path (Join-Path $smoke 'test.txt') -DestinationPath (Join-Path $smoke 'test.zip') -Force
@@ -121,8 +121,8 @@ for ($i = 0; $i -lt 60; $i++) {
     Start-Sleep -Milliseconds 500
     $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
     if ($null -eq $alive) { break }
-    $titles = Get-QuickLookWindows $p.Id
-    if (($titles -join ' ') -match 'QuickLook Tray Menu') { $trayMenuSeen = $true; break }
+    $titles = Get-QuickLookNextWindows $p.Id
+    if (($titles -join ' ') -match 'QuickLook-Next Tray Menu') { $trayMenuSeen = $true; break }
 }
 # Wait for the menu to auto-close and the plugins to finish loading.
 Start-Sleep -Seconds 15
@@ -157,14 +157,14 @@ foreach ($pv in $previews) {
     Start-Sleep -Seconds 12
     $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
     Assert ($null -ne $alive) "预览 $($pv.File) 后进程存活"
-    $titles = Get-QuickLookWindows $p.Id
+    $titles = Get-QuickLookNextWindows $p.Id
     Assert (($titles -join ' ') -match [regex]::Escape($pv.Title)) "预览窗口出现: $($pv.Title)"
     Assert ((Get-LogLength) -eq $before) "预览 $($pv.File) 无错误（日志零新增）"
 
     # v1.2.36: regression guard - the preview window must be centered on the
     # screen that contains it (the off-screen warm-up once broke this).
     if ($pv.File -eq 'test.png') {
-        $rectStr = Get-QuickLookWindowRect $p.Id $pv.Title
+        $rectStr = Get-QuickLookNextWindowRect $p.Id $pv.Title
         if ($rectStr) {
             $rp = $rectStr.Split('|')
             $winCenter = [System.Drawing.Point]::new(

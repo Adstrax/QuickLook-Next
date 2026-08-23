@@ -1,16 +1,16 @@
 # OPTIONS
 
 This document summarizes the current repository's advanced configuration options.
-All options are stored in XML config files under QuickLook data location:
+All options are stored in XML config files under QuickLookNext data location:
 
-- `%APPDATA%\pooi.moe\QuickLook\` for installed mode
+- `%APPDATA%\pooi.moe\QuickLookNext\` for installed mode
 - `UserData\` next to the executable for portable mode
 
-Each config file is named after its domain, e.g. `QuickLook.config`, `QuickLook.Plugin.ImageViewer.config`, `QuickLook.Plugin.VideoViewer.config`.
+Each config file is named after its domain, e.g. `QuickLookNext.config`, `QuickLookNext.Plugin.ImageViewer.config`, `QuickLookNext.Plugin.VideoViewer.config`.
 
 ## Config file format
 
-The config file is a simple XML document. If the file does not exist, run QuickLook once and then create it.
+The config file is a simple XML document. If the file does not exist, run QuickLookNext once and then create it.
 
 Example:
 
@@ -22,7 +22,7 @@ Example:
 </Settings>
 ```
 
-## QuickLook.config options
+## QuickLookNext.config options
 
 ### `<ShowTrayIcon>`
 - Default: `True`
@@ -147,7 +147,7 @@ Example:
   - `<TriedUnblock>True</TriedUnblock>`
 
 ### Extension filter options
-These keys are also stored in `QuickLook.config`.
+These keys are also stored in `QuickLookNext.config`.
 
 #### `<UseExtensionAllowlist>`
 - Default: `False`
@@ -170,7 +170,7 @@ These keys are also stored in `QuickLook.config`.
 - Example:
   - `<ExtensionBlocklist>.insv;.exe</ExtensionBlocklist>`
 
-## QuickLook.Plugin.ImageViewer.config options
+## QuickLookNext.Plugin.ImageViewer.config options
 
 ### `<UseColorProfile>`
 - Default: `False`
@@ -203,7 +203,7 @@ These keys are also stored in `QuickLook.config`.
 - Example:
   - `<LastTheme>2</LastTheme>`
 
-## QuickLook.Plugin.VideoViewer.config options
+## QuickLookNext.Plugin.VideoViewer.config options
 
 ### `<ShouldLoop>`
 - Default: `False`
@@ -226,7 +226,7 @@ These keys are also stored in `QuickLook.config`.
 - Example:
   - `<UseHardwareAcceleration>True</UseHardwareAcceleration>`
 
-## QuickLook.Plugin.OfficeViewer.config options
+## QuickLookNext.Plugin.OfficeViewer.config options
 
 ### `<CheckPreviewHandler>`
 - Default: `True`
@@ -242,7 +242,7 @@ These keys are also stored in `QuickLook.config`.
 - Example:
   - `<AlwaysUnblockProtectedView>True</AlwaysUnblockProtectedView>`
 
-## QuickLook.Plugin.MarkdownViewer.config options
+## QuickLookNext.Plugin.MarkdownViewer.config options
 
 ### `<ToggleTocKey>`
 - Default: `Ctrl+Shift+L`
@@ -252,7 +252,7 @@ These keys are also stored in `QuickLook.config`.
   - `<ToggleTocKey>Ctrl+Shift+L</ToggleTocKey>`
   - `<ToggleTocKey>Ctrl+Shift+T</ToggleTocKey>`
 
-## QuickLook.Plugin.FontViewer.config options
+## QuickLookNext.Plugin.FontViewer.config options
 
 ### `<LastPreviewMode>`
 - Default: `0` (`Pangram`)
@@ -263,7 +263,7 @@ These keys are also stored in `QuickLook.config`.
 - Example:
   - `<LastPreviewMode>1</LastPreviewMode>`
 
-## QuickLook.Plugin.TextViewer.config options
+## QuickLookNext.Plugin.TextViewer.config options
 
 ### `<UseFormatDetector>`
 - Default: `True`
@@ -296,5 +296,5 @@ These keys are also stored in `QuickLook.config`.
 ## Notes
 
 - All option names are case-sensitive and stored as XML element names under `<Settings>`.
-- Plugin option domain names correspond to config file names, e.g. `QuickLook.Plugin.ImageViewer` → `QuickLook.Plugin.ImageViewer.config`.
+- Plugin option domain names correspond to config file names, e.g. `QuickLookNext.Plugin.ImageViewer` → `QuickLookNext.Plugin.ImageViewer.config`.
 - `LastUpdateTicks` and `TriedUnblock` are internal state values and generally do not need manual editing.

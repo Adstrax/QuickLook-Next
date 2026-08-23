@@ -1,6 +1,6 @@
 # bench.ps1 - 预览延迟基准
 #
-# 依赖 QuickLook 内置的隐藏 /test-timing 钩子：常驻实例在每次预览
+# 依赖 QuickLookNext 内置的隐藏 /test-timing 钩子：常驻实例在每次预览
 # "内容就绪"（spinner 消失）时向 %TEMP%\ql-smoke\timing.txt 追加一条
 # 带文件路径的就绪时间戳。本脚本为每个测试文件发起一次预览请求，
 # 用"请求时刻 -> 就绪时刻"计算延迟。
@@ -12,7 +12,7 @@ param([int]$Rounds = 2)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$exe = Join-Path $root 'Build\Release\QuickLook.exe'
+$exe = Join-Path $root 'Build\Release\QuickLook-Next.exe'
 # v1.2.36: keep bench files inside the repository instead of the C: temp
 # folder; the app's diagnostics follow via QL_SMOKE_DIR.
 $smoke = Join-Path $root 'ql-smoke'

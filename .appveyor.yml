@@ -29,20 +29,20 @@ after_build:
 - ps: >-
     Get-Content GitVersion.cs
 
-    Move-Item Build\QuickLook-$env:GIT_TAG.msi QuickLook-$env:GIT_TAG.msi
+    Move-Item Build\QuickLookNext-$env:GIT_TAG.msi QuickLookNext-$env:GIT_TAG.msi
     
-    Move-Item Build\QuickLook-$env:GIT_TAG.zip QuickLook-$env:GIT_TAG.zip
+    Move-Item Build\QuickLookNext-$env:GIT_TAG.zip QuickLookNext-$env:GIT_TAG.zip
 
 artifacts:
-- path: QuickLook-%GIT_TAG%.zip
-  name: QuickLook-%GIT_TAG%
-- path: QuickLook-%GIT_TAG%.msi
-  name: QuickLook-%GIT_TAG%
+- path: QuickLookNext-%GIT_TAG%.zip
+  name: QuickLookNext-%GIT_TAG%
+- path: QuickLookNext-%GIT_TAG%.msi
+  name: QuickLookNext-%GIT_TAG%
 # deploy:
 # - provider: GitHub
 #   auth_token:
 #     secure: 5CSvkfKBq9kUho529L1tkH5ywQQFJY/A8Y6lNoHGJFi7mnSqQAaoiVPbUVU4a/KC
-#   artifact: QuickLook-$(APPVEYOR_REPO_TAG_NAME)
+#   artifact: QuickLookNext-$(APPVEYOR_REPO_TAG_NAME)
 #   draft: true
 #   on:
 #     APPVEYOR_REPO_TAG: true

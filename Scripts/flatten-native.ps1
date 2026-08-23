@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Stop'
 
 $pluginDir = Split-Path $ProjectDir -Leaf
 $repoRoot = Split-Path (Split-Path $ProjectDir -Parent) -Parent
-$OutputPath = Join-Path $repoRoot "Build\$Configuration\QuickLook.Plugin\$pluginDir"
+$OutputPath = Join-Path $repoRoot "Build\$Configuration\QuickLookNext.Plugin\$pluginDir"
 
 $rid = switch ($Platform) {
     'ARM64' { 'win-arm64' }

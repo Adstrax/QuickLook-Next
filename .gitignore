@@ -288,9 +288,9 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-/QuickLook.Plugin.PDFViewer/MoonPdfLib
+/QuickLookNext.Plugin.PDFViewer/MoonPdfLib
 /GitVersion.cs
-/QuickLook.Installer/C_QuickLookComponents.wxs
+/QuickLookNext.Installer/C_QuickLookNextComponents.wxs
 /Build/*
 !/Build/Assets
 !/Build/AppxManifest.xml

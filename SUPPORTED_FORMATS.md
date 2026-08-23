@@ -1,4 +1,4 @@
-## Supported formats in QuickLook
+## Supported formats in QuickLookNext
 
 Update not completed yet...
 
@@ -357,4 +357,4 @@ Update not completed yet...
 - `.wgt`, `.wgtu` (UniApp Widget)
 
 ### Plugin Installer files
-- `.qlplugin` (QuickLook plugin package)
+- `.qlplugin` (QuickLookNext plugin package)

@@ -18,5 +18,5 @@ if (-not (Test-Path sideload.pfx)) {
     .$opensslExe pkcs12 -export -out "sideload.pfx" -inkey "sideload.key" -in "sideload.crt" -password pass:123456
 }
 
-.$signExe sign /fd sha256 /f "sideload.pfx" /p 123456 /td sha256 /tr $timestampUrl QuickLook-$version.appx
-.$signExe verify /pa /v QuickLook-$version.appx
+.$signExe sign /fd sha256 /f "sideload.pfx" /p 123456 /td sha256 /tr $timestampUrl QuickLookNext-$version.appx
+.$signExe verify /pa /v QuickLookNext-$version.appx

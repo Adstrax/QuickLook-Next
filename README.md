@@ -2,7 +2,7 @@
 
 基于 [QL-Win/QuickLook](https://github.com/QL-Win/QuickLook) 4.5.0 的 .NET 10 迁移精简版：
 保留日常最常用的文件类型预览，并把预览背景、主题、托盘菜单、插件管理等体验全面打磨。
-独立分支 `lite`，与完整版命名隔离（管道 / 互斥体使用 `QuickLook.Lite.*`），可同时安装互不干扰。
+独立分支 `lite`，与完整版命名隔离（管道 / 互斥体使用 `QuickLookNext.App.*`），可同时安装互不干扰。
 
 ## 相对原版的主要改进
 
@@ -39,16 +39,19 @@
 ### 工程与架构
 
 - **.NET 10 迁移**：目标框架 net10.0-windows，构建只需 .NET SDK，不再需要 VS C++ / ATL 工具链
-- **删除原生 C++ 依赖（QuickLook.Native）**：空格键链路（焦点判断 + Explorer / 桌面选区
+- **删除原生 C++ 依赖（QuickLookNext.Native）**：空格键链路（焦点判断 + Explorer / 桌面选区
   读取）改为纯 C# 实现（P/Invoke + Shell COM）
-- **命名隔离**：管道 / 互斥体使用 `QuickLook.Lite.*`，与已安装的完整版互不干扰
+- **命名隔离**：管道 / 互斥体使用 `QuickLookNext.App.*`，与已安装的完整版互不干扰
+- **2.0.0 全面改名**：可执行文件 `QuickLook-Next.exe`、程序集与命名空间
+  `QuickLookNext.*`、插件前缀 `QuickLookNext.Plugin.*` 全部与上游 QuickLook 隔离，
+  设置域名同步改为 `QuickLookNext`（原设置与用户插件目录不再沿用）
 - **自动化测试**：png / txt / md / zip / ttf / mp4 预览 + Shell 选区读取链路（test.ps1，
   提交前必须全绿）
 
 ## 安装与使用
 
 1. 从 [Releases](https://github.com/Adstrax/QuickLook-Next/releases) 下载最新版，解压后运行
-   `QuickLook.exe`
+   `QuickLook-Next.exe`
 2. 选中文件按 **空格** 预览，**Esc** 关闭；预览窗口支持置顶、跨预览拖拽内容
 3. 托盘图标右键可切换主题 / 背景 / 语言、管理插件、检查更新等
 
@@ -57,7 +60,7 @@
 需要 .NET 10 SDK：
 
 ```powershell
-dotnet build QuickLook.slnx -c Release
+dotnet build QuickLookNext.slnx -c Release
 ```
 
 提交前运行冒烟测试：`.\test.ps1`（要求全部通过）。

@@ -1,0 +1,76 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/QuickLookNext.Plugin/">
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.AppViewer/QuickLookNext.Plugin.AppViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.ArchiveViewer/QuickLookNext.Plugin.ArchiveViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.CLSIDViewer/QuickLookNext.Plugin.CLSIDViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.CsvViewer/QuickLookNext.Plugin.CsvViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.FontViewer/QuickLookNext.Plugin.FontViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.HtmlViewer/QuickLookNext.Plugin.HtmlViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.ImageViewer/QuickLookNext.Plugin.ImageViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.MarkdownViewer/QuickLookNext.Plugin.MarkdownViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.MediaInfoViewer/QuickLookNext.Plugin.MediaInfoViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.OfficeViewer/QuickLookNext.Plugin.OfficeViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.PDFViewer/QuickLookNext.Plugin.PdfViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.PluginInstaller/QuickLookNext.Plugin.PluginInstaller.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.TextViewer/QuickLookNext.Plugin.TextViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.VideoViewer/QuickLookNext.Plugin.VideoViewer.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="GitVersion.cs" />
+  </Folder>
+  <Project Path="QuickLookNext.Common/QuickLookNext.Common.csproj">
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="QuickLookNext/QuickLookNext.csproj">
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+</Solution>

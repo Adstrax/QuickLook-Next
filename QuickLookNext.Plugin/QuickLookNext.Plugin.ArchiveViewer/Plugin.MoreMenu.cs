@@ -1,0 +1,167 @@
+﻿// Copyright © 2017-2026 QL-Win Contributors
+//
+// This file is part of QuickLookNext program.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+using QuickLookNext.Common.Commands;
+using QuickLookNext.Common.Controls;
+using QuickLookNext.Common.Helpers;
+using QuickLookNext.Common.Plugin.MoreMenu;
+using QuickLookNext.Plugin.ArchiveViewer.ChromiumResourcePackage;
+using QuickLookNext.Plugin.ArchiveViewer.CompoundFileBinary;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using WindowsAPICodePack.Dialogs;
+
+namespace QuickLookNext.Plugin.ArchiveViewer;
+
+public sealed partial class Plugin
+{
+    /// <summary>
+    /// Command to extract archive contents to a directory. Executed asynchronously.
+    /// </summary>
+    public ICommand ExtractToDirectoryCommand { get; }
+
+    /// <summary>
+    /// Constructor - initializes commands used by the plugin.
+    /// </summary>
+    public Plugin()
+    {
+        ExtractToDirectoryCommand = new AsyncRelayCommand(ExtractToDirectoryAsync);
+    }
+
+    /// <summary>
+    /// Return additional "More" menu items for the plugin.
+    /// When the current file is an EIF archive, a menu item to extract to directory is provided.
+    /// </summary>
+    public IEnumerable<IMenuItem> GetMenuItems()
+    {
+        if (string.IsNullOrEmpty(_path))
+            yield break;
+
+        // Use external Translations.config shipped next to the executing assembly
+        string translationFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Translations.config");
+
+        // Currently only supports for CFB and EIF files
+        if (_path.EndsWith(".cfb", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".eif", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".pak", StringComparison.OrdinalIgnoreCase)
+            || Path.GetFileName(_path).Equals("Thumbs.db", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new MoreMenuItem()
+            {
+                Icon = FontSymbols.MoveToFolder,
+                Header = TranslationHelper.Get("MW_ExtractToDirectory", translationFile),
+                MenuItems = null,
+                Command = ExtractToDirectoryCommand,
+            };
+        }
+        else if (_path.EndsWith(".apk", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".apk.1", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".aab", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".ipa", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".hap", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".hap.1", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".appx", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".appxbundle", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".msix", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".msixbundle", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".snupkg", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".wgt", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".wgtu", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".aar", StringComparison.OrdinalIgnoreCase)
+            || _path.EndsWith(".har", StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new MoreMenuItem()
+            {
+                Icon = FontSymbols.Package,
+                Header = TranslationHelper.Get("MW_OpenInAppViewer", translationFile),
+                MenuItems = null,
+                Command = new RelayCommand(() => PluginHelper.InvokePluginPreview("QuickLookNext.Plugin.AppViewer", _path)),
+            };
+        }
+    }
+
+    /// <summary>
+    /// Show folder picker and extract archive contents to the chosen directory.
+    /// For EIF files, prompt the user whether to apply EIF-specific Face.dat ordering.
+    /// </summary>
+    public async Task ExtractToDirectoryAsync()
+    {
+        using CommonOpenFileDialog dialog = new()
+        {
+            IsFolderPicker = true,
+        };
+
+        if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+        {
+            if (Path.GetFileName(_path).Equals("Thumbs.db", StringComparison.OrdinalIgnoreCase))
+            {
+                // Thumbs.db thumbnail extraction: strips private header + reconstructs bare-DCT JPEG
+                await Task.Run(() =>
+                {
+                    ThumbsDbExtractor.ExtractToDirectory(_path, dialog.FileName);
+                });
+            }
+            else if (_path.EndsWith(".cfb", StringComparison.OrdinalIgnoreCase))
+            {
+                // Generic compound file extraction
+                await Task.Run(() =>
+                {
+                    CompoundFileExtractor.ExtractToDirectory(_path, dialog.FileName);
+                });
+            }
+            else if (_path.EndsWith(".eif", StringComparison.OrdinalIgnoreCase))
+            {
+                string translationFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Translations.config");
+
+                // Ask the user whether to apply EIF-specific `Face.dat` ordering during extraction
+                MessageBoxResult result = MessageBox.Show(TranslationHelper.Get("MW_ExtractToDirectory_EIFOrderFaceDat",
+                    translationFile), "QuickLookNext", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                // If user chooses Yes, use EifExtractor which reorders images according to `Face.dat`
+                if (result == MessageBoxResult.Yes)
+                {
+                    await Task.Run(() =>
+                    {
+                        EifExtractor.ExtractToDirectory(_path, dialog.FileName);
+                    });
+                }
+                else
+                {
+                    // Fallback: generic compound file extraction
+                    await Task.Run(() =>
+                    {
+                        CompoundFileExtractor.ExtractToDirectory(_path, dialog.FileName);
+                    });
+                }
+            }
+            else if (_path.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+            {
+                // Chromium resource package file v5 extraction
+                await Task.Run(() =>
+                {
+                    PakExtractor.ExtractToDirectory(_path, dialog.FileName, appendExtension: true);
+                });
+            }
+        }
+    }
+}

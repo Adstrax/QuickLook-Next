@@ -1,6 +1,14 @@
-# QuickLook Changelog
+# QuickLook-Next Changelog
 
-> QuickLook Changelog starting from version `4.0.0`.
+> QuickLookNext Changelog starting from version `4.0.0`.
+
+## QuickLook-Next 2.0.0
+
+- 全面改名定型：可执行文件改为 `QuickLook-Next.exe`，程序集与 C# 命名空间改为
+  `QuickLookNext.*`，命名管道 / 互斥体改为 `QuickLookNext.App.*`，插件前缀改为
+  `QuickLookNext.Plugin.*`，与上游 QuickLook 彻底隔离
+- 设置域名同步改为 `QuickLookNext`：原主题 / 语言 / 背景等设置与用户插件目录不再
+  沿用，需要重新设置；第三方 `QuickLook.Plugin.*` 插件需按新命名空间适配
 
 ## QuickLook-Next 1.5.0
 
@@ -218,11 +226,11 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 
 ## QuickLook-Next 1.2.16
 
-- Fix the broken startup shortcut: `Assembly.Location` resolves to QuickLook.dll
+- Fix the broken startup shortcut: `Assembly.Location` resolves to QuickLook-Next.dll
   under the .NET apphost, so the auto-start shortcut (and the shell
   context-menu command / restart) pointed at the DLL - Windows then tried to
   "open" the DLL after every restart. The executable path is now resolved
-  explicitly, so auto-start launches QuickLook.exe properly
+  explicitly, so auto-start launches QuickLook-Next.exe properly
 
 ## QuickLook-Next 1.2.15
 
@@ -322,7 +330,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Improve acrylic tint opacity and color values [#1912](https://github.com/QL-Win/QuickLook/issues/1912)
 - Add magic number checks to support image files without an extension [#1868](https://github.com/QL-Win/QuickLook/pull/1868)
 - Add option to close preview when losing focus [#484](https://github.com/QL-Win/QuickLook/issues/484) (Experimental)
-- Add auto-terminate QuickLook.exe before install/upgrade/uninstall
+- Add auto-terminate QuickLook-Next.exe before install/upgrade/uninstall
 - Add `.csv`, `.tsv` and `.psv` rainbow highlighters support
 - Add `.jsonc` extension to JSON syntax highlighters support
 - Add `.hxx` extension to C++ syntax definitions
@@ -338,7 +346,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add `.msp` installer support for app viewer
 - Add `.m3u` and `.m3u8` highlighting definitions support
 - Add ShellScript syntax extensions for `.bashrc`, `.bash_profile`, `.bash_login`, `.profile`, `.bash_logout`, `.zshrc`, `.zprofile`, `.zlogin`, `.zlogout`, `.dashrc`, `.kshrc`, `.mkshrc`, `.ashrc` and `.shrc`
-- Add IDMan (Internet Download Manager) support instead of [QuickLook.Plugin.IDManViewer](https://github.com/emako/QuickLook.Plugin.IDManViewer)
+- Add IDMan (Internet Download Manager) support instead of [QuickLookNext.Plugin.IDManViewer](https://github.com/emako/QuickLook.Plugin.IDManViewer)
 - Support search panel in CSV viewer [#1824](https://github.com/QL-Win/QuickLook/issues/1824)
 - Add ShellScriptDetector and register in FormatDetector
 - Add Graphviz (`.gv` and `.dot`) support for image viewer
@@ -391,7 +399,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Update LAVFilters to `0.81.0` [#1362](https://github.com/QL-Win/QuickLook/issues/1362) [#1855](https://github.com/QL-Win/QuickLook/issues/1855) [#1863](https://github.com/QL-Win/QuickLook/issues/1863)
   > A possible side effect is that users with older GPUs or without the latest VC++ Redistributable installed may experience video playback failures.
   >
-  > Nevertheless, QuickLook has chosen to continue with an up-to-date update strategy.
+  > Nevertheless, QuickLookNext has chosen to continue with an up-to-date update strategy.
   >
   > If you encounter any issues, you can refer to [#1362](https://github.com/QL-Win/QuickLook/issues/1362) and consider downgrading your LAVFilters version.
 
@@ -441,7 +449,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add option to disable automatic update check at startup [#1801](https://github.com/QL-Win/QuickLook/issues/1801)
 - Update PowerShell syntax colors in dark theme
 - Improve TextViewerPanel UI and usability
-- Fix DOpus crash when QuickLook runs with different privilege level [#1781](https://github.com/QL-Win/QuickLook/issues/1781)
+- Fix DOpus crash when QuickLookNext runs with different privilege level [#1781](https://github.com/QL-Win/QuickLook/issues/1781)
 - Fix volume control exceeding limits during mouse wheel scroll [#1813](https://github.com/QL-Win/QuickLook/issues/1813)
 - Fix error in RTF file originating from version 4.2.1 [#1826](https://github.com/QL-Win/QuickLook/issues/1826)
 
@@ -494,7 +502,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add `SubRip Subtitle (.srt) files`, `Protobuf`, `NSIS`, `.gitmodules`, `.dotsettings`, `.gitignore`, `.gitattributes`, `Markdown`, `reStructuredText`, `simple QML syntax`, `.env`, `Configuration (.conf;.config;.cfg)` highlighting [#1002](https://github.com/QL-Win/QuickLook/issues/1002)
 - Add dark mode highlighting for `PowerShell`, `Registry`, `C`, `C++`, `Java`, `Rust`, `SQL`, `Ruby`, `R`, `PHP`, `Pascal`, `Objective-C`, `Lisp`, `Kotlin`, `Erlang`, `Dart`, `Swift`, `VisualSolution`, `CMake`
 - Add `MakefileDetector`, `CMakeListsDetector for CMakeLists.txt`, `DockerfileDetector`, `HostsDetector for hosts` for text viewer
-- Improve QuickLook initialization speed
+- Improve QuickLookNext initialization speed
 - Optimize JSONDetector with Span
 - Set RichTextBox background to transparent
 - Revert Add Sandbox detection from 4.1.0 which will call crash
@@ -563,7 +571,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add support for Multi Commander
 - Add support for both Everything v1.4 and v1.5(a)
 - Add "Open Data Folder" and dark mode support to tray menu
-- Add "Restart QuickLook" option to tray menu [#1448](https://github.com/QL-Win/QuickLook/issues/1448)
+- Add "Restart QuickLookNext" option to tray menu [#1448](https://github.com/QL-Win/QuickLook/issues/1448)
 - Implement modern message box UI
 - Replace icons with Segoe Fluent Icons
 - Detect and auto-fix Windows blocking issues [#1495](https://github.com/QL-Win/QuickLook/issues/1495)

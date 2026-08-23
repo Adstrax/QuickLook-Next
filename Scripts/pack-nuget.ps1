@@ -26,8 +26,8 @@ Write-Host "NuGet Package Version: $revision"
 Set-Location ..\ # Move to the root of the project
 
 powershell -ExecutionPolicy Bypass -File "Scripts\update-version.ps1"
-dotnet pack -c Release -p:PackageVersion=$revision -o .\Build -p:PreBuildEvent="" QuickLook.Common\QuickLook.Common.csproj
-dotnet pack -c Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:PackageVersion=$revision -o .\Build -p:PreBuildEvent=""  QuickLook.Common\QuickLook.Common.csproj
+dotnet pack -c Release -p:PackageVersion=$revision -o .\Build -p:PreBuildEvent="" QuickLookNext.Common\QuickLookNext.Common.csproj
+dotnet pack -c Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:PackageVersion=$revision -o .\Build -p:PreBuildEvent=""  QuickLookNext.Common\QuickLookNext.Common.csproj
 
 # Write-Host "`nPress any key to exit..."
 # [void][System.Console]::ReadKey($true)
