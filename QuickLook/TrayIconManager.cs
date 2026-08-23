@@ -22,6 +22,7 @@ using QuickLook.Properties;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,6 +87,14 @@ internal partial class TrayIconManager : IDisposable
                 ? TranslationHelper.Get(backdropMode.Key, failsafe: backdropMode.Name)
                 : currentBackdrop);
 
+        // v1.5.0: language override (empty = follow the OS UI culture).
+        var currentLanguage = SettingHelper.Get("Language", string.Empty, "QuickLook");
+        var languageGroupLabel =
+            $"{TranslationHelper.Get("Icon_Language", failsafe: "Language")}：" +
+            (string.IsNullOrEmpty(currentLanguage)
+                ? TranslationHelper.Get("Icon_Language_FollowSystem", failsafe: "Follow System")
+                : LanguageDisplayName(currentLanguage));
+
         return
         [
             new TrayMenuEntry
@@ -105,6 +114,25 @@ internal partial class TrayIconManager : IDisposable
                         Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
                         Command = () => SetThemeMode(mode.Theme),
                         IsChecked = currentTheme == mode.Theme,
+                    }),
+                ],
+            },
+            new TrayMenuEntry
+            {
+                Header = languageGroupLabel,
+                Children =
+                [
+                    new TrayMenuEntry
+                    {
+                        Header = TranslationHelper.Get("Icon_Language_FollowSystem", failsafe: "Follow System"),
+                        Command = () => SetLanguage(string.Empty),
+                        IsChecked = string.IsNullOrEmpty(currentLanguage),
+                    },
+                    ..TranslationHelper.GetAvailableLanguages().Select(language => new TrayMenuEntry
+                    {
+                        Header = LanguageDisplayName(language),
+                        Command = () => SetLanguage(language),
+                        IsChecked = string.Equals(currentLanguage, language, StringComparison.OrdinalIgnoreCase),
                     }),
                 ],
             },
@@ -263,6 +291,25 @@ internal partial class TrayIconManager : IDisposable
 
         SettingHelper.Set("LastTheme", (int)theme, "QuickLook");
         SettingHelper.Set("LastTheme", (int)theme, "QuickLook.Plugin.ImageViewer");
+    }
+
+    // v1.5.0: persist the language override. An empty value means follow the
+    // OS UI culture; menus and windows pick the new language up on next open.
+    private static void SetLanguage(string cultureName)
+    {
+        SettingHelper.Set("Language", cultureName, "QuickLook");
+    }
+
+    private static string LanguageDisplayName(string cultureName)
+    {
+        try
+        {
+            return CultureInfo.GetCultureInfo(cultureName).NativeName;
+        }
+        catch (CultureNotFoundException)
+        {
+            return cultureName;
+        }
     }
 
     // v1.3.6: 顶部状态栏默认隐藏开关 - 开启后鼠标移入内容区不再弹出顶栏，

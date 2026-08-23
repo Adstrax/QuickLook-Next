@@ -116,7 +116,14 @@ internal sealed class TrayMenuWindow : Window
             BorderBrush = _borderBrush,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Child = _root,
+            // v1.5.0: long submenus (e.g. the language picker) scroll instead
+            // of overflowing the screen; small menus keep their natural size.
+            Child = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                MaxHeight = 620,
+                Content = _root,
+            },
         };
 
         if (autoCloseMs > 0)

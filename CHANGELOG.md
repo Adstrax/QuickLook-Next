@@ -2,6 +2,12 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.5.0
+
+- 新增语言切换：托盘菜单「语言」子菜单，支持跟随系统 + 全部支持语言（约 25 种，
+  按母语名称显示），选择持久化到 Language 设置，菜单/窗口下次打开生效
+- 长菜单（语言列表）改用 ScrollViewer 限高滚动，避免超出屏幕
+
 ## QuickLook Lite 1.3.12
 
 - 插件管理面板背景改为与托盘菜单一致：无边框非分层窗口 + WCA Acrylic 毛玻璃 +

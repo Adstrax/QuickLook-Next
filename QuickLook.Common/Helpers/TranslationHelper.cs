@@ -45,7 +45,7 @@ public static class TranslationHelper
             return failsafe ?? id;
 
         if (locale == null)
-            locale = CurrentCultureInfo;
+            locale = ResolveLocale();
 
         var nav = GetLangFile(file).CreateNavigator();
 
@@ -66,6 +66,53 @@ public static class TranslationHelper
             return s;
 
         return failsafe ?? id;
+    }
+
+    /// <summary>
+    /// v1.5.0: the language override chosen in the tray menu. When set, it
+    /// wins over the OS UI culture; an empty value means "follow system".
+    /// </summary>
+    private static CultureInfo ResolveLocale()
+    {
+        var overrideName = SettingHelper.Get("Language", string.Empty, "QuickLook");
+        if (!string.IsNullOrWhiteSpace(overrideName))
+        {
+            try
+            {
+                return CultureInfo.GetCultureInfo(overrideName);
+            }
+            catch
+            {
+                // Invalid stored value - fall through to the OS culture.
+            }
+        }
+
+        return CurrentCultureInfo;
+    }
+
+    /// <summary>
+    /// v1.5.0: lists the language blocks shipped in the main Translations.config
+    /// so the tray menu can offer a language picker.
+    /// </summary>
+    public static IReadOnlyList<string> GetAvailableLanguages(string file = null)
+    {
+        if (file == null)
+        {
+            file = Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "Translations.config");
+        }
+
+        if (!File.Exists(file))
+            return ["en"];
+
+        var nav = GetLangFile(file).CreateNavigator();
+        var languages = new List<string>();
+        var iterator = nav.Select("/Translations/*");
+        while (iterator.MoveNext())
+            languages.Add(iterator.Current.Name);
+
+        return languages;
     }
 
     private static string GetStringFromXml(XPathNavigator nav, string id, CultureInfo locale)
