@@ -102,6 +102,7 @@ public partial class ViewerWindow
 
             // Restore rounded corners on Windows 11
             WindowHelper.SetWindowCorner(this, Dwmapi.WindowCornerStyle.Round);
+            ApplyLayeredWindowRegion();
         }
         else
         {
@@ -157,6 +158,9 @@ public partial class ViewerWindow
 
             // Remove rounded corners on Windows 11 for true fullscreen
             WindowHelper.SetWindowCorner(this, Dwmapi.WindowCornerStyle.DoNotRound);
+            // Layered window: the rounded region would clip the fullscreen
+            // surface, so drop it for the duration of fullscreen.
+            WindowHelper.ClearWindowRegion(this);
         }
     }
 

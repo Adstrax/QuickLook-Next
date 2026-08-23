@@ -2,6 +2,15 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.2
+
+- 修复分层窗口边缘黑线：1px 的窗口边框（深色 BorderBrush）与 WindowChrome
+  的 1px 玻璃框在分层窗口上没有 DWM 玻璃填充，会渲染成黑色描边；分层模式下
+  现在移除窗口边框并把 WindowChrome 玻璃厚度归零
+- 预览窗口恢复 Win11 圆角：分层窗口不受 DWM 圆角偏好控制，改用
+  `SetWindowRgn` 把窗口本身（含 WCA 毛玻璃）裁成 8px 圆角，随窗口尺寸/状态
+  同步；最大化与全屏时自动恢复直角
+
 ## QuickLook Lite 1.3.1
 
 - 预览窗口一打开就显示 Acrylic 背景：Win11 的 DWM `SystembackdropType.Acrylic`

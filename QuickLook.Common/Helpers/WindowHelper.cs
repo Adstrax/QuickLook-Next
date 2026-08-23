@@ -326,6 +326,38 @@ Marshal.FreeHGlobal(accentPtr);
         Dwmapi.DwmSetWindowAttribute(hwnd, (uint)Dwmapi.WindowAttribute.WindowCornerPreference, ref cornerPreference, Marshal.SizeOf(typeof(int)));
     }
 
+    /// <summary>
+    /// v1.3.2: gives a layered window true rounded corners by clipping the
+    /// HWND with a rounded region. DWM corner preference does not apply to
+    /// layered windows, so this is the only way the WCA acrylic (which blurs
+    /// the whole window rectangle) follows the Win11 corner radius.
+    /// </summary>
+    public static void SetRoundedWindowRegion(Window window, int radiusDip)
+    {
+        var hwnd = new WindowInteropHelper(window).EnsureHandleSafe();
+        if (hwnd == IntPtr.Zero || !User32.GetWindowRect(hwnd, out var rect))
+            return;
+
+        var scale = User32.GetDpiForWindow(hwnd) / 96d;
+        var w = rect.Right - rect.Left;
+        var h = rect.Bottom - rect.Top;
+        var r = Math.Max(1, (int)Math.Round(radiusDip * scale));
+        var rgn = User32.CreateRoundRectRgn(0, 0, w + 1, h + 1, r * 2, r * 2);
+        if (rgn != IntPtr.Zero)
+            User32.SetWindowRgn(hwnd, rgn, true); // ownership passes to the OS
+    }
+
+    /// <summary>
+    /// v1.3.2: removes the rounded region (maximized / fullscreen windows are
+    /// square, and a stale region would keep the old size after a resize).
+    /// </summary>
+    public static void ClearWindowRegion(Window window)
+    {
+        var hwnd = new WindowInteropHelper(window).EnsureHandleSafe();
+        if (hwnd != IntPtr.Zero)
+            User32.SetWindowRgn(hwnd, IntPtr.Zero, true);
+    }
+
     public static void EnableMicaBlur(Window window, bool isDarkTheme)
     {
         EnableDwmBlur(window, isDarkTheme, (uint)Dwmapi.WindowAttribute.MicaEffect, 1);

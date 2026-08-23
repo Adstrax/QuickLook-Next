@@ -66,6 +66,19 @@ public static class User32
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(nint hwnd, out RECT lpRect);
 
+    // v1.3.2: layered windows cannot use DWM corner preference; clip the
+    // window itself with a rounded region so both the WCA acrylic and the
+    // content follow the Win11 corner radius.
+    [DllImport("user32.dll")]
+    public static extern nint SetWindowRgn(nint hWnd, nint hRgn, [MarshalAs(UnmanagedType.Bool)] bool bRedraw);
+
+    [DllImport("gdi32.dll")]
+    public static extern nint CreateRoundRectRgn(int left, int top, int right, int bottom, int widthEllipse,
+        int heightEllipse);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetDpiForWindow(nint hwnd);
+
     [DllImport("user32.dll")]
     public static extern nint GetWindowThreadProcessId(nint hWnd, nint processId);
 

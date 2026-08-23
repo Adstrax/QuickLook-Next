@@ -68,6 +68,9 @@ public partial class ViewerWindow : Window
             // WPF rule: layered windows must not use a native window style.
             WindowStyle = WindowStyle.None;
             AllowsTransparency = true;
+            // v1.3.2: the 1px Window border (BorderBrush = dark caption color)
+            // would render as a black outline around the layered window.
+            BorderThickness = new Thickness(0);
         }
 
         // this object should be initialized before loading UI components, because many of which are binding to it.
@@ -89,7 +92,11 @@ public partial class ViewerWindow : Window
 
         SizeChanged += SaveWindowSizeOnSizeChanged;
 
-        StateChanged += (_, _) => _ignoreNextWindowSizeChange = true;
+        StateChanged += (_, _) =>
+        {
+            _ignoreNextWindowSizeChange = true;
+            ApplyLayeredWindowRegion();
+        };
 
         windowFrameContainer.PreviewMouseMove += ShowWindowCaptionContainer;
 
@@ -214,6 +221,18 @@ public partial class ViewerWindow : Window
         base.OnSourceInitialized(e);
 
         WindowHelper.RemoveWindowControls(this);
+
+        if (_layeredAcrylic)
+        {
+            // v1.3.2: on a layered window there is no DWM glass to fill the
+            // WindowChrome frame; the 1px glass thickness renders as a dark
+            // line, so flatten it and clip the window to rounded corners.
+            var chrome = WindowChrome.GetWindowChrome(this);
+            if (chrome != null)
+                chrome.GlassFrameThickness = new Thickness(0);
+
+            ApplyLayeredWindowRegion();
+        }
 
         ApplyWindowBackgroundEffects();
     }
@@ -523,6 +542,8 @@ public partial class ViewerWindow : Window
 
     private void SaveWindowSizeOnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        ApplyLayeredWindowRegion();
+
         // first shown?
         if (e.PreviousSize == new Size(0, 0))
             return;
@@ -535,6 +556,22 @@ public partial class ViewerWindow : Window
 
         // by user?
         _customWindowSize = new Size(Width, Height);
+    }
+
+    /// <summary>
+    /// v1.3.2: keeps the rounded window region in sync with the window size
+    /// and state. The region is what gives a layered window its Win11-style
+    /// corners (DWM corner preference does not apply to layered windows).
+    /// </summary>
+    private void ApplyLayeredWindowRegion()
+    {
+        if (!_layeredAcrylic)
+            return;
+
+        if (WindowState == WindowState.Maximized || _isFullscreen)
+            WindowHelper.ClearWindowRegion(this);
+        else
+            WindowHelper.SetRoundedWindowRegion(this, 8);
     }
 
     private void ToggleTheme(object sender, RoutedEventArgs e)
