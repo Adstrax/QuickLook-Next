@@ -2,6 +2,13 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.39
+
+- 预览窗口 Acrylic 背景修复：Win11 的 DWM Acrylic 只在窗口激活时渲染毛玻璃，
+  而预览窗口从不激活（`ShowActivated=false`），导致文本类预览（txt/md 等）
+  一打开是纯色、点击后才出现毛玻璃。改用 `SetWindowCompositionAttribute`
+  方案（与托盘菜单一致，不依赖激活状态），一打开就有毛玻璃效果
+
 ## QuickLook Lite 1.2.38
 
 - 首次图片预览提速：启动后后台预热图片解码管线（WPF/WIC + ImageMagick

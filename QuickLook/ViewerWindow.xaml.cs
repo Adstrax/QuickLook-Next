@@ -311,16 +311,20 @@ public partial class ViewerWindow : Window
 
                 break;
 
-            case SystembackdropType.Acrylic:
-                if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
-                {
-                    SetGlassFrameThickness(1d);
-                    WindowHelper.EnableBackdropAcrylicBlur(this, CurrentTheme == Themes.Dark);
-                    Background = Brushes.Transparent;
-                }
-                else if (App.IsWin10)
-                {
-                    SetGlassFrameThickness(0d);
+case SystembackdropType.Acrylic:
+if (App.IsWin11)
+{
+// v1.2.39: DWM SystembackdropType.Acrylic renders a SOLID tint on inactive
+// windows, and the preview window never activates (ShowActivated=false) - so
+// the frosted glass only appeared after a click. The legacy WCA acrylic blurs
+// regardless of the activation state, matching the tray menu look.
+SetGlassFrameThickness(1d);
+WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
+Background = Brushes.Transparent;
+}
+else if (App.IsWin10)
+{
+SetGlassFrameThickness(0d);
                     WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark);
                     Background = Brushes.Transparent;
                 }
