@@ -25,8 +25,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using ImageMagick;
 
 namespace QuickLook.Plugin.ImageViewer;
 
@@ -121,6 +124,45 @@ public sealed partial class Plugin : IViewer, IMoreMenu
         AnimatedImage.AnimatedImage.Providers.Add(
             new KeyValuePair<string[], Type>(["*"],
                 typeof(ImageMagickProvider)));
+
+        // v1.2.38: warm up the image decode pipeline (WPF/WIC + ImageMagick
+        // native) in the background during startup, so the first image preview
+        // does not pay the one-time decoder initialization - which is what
+        // shows a gray flash before the first frame on the very first preview.
+        _ = Task.Run(WarmUpDecoders);
+    }
+
+    private static void WarmUpDecoders()
+    {
+        try
+        {
+            // Decode a 1x1 PNG through the same WPF/WIC path used by
+            // APngProvider / NativeProvider.
+            var png = Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+            using var ms = new MemoryStream(png);
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.StreamSource = ms;
+            bmp.EndInit();
+            bmp.Freeze();
+        }
+        catch
+        {
+            // Warm-up is best-effort; never break startup.
+        }
+
+        try
+        {
+            // Load the ImageMagick native library so exotic formats decode
+            // instantly on first use as well.
+            using var img = new MagickImage(MagickColors.Transparent, 1, 1);
+        }
+        catch
+        {
+            // Warm-up is best-effort; never break startup.
+        }
     }
 
     public bool CanHandle(string path)

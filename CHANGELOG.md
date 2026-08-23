@@ -2,6 +2,12 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.2.38
+
+- 首次图片预览提速：启动后后台预热图片解码管线（WPF/WIC + ImageMagick
+  原生库），首次预览不再支付一次性解码器初始化（灰色背景闪现明显缩短）；
+  实测首次 png 预览从约 1260ms 降到约 476ms
+
 ## QuickLook Lite 1.2.37
 
 - 设置界面（托盘菜单 / More 菜单）适配 Win11 圆角与毛玻璃：
