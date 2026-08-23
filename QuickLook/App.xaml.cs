@@ -211,6 +211,70 @@ public partial class App : Application
                 System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
+        // Hidden test hook (/test-plugin-manager): open the plugin management
+        // panel once and dump the enumerated plugin list for the smoke test.
+        if (e.Args.Contains("/test-plugin-manager"))
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var managerWindow = new PluginManagerWindow();
+                managerWindow.Show();
+
+                Task.Delay(1500).ContinueWith(_ => Dispatcher.Invoke(() =>
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(SmokeDir);
+                        File.WriteAllText(
+                            Path.Combine(SmokeDir, "plugin-manager.txt"),
+                            $"title={managerWindow.Title}\nplugins={managerWindow.DiagnosePlugins()}\nuserPath={App.UserPluginPath}");
+                    }
+                    catch
+                    {
+                        // diagnostics must never affect startup
+                    }
+                }));
+            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
+        // Hidden test hook (/test-uninstall-plugin): exercise the user-plugin
+        // uninstall happy path against a throwaway folder and record the result.
+        if (e.Args.Contains("/test-uninstall-plugin"))
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    var testDir = Path.Combine(
+                        App.UserPluginPath, "QuickLook.Plugin.TestUninstall." + Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(testDir);
+                    File.WriteAllText(Path.Combine(testDir, "readme.txt"), "test");
+
+                    var entry = new PluginEntry("TestUninstall", "0.0.0", string.Empty, testDir, true);
+                    var ok = PluginManager.GetInstance().UninstallUserPlugin(
+                        entry, out var error, out var restartRequired);
+
+                    Directory.CreateDirectory(SmokeDir);
+                    File.WriteAllText(Path.Combine(SmokeDir, "plugin-manager-uninstall.txt"),
+                        $"ok={ok} restart={restartRequired} exists={Directory.Exists(testDir)} " +
+                        $"pendingExists={Directory.Exists(testDir + ".uninstalled")} error={error}");
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(SmokeDir);
+                        File.WriteAllText(Path.Combine(SmokeDir, "plugin-manager-uninstall.txt"),
+                            "exception=" + ex);
+                    }
+                    catch
+                    {
+                        // diagnostics must never affect startup
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
         // First instance: run and preview this file
         if (e.Args.Any())
         {

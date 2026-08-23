@@ -163,6 +163,12 @@ internal partial class TrayIconManager : IDisposable
             },
             new TrayMenuEntry
             {
+                // v1.3.11: plugin management panel (uninstall user plugins).
+                Header = TranslationHelper.Get("Icon_PluginManager", failsafe: "Manage &Plugins..."),
+                Command = PluginManagerWindow.ShowWindow,
+            },
+            new TrayMenuEntry
+            {
                 Header = TranslationHelper.Get("Icon_OpenDataFolder"),
                 Command = () => Process.Start("explorer.exe", SettingHelper.LocalDataPath),
             },
@@ -272,7 +278,7 @@ internal partial class TrayIconManager : IDisposable
             w.ApplyTopBarMode();
     }
 
-    private static bool IsDarkTheme()
+    internal static bool IsDarkTheme()
     {
         var theme = (Themes)SettingHelper.Get("LastTheme", (int)Themes.None, "QuickLook");
         return theme switch

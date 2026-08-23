@@ -26,6 +26,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml;
 using UnblockZoneIdentifier;
 
 namespace QuickLook;
@@ -100,6 +101,10 @@ public sealed class PluginManager
     {
         try
         {
+            // v1.3.11: finish uninstalls that were parked because a plugin
+            // file was locked while the previous instance was still running.
+            CleanupPendingUninstalls(App.UserPluginPath);
+
             var loaded = new List<IViewer>();
             LoadPlugins(App.UserPluginPath, loaded);
             LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), loaded);
@@ -282,4 +287,187 @@ public sealed class PluginManager
             return false;
         }
     }
+
+    /// <summary>
+    /// v1.3.11: enumerates plugins for the management panel - user-installed
+    /// plugins first, then the built-in plugins that ship with the app.
+    /// </summary>
+    internal List<PluginEntry> EnumerateInstalledPlugins()
+    {
+        var list = new List<PluginEntry>();
+        CollectPlugins(App.UserPluginPath, user: true, list);
+        CollectPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), user: false, list);
+        return list;
+    }
+
+    /// <summary>
+    /// v1.3.11: uninstalls a user plugin. Prefers deleting the folder right
+    /// away; when a file is locked, the folder is parked with an
+    /// ".uninstalled" suffix and removed on the next launch.
+    /// </summary>
+    internal bool UninstallUserPlugin(PluginEntry entry, out string error, out bool restartRequired)
+    {
+        error = null;
+        restartRequired = false;
+
+        try
+        {
+            Directory.Delete(entry.Folder, recursive: true);
+            RemovePluginsUnder(entry.Folder);
+            return true;
+        }
+        catch (Exception)
+        {
+            // The plugin assembly or a native dependency is locked. Park the
+            // folder so startup can finish the removal; the panel stays
+            // consistent because the loaded plugin is dropped from the list.
+            try
+            {
+                var pending = entry.Folder.TrimEnd('\\', '/') + ".uninstalled";
+                if (Directory.Exists(pending))
+                    Directory.Delete(pending, recursive: true);
+                Directory.Move(entry.Folder, pending);
+                RemovePluginsUnder(entry.Folder);
+                restartRequired = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// v1.3.11: removes loaded plugin instances whose assembly lives under
+    /// the given folder so future previews no longer match them.
+    /// </summary>
+    internal void RemovePluginsUnder(string folder)
+    {
+        if (LoadedPlugins is null)
+            return;
+
+        var prefix = folder.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+        LoadedPlugins.RemoveAll(plugin =>
+        {
+            try
+            {
+                var location = plugin.GetType().Assembly.Location;
+                return !string.IsNullOrEmpty(location) &&
+                    location.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        });
+    }
+
+    private static void CollectPlugins(string root, bool user, List<PluginEntry> list)
+    {
+        if (!Directory.Exists(root))
+            return;
+
+        foreach (var dir in Directory.GetDirectories(root))
+        {
+            var folderName = Path.GetFileName(dir);
+            if (folderName.EndsWith(".uninstalled", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Prefer the DLL named after the plugin folder; a folder can also
+            // contain dependency copies of other plugins (e.g. PDFViewer ships
+            // an HtmlViewer copy), which must not be treated as its own DLL.
+            var dll = Path.Combine(dir, folderName + ".dll");
+            if (!File.Exists(dll))
+            {
+                dll = Directory.GetFiles(dir, "QuickLook.Plugin.*.dll", SearchOption.TopDirectoryOnly)
+                    .OrderByDescending(file => new FileInfo(file).Length)
+                    .FirstOrDefault();
+            }
+            if (dll is null)
+                continue;
+
+            var (name, version, description) = ReadPluginMeta(dir, dll, folderName);
+            list.Add(new PluginEntry(name, version, description, dir, user));
+        }
+    }
+
+    private static (string Name, string Version, string Description) ReadPluginMeta(
+        string dir, string dll, string folderName)
+    {
+        var config = Path.Combine(dir, "QuickLook.Plugin.Metadata.config");
+        if (File.Exists(config))
+        {
+            try
+            {
+                var doc = new XmlDocument();
+                doc.Load(config);
+                var ns = doc.SelectSingleNode("/Metadata/Namespace")?.InnerText?.Trim();
+                if (!string.IsNullOrEmpty(ns))
+                {
+                    return (
+                        FriendlyName(ns),
+                        doc.SelectSingleNode("/Metadata/Version")?.InnerText?.Trim() ?? string.Empty,
+                        doc.SelectSingleNode("/Metadata/Description")?.InnerText?.Trim() ?? string.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                ProcessHelper.WriteLog($"Failed to read plugin metadata {config}: {ex}");
+            }
+        }
+
+        try
+        {
+            var assembly = Assembly.LoadFrom(dll);
+            // Use the assembly identity, not AssemblyTitle: the Lite fork has
+            // copy-paste AssemblyTitle bugs (MarkdownViewer declares ImageViewer).
+            var title = assembly.GetName().Name ?? folderName;
+            var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                    .InformationalVersion
+                ?? assembly.GetName().Version?.ToString()
+                ?? string.Empty;
+            var description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description
+                ?? string.Empty;
+            return (FriendlyName(title), version, description);
+        }
+        catch (Exception ex)
+        {
+            ProcessHelper.WriteLog($"Failed to read plugin assembly {dll}: {ex}");
+            return (FriendlyName(folderName), string.Empty, string.Empty);
+        }
+    }
+
+    private static string FriendlyName(string namespaceOrTitle)
+    {
+        const string prefix = "QuickLook.Plugin.";
+        var name = namespaceOrTitle?.Trim() ?? string.Empty;
+        if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            name = name[prefix.Length..];
+        return name.Replace('.', ' ');
+    }
+
+    private static void CleanupPendingUninstalls(string userPluginPath)
+    {
+        if (!Directory.Exists(userPluginPath))
+            return;
+
+        foreach (var dir in Directory.GetDirectories(userPluginPath, "*.uninstalled", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                ProcessHelper.WriteLog($"Failed to finish uninstall of {dir}: {ex}");
+            }
+        }
+    }
 }
+
+/// <summary>
+/// v1.3.11: one row in the plugin management panel.
+/// </summary>
+internal sealed record PluginEntry(string Name, string Version, string Description, string Folder, bool IsUserPlugin);
