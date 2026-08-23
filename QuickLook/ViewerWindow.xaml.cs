@@ -50,9 +50,26 @@ public partial class ViewerWindow : Window
     private int _lastCursorY;
     private bool _hasLastCursor;
     private bool _warmShown;
+    // v1.3.1: the window is created as a layered window when the user's
+    // backdrop is an acrylic material on Win11, so the WCA acrylic renders
+    // from the very first frame (see ShouldUseLayeredAcrylic).
+    private readonly bool _layeredAcrylic;
 
     internal ViewerWindow()
     {
+        // v1.3.1: Win11's DWM SystembackdropType.Acrylic renders a solid tint
+        // on inactive windows and the preview window never activates
+        // (ShowActivated=false), so the chosen acrylic only appeared after a
+        // click. A layered window + WCA acrylic (the tray-menu recipe) blurs
+        // regardless of the activation state.
+        _layeredAcrylic = ShouldUseLayeredAcrylic();
+        if (_layeredAcrylic)
+        {
+            // WPF rule: layered windows must not use a native window style.
+            WindowStyle = WindowStyle.None;
+            AllowsTransparency = true;
+        }
+
         // this object should be initialized before loading UI components, because many of which are binding to it.
         ContextObject = new ContextObject() { Source = this };
 
@@ -312,7 +329,15 @@ public partial class ViewerWindow : Window
                 break;
 
             case SystembackdropType.Acrylic:
-                if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
+                if (_layeredAcrylic)
+                {
+                    // v1.3.1: layered window - WCA acrylic works while the
+                    // window is inactive, so the frosted glass shows on open.
+                    SetGlassFrameThickness(1d);
+                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
+                    Background = Brushes.Transparent;
+                }
+                else if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
                 {
                     SetGlassFrameThickness(1d);
                     WindowHelper.EnableBackdropAcrylicBlur(this, CurrentTheme == Themes.Dark);
@@ -347,7 +372,13 @@ public partial class ViewerWindow : Window
                 break;
 
             case SystembackdropType.Acrylic11:
-                if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
+                if (_layeredAcrylic)
+                {
+                    SetGlassFrameThickness(1d);
+                    WindowHelper.EnableAcrylicBlur(this, GetAcrylicTintColor(), CurrentTheme == Themes.Dark, 0.4d);
+                    Background = Brushes.Transparent;
+                }
+                else if (App.IsWin11 && Environment.OSVersion.Version >= new Version(10, 0, 22523))
                 {
                     SetGlassFrameThickness(1d);
                     WindowHelper.EnableBackdropAcrylicBlur(this, CurrentTheme == Themes.Dark);
@@ -469,6 +500,25 @@ public partial class ViewerWindow : Window
         return Enum.TryParse(option, true, out SystembackdropType parsed)
             ? parsed
             : SystembackdropType.Auto;
+    }
+
+    /// <summary>
+    /// v1.3.1: acrylic materials cannot render while the preview window is
+    /// inactive through the DWM backdrop API (Win11 limitation). Creating the
+    /// window as a layered window lets the WCA acrylic show immediately; Mica,
+    /// Tabbed and the other backdrops render fine on a normal window and stay
+    /// non-layered (hardware-accelerated).
+    /// </summary>
+    private static bool ShouldUseLayeredAcrylic()
+    {
+        if (!App.IsWin11)
+            return false;
+
+        return GetBackdropOption() switch
+        {
+            SystembackdropType.Acrylic or SystembackdropType.Acrylic10 or SystembackdropType.Acrylic11 => true,
+            _ => false,
+        };
     }
 
     private void SaveWindowSizeOnSizeChanged(object sender, SizeChangedEventArgs e)

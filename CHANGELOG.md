@@ -2,6 +2,18 @@
 
 > QuickLook Changelog starting from version `4.0.0`.
 
+## QuickLook Lite 1.3.1
+
+- 预览窗口一打开就显示 Acrylic 背景：Win11 的 DWM `SystembackdropType.Acrylic`
+  只在窗口激活时渲染毛玻璃，而预览窗口从不激活（`ShowActivated=false`），所以
+  之前文本类预览打开是纯色、点击后才出现毛玻璃。现在当背景设置为 Acrylic 系
+  （Acrylic/Acrylic10/Acrylic11）时，预览窗口改为分层窗口并走托盘菜单同款的
+  WCA（SetWindowCompositionAttribute）方案——毛玻璃不依赖激活状态，一打开即
+  显示；Mica/Tabbed 等其他背景仍使用普通窗口（硬件加速渲染不受影响）
+- 分层窗口的取舍：窗口失去 DWM 原生投影与 Win11 圆角（分层窗口的限制），文字、
+  视频（D3DImage）与 WebView2 内容渲染经实测正常；如需恢复原生观感，可将
+  WindowBackdrop 设为 Mica/Tabbed，或回退到 1.3.0 文件夹
+
 ## QuickLook Lite 1.3.0
 
 大版本更新：预览调用链路与构建体积全面优化，并恢复预览窗口的 DWM Acrylic
