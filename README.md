@@ -65,6 +65,15 @@ dotnet build QuickLookNext.slnx -c Release
 
 提交前运行冒烟测试：`.\test.ps1`（要求全部通过）。
 
+生成用户友好的发布包（exe 位于解压根目录，插件在 `QuickLook.Plugin` 子目录，
+自带便携模式）：
+
+```powershell
+.\Scripts\pack-release.ps1 -MakeZip
+```
+
+产物：`Build\QuickLook-Next-<版本号>.zip`，可直接上传到 GitHub Release 供用户下载。
+
 ## 支持的文件格式
 
 文件夹预览由主程序内置的 InfoPanel 提供，插件覆盖格式如下：
