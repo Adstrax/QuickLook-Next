@@ -2,6 +2,12 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.0.4
+
+- 新增自动更新：「检查更新」发现新版本后不再只是打开 GitHub 页面，而是直接下载
+  Release 的 zip 安装包、替换程序文件并自动重启；目录不可写或没有安装包时回退为
+  打开下载页面。后台静默检查仍只提示，点击通知再触发自动更新
+
 ## QuickLook-Next 3.0.3
 
 - 修复子菜单快速点击被吞的问题：子菜单刚弹出时立刻点击某项（如「语言 -> 跟随

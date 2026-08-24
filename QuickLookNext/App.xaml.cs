@@ -276,6 +276,38 @@ public partial class App : Application
             }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
+        // Hidden test hook (/test-auto-update): feeds a fake release JSON
+        // (ql-smoke\fake-release.json) into the auto-update pipeline so the
+        // download / replace / restart flow can be verified end to end.
+        if (e.Args.Contains("/test-auto-update"))
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    var fakePath = Path.Combine(SmokeDir, "fake-release.json");
+                    var release = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(fakePath));
+                    var ok = Updater.RunAutoUpdate(release);
+                    Directory.CreateDirectory(SmokeDir);
+                    File.WriteAllText(Path.Combine(SmokeDir, "auto-update.txt"), $"ok={ok}");
+                    if (ok)
+                        Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(SmokeDir);
+                        File.WriteAllText(Path.Combine(SmokeDir, "auto-update.txt"), "exception=" + ex);
+                    }
+                    catch
+                    {
+                        // diagnostics must never affect startup
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
         // First instance: run and preview this file
         if (e.Args.Any())
         {
