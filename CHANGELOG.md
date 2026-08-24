@@ -2,6 +2,12 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.0.5
+
+- 移除 ImageViewer 内嵌 Excalidraw 模板中的演示 Firebase API Key
+  （Excalidraw 官方公开 demo 密钥，静态渲染用不到），消除 GitHub Secret
+  Scanning 告警
+
 ## QuickLook-Next 3.0.4
 
 - 新增自动更新：「检查更新」发现新版本后不再只是打开 GitHub 页面，而是直接下载
