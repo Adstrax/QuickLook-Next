@@ -73,7 +73,7 @@ internal class Updater
         {
             try
             {
-                var json = DownloadJson("https://api.github.com/repos/QL-Win/QuickLook/releases/latest");
+                var json = DownloadJson("https://api.github.com/repos/Adstrax/QuickLook-Next/releases/latest");
 
                 var nVersion = (string)json["tag_name"];
 
@@ -104,7 +104,7 @@ internal class Updater
                             // v1.3.9: shell URIs need UseShellExecute on .NET Core.
                             try
                             {
-                                Process.Start(new ProcessStartInfo("https://github.com/QL-Win/QuickLook/releases/latest")
+                                Process.Start(new ProcessStartInfo("https://github.com/Adstrax/QuickLook-Next/releases/latest")
                                 {
                                     UseShellExecute = true,
                                 });
@@ -132,7 +132,7 @@ internal class Updater
         {
             try
             {
-                var json = DownloadJson("https://api.github.com/repos/QL-Win/QuickLook/releases");
+                var json = DownloadJson("https://api.github.com/repos/Adstrax/QuickLook-Next/releases");
 
                 var notes = "# A new version of QuickLookNext is available!\r\n";
 

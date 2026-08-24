@@ -2,6 +2,12 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.0.2
+
+- 修复更新检查指向原项目的问题：「检查更新」现在查询本仓库
+  （Adstrax/QuickLook-Next）的 Releases，提示新版本与下载链接均指向本项目的
+  Release，不再误报原版 QuickLook 的版本
+
 ## QuickLook-Next 3.0.1
 
 - 修复预览窗口可能被其他窗口挡住：1.2.36 的离屏预热让窗口在首次预览前就已
