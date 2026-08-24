@@ -664,7 +664,17 @@ internal sealed class TrayMenuWindow : Window
         if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var rect))
             return false;
 
-        return x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
+        if (x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom)
+            return true;
+
+        // v3.0.3: a click inside an open submenu must not count as an outside
+        // click. Without this, the parent's low-level mouse hook can close the
+        // menus before the submenu receives the click, so the first quick click
+        // on a submenu item (e.g. 语言 -> 跟随系统) was silently swallowed.
+        if (_childMenu is { IsVisible: true } child && child.IsPointInsideWindow(x, y))
+            return true;
+
+        return false;
     }
 
     private void ScheduleClose()
