@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.ExtensionMethods;
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.ExtensionMethods;
+using QuickLook.Common.Helpers;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
-namespace QuickLookNext.Plugin.InfoPanel;
+namespace QuickLook.Plugin.InfoPanel;
 
 public partial class InfoPanel : UserControl
 {

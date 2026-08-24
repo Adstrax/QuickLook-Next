@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Annotations;
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.Plugin;
+using QuickLook.Common.Annotations;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.Plugin;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -33,7 +33,7 @@ public partial class ViewerWindow : INotifyPropertyChanged
 {
     private readonly ResourceDictionary _darkDict = new()
     {
-        Source = new Uri("pack://application:,,,/QuickLookNext.Common;component/Styles/MainWindowStyles.Dark.xaml")
+        Source = new Uri("pack://application:,,,/QuickLook.Common;component/Styles/MainWindowStyles.Dark.xaml")
     };
 
     private bool _canOldPluginResize;

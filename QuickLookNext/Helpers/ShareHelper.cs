@@ -25,8 +25,8 @@ using System.Windows;
 using System.Windows.Interop;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using QuickLookNext.Common.ExtensionMethods;
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.ExtensionMethods;
+using QuickLook.Common.Helpers;
 
 namespace QuickLookNext.Helpers;
 

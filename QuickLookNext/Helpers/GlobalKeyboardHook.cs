@@ -18,7 +18,7 @@
 using System;
 using System.Windows.Forms;
 using System.Windows.Input;
-using QuickLookNext.Common.NativeMethods;
+using QuickLook.Common.NativeMethods;
 using KeyEventArgs = System.Windows.Forms.KeyEventArgs;
 using KeyEventHandler = System.Windows.Forms.KeyEventHandler;
 

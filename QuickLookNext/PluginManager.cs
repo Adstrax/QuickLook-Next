@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.ExtensionMethods;
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.Plugin;
+using QuickLook.Common.ExtensionMethods;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.Plugin;
+using QuickLook.Plugin.InfoPanel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,7 +39,7 @@ public sealed class PluginManager
 
     private PluginManager()
     {
-        DefaultPlugin = new Plugin.InfoPanel.Plugin();
+        DefaultPlugin = new Plugin();
 
         // Loading plugin assemblies does reflection and file I/O that can add
         // hundreds of milliseconds to startup. Run it on a background thread so
@@ -107,7 +108,7 @@ public sealed class PluginManager
 
             var loaded = new List<IViewer>();
             LoadPlugins(App.UserPluginPath, loaded);
-            LoadPlugins(Path.Combine(App.AppPath, @"QuickLookNext.Plugin\"), loaded);
+            LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), loaded);
             App.RecordStartupPhase("plugins-assemblies-loaded");
             loaded.Sort(static (a, b) => b.Priority.CompareTo(a.Priority));
 
@@ -141,7 +142,7 @@ public sealed class PluginManager
 
         var failedPlugins = new List<(string Plugin, Exception Error)>();
 
-        foreach (var lib in Directory.GetFiles(folder, "QuickLookNext.Plugin.*.dll", SearchOption.AllDirectories))
+        foreach (var lib in Directory.GetFiles(folder, "QuickLook.Plugin.*.dll", SearchOption.AllDirectories))
         {
             try
             {
@@ -296,7 +297,7 @@ public sealed class PluginManager
     {
         var list = new List<PluginEntry>();
         CollectPlugins(App.UserPluginPath, user: true, list);
-        CollectPlugins(Path.Combine(App.AppPath, @"QuickLookNext.Plugin\"), user: false, list);
+        CollectPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), user: false, list);
         return list;
     }
 
@@ -381,7 +382,7 @@ public sealed class PluginManager
             var dll = Path.Combine(dir, folderName + ".dll");
             if (!File.Exists(dll))
             {
-                dll = Directory.GetFiles(dir, "QuickLookNext.Plugin.*.dll", SearchOption.TopDirectoryOnly)
+                dll = Directory.GetFiles(dir, "QuickLook.Plugin.*.dll", SearchOption.TopDirectoryOnly)
                     .OrderByDescending(file => new FileInfo(file).Length)
                     .FirstOrDefault();
             }
@@ -396,7 +397,7 @@ public sealed class PluginManager
     private static (string Name, string Version, string Description) ReadPluginMeta(
         string dir, string dll, string folderName)
     {
-        var config = Path.Combine(dir, "QuickLookNext.Plugin.Metadata.config");
+        var config = Path.Combine(dir, "QuickLook.Plugin.Metadata.config");
         if (File.Exists(config))
         {
             try
@@ -441,7 +442,7 @@ public sealed class PluginManager
 
     private static string FriendlyName(string namespaceOrTitle)
     {
-        const string prefix = "QuickLookNext.Plugin.";
+        const string prefix = "QuickLook.Plugin.";
         var name = namespaceOrTitle?.Trim() ?? string.Empty;
         if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             name = name[prefix.Length..];

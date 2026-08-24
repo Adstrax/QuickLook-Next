@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.NativeMethods;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.NativeMethods;
 using QuickLookNext.Helpers;
 using System;
 using System.Collections.Generic;

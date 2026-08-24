@@ -4,60 +4,60 @@
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
-  <Folder Name="/QuickLookNext.Plugin/">
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.AppViewer/QuickLookNext.Plugin.AppViewer.csproj">
+  <Folder Name="/QuickLook.Plugin/">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.AppViewer/QuickLook.Plugin.AppViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.ArchiveViewer/QuickLookNext.Plugin.ArchiveViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.ArchiveViewer/QuickLook.Plugin.ArchiveViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.CLSIDViewer/QuickLookNext.Plugin.CLSIDViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/QuickLook.Plugin.CLSIDViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.CsvViewer/QuickLookNext.Plugin.CsvViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.CsvViewer/QuickLook.Plugin.CsvViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.FontViewer/QuickLookNext.Plugin.FontViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.FontViewer/QuickLook.Plugin.FontViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.HtmlViewer/QuickLookNext.Plugin.HtmlViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.HtmlViewer/QuickLook.Plugin.HtmlViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.ImageViewer/QuickLookNext.Plugin.ImageViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.ImageViewer/QuickLook.Plugin.ImageViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.MarkdownViewer/QuickLookNext.Plugin.MarkdownViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.MarkdownViewer/QuickLook.Plugin.MarkdownViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.MediaInfoViewer/QuickLookNext.Plugin.MediaInfoViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/QuickLook.Plugin.MediaInfoViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.OfficeViewer/QuickLookNext.Plugin.OfficeViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/QuickLook.Plugin.OfficeViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.PDFViewer/QuickLookNext.Plugin.PdfViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.PDFViewer/QuickLook.Plugin.PdfViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.PluginInstaller/QuickLookNext.Plugin.PluginInstaller.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.PluginInstaller/QuickLook.Plugin.PluginInstaller.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.TextViewer/QuickLookNext.Plugin.TextViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.TextViewer/QuickLook.Plugin.TextViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
-    <Project Path="QuickLookNext.Plugin/QuickLookNext.Plugin.VideoViewer/QuickLookNext.Plugin.VideoViewer.csproj">
+    <Project Path="QuickLook.Plugin/QuickLook.Plugin.VideoViewer/QuickLook.Plugin.VideoViewer.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
@@ -65,7 +65,7 @@
   <Folder Name="/Solution Items/">
     <File Path="GitVersion.cs" />
   </Folder>
-  <Project Path="QuickLookNext.Common/QuickLookNext.Common.csproj">
+  <Project Path="QuickLook.Common/QuickLook.Common.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />
   </Project>

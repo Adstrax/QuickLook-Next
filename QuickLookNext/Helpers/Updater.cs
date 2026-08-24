@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using Newtonsoft.Json;
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.Helpers;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;

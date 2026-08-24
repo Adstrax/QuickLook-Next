@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Plugin;
+using QuickLook.Common.Plugin;
 using System.Windows;
 
-namespace QuickLookNext.Plugin.InfoPanel;
+namespace QuickLook.Plugin.InfoPanel;
 
 public sealed class Plugin : IViewer
 {

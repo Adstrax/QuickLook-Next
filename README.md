@@ -42,9 +42,9 @@
 - **删除原生 C++ 依赖（QuickLookNext.Native）**：空格键链路（焦点判断 + Explorer / 桌面选区
   读取）改为纯 C# 实现（P/Invoke + Shell COM）
 - **命名隔离**：管道 / 互斥体使用 `QuickLookNext.App.*`，与已安装的完整版互不干扰
-- **2.0.0 全面改名**：可执行文件 `QuickLook-Next.exe`、程序集与命名空间
-  `QuickLookNext.*`、插件前缀 `QuickLookNext.Plugin.*` 全部与上游 QuickLook 隔离，
-  设置域名同步改为 `QuickLookNext`（原设置与用户插件目录不再沿用）
+- **应用改名 / 插件兼容**：应用本体为 `QuickLook-Next.exe`、命名空间
+  `QuickLookNext.*`、管道 / 互斥体 `QuickLookNext.App.*`；插件契约保留
+  `QuickLook.Common` / `QuickLook.Plugin.*`，老插件无需重新编译即可安装加载
 - **自动化测试**：png / txt / md / zip / ttf / mp4 预览 + Shell 选区读取链路（test.ps1，
   提交前必须全绿）
 

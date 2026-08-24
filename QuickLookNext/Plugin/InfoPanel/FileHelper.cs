@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace QuickLookNext.Plugin.InfoPanel;
+namespace QuickLook.Plugin.InfoPanel;
 
 public static class FileHelper
 {

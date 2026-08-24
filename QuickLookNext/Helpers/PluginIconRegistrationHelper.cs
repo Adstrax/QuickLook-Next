@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using Microsoft.Win32;
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.Helpers;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -46,9 +46,9 @@ internal static class PluginIconRegistrationHelper
             {
                 if (key != null)
                 {
-                    if (key.GetValue(string.Empty) as string != "QuickLookNext.Plugin")
+                    if (key.GetValue(string.Empty) as string != "QuickLook.Plugin")
                     {
-                        key.SetValue(string.Empty, "QuickLookNext.Plugin");
+                        key.SetValue(string.Empty, "QuickLook.Plugin");
                         changed = true;
                     }
 
@@ -60,8 +60,8 @@ internal static class PluginIconRegistrationHelper
                 }
             }
 
-            // Computer\HKEY_CLASSES_ROOT\QuickLookNext.Plugin\DefaultIcon
-            using (var key = Registry.ClassesRoot.CreateSubKey(@"QuickLookNext.Plugin\DefaultIcon", true))
+            // Computer\HKEY_CLASSES_ROOT\QuickLook.Plugin\DefaultIcon
+            using (var key = Registry.ClassesRoot.CreateSubKey(@"QuickLook.Plugin\DefaultIcon", true))
             {
                 var iconValue = $"{iconPath},0";
                 if (key != null && key.GetValue("") as string != iconValue)
@@ -71,8 +71,8 @@ internal static class PluginIconRegistrationHelper
                 }
             }
 
-            // Computer\HKEY_CLASSES_ROOT\QuickLookNext.Plugin
-            using (var key = Registry.ClassesRoot.CreateSubKey("QuickLookNext.Plugin", true))
+            // Computer\HKEY_CLASSES_ROOT\QuickLook.Plugin
+            using (var key = Registry.ClassesRoot.CreateSubKey("QuickLook.Plugin", true))
             {
             const string fileTypeName = "QuickLook-Next Plugin File";
                 if (key != null && key.GetValue(string.Empty) as string != fileTypeName)
@@ -82,8 +82,8 @@ internal static class PluginIconRegistrationHelper
                 }
             }
 
-            // Computer\HKEY_CLASSES_ROOT\QuickLookNext.Plugin\shell\open\command
-            using (var key = Registry.ClassesRoot.CreateSubKey(@"QuickLookNext.Plugin\shell\open\command", true))
+            // Computer\HKEY_CLASSES_ROOT\QuickLook.Plugin\shell\open\command
+            using (var key = Registry.ClassesRoot.CreateSubKey(@"QuickLook.Plugin\shell\open\command", true))
             {
                 var commandValue = $"\"{App.AppFullPath}\" \"%1\"";
                 if (key != null && key.GetValue(string.Empty) as string != commandValue)

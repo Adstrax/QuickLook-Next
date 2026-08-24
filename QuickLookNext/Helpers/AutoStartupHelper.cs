@@ -18,7 +18,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.Helpers;
 using QuickLookNext.NativeMethods;
 
 namespace QuickLookNext.Helpers;

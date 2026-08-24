@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Helpers;
+using QuickLook.Common.Helpers;
 using QuickLookNext.Helpers;
 using QuickLookNext.NativeMethods;
 using System;
@@ -38,7 +38,7 @@ namespace QuickLookNext;
 public partial class App : Application
 {
     public static readonly string LocalDataPath = SettingHelper.LocalDataPath;
-    public static readonly string UserPluginPath = Path.Combine(SettingHelper.LocalDataPath, @"QuickLookNext.Plugin\");
+    public static readonly string UserPluginPath = Path.Combine(SettingHelper.LocalDataPath, @"QuickLook.Plugin\");
     // v1.2.16: Assembly.Location points at QuickLook-Next.dll under the .NET apphost,
     // but everything that launches the app (startup shortcut, shell command,
     // restart) must target the executable. Resolve the .exe next to it.
@@ -247,7 +247,7 @@ public partial class App : Application
                 try
                 {
                     var testDir = Path.Combine(
-                        App.UserPluginPath, "QuickLookNext.Plugin.TestUninstall." + Guid.NewGuid().ToString("N"));
+                        App.UserPluginPath, "QuickLook.Plugin.TestUninstall." + Guid.NewGuid().ToString("N"));
                     Directory.CreateDirectory(testDir);
                     File.WriteAllText(Path.Combine(testDir, "readme.txt"), "test");
 

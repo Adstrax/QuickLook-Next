@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.ExtensionMethods;
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.NativeMethods;
-using QuickLookNext.Common.Plugin;
+using QuickLook.Common.ExtensionMethods;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.NativeMethods;
+using QuickLook.Common.Plugin;
 using QuickLookNext.Helpers;
 using System;
 using System.Diagnostics;
@@ -32,7 +32,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using Wpf.Ui.Violeta.Controls;
-using static QuickLookNext.Common.NativeMethods.Dwmapi;
+using static QuickLook.Common.NativeMethods.Dwmapi;
 using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
 using FontFamily = System.Windows.Media.FontFamily;
@@ -606,7 +606,7 @@ public partial class ViewerWindow : Window
 
         // Persist the choice so future previews start with it.
         SettingHelper.Set("LastTheme", (int)newTheme, "QuickLookNext");
-        SettingHelper.Set("LastTheme", (int)newTheme, "QuickLookNext.Plugin.ImageViewer");
+        SettingHelper.Set("LastTheme", (int)newTheme, "QuickLook.Plugin.ImageViewer");
 
         // Re-render the current preview so web content (WebView2) picks up the
         // new PreferredColorScheme / theme.

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.Plugin;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.Plugin;
 using QuickLookNext.Helpers;
 using QuickLookNext.Properties;
 using System;
@@ -27,9 +27,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using QuickLookNext.Common.NativeMethods;
+using QuickLook.Common.NativeMethods;
 using Wpf.Ui.Violeta.Win32;
-using OSThemeHelper = QuickLookNext.Common.Helpers.OSThemeHelper;
+using OSThemeHelper = QuickLook.Common.Helpers.OSThemeHelper;
 using ToolTipIcon = Wpf.Ui.Violeta.Win32.ToolTipIcon;
 
 namespace QuickLookNext;
@@ -290,7 +290,7 @@ internal partial class TrayIconManager : IDisposable
         }
 
         SettingHelper.Set("LastTheme", (int)theme, "QuickLookNext");
-        SettingHelper.Set("LastTheme", (int)theme, "QuickLookNext.Plugin.ImageViewer");
+        SettingHelper.Set("LastTheme", (int)theme, "QuickLook.Plugin.ImageViewer");
     }
 
     // v1.5.0: persist the language override. An empty value means follow the

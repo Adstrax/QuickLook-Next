@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using QuickLookNext.Common.Helpers;
-using QuickLookNext.Common.NativeMethods;
-using QuickLookNext.Common.Plugin;
-using QuickLookNext.Common.Plugin.MoreMenu;
+using QuickLook.Common.Helpers;
+using QuickLook.Common.NativeMethods;
+using QuickLook.Common.Plugin;
+using QuickLook.Common.Plugin.MoreMenu;
 using QuickLookNext.Helpers;
 using System;
 using System.Collections.Generic;

@@ -8,7 +8,15 @@
   `QuickLookNext.*`，命名管道 / 互斥体改为 `QuickLookNext.App.*`，插件前缀改为
   `QuickLookNext.Plugin.*`，与上游 QuickLook 彻底隔离
 - 设置域名同步改为 `QuickLookNext`：原主题 / 语言 / 背景等设置与用户插件目录不再
-  沿用，需要重新设置；第三方 `QuickLook.Plugin.*` 插件需按新命名空间适配
+  沿用，需要重新设置；第三方 `QuickLook.Plugin.*` 插件需按 `QuickLookNext.Plugin.*`
+  适配
+
+## QuickLook-Next 3.0.0
+
+- 恢复老插件兼容：插件契约（`QuickLook.Common` 接口与程序集、`QuickLook.Plugin.*`
+  前缀、元数据文件名、注册表关联）全部改回旧名，老插件无需重新编译即可安装与加载
+- 应用本体保持 QuickLook-Next 命名（`QuickLook-Next.exe`、命名空间 `QuickLookNext.*`、
+  管道 / 互斥体 `QuickLookNext.App.*`、设置域 `QuickLookNext`）
 
 ## QuickLook-Next 1.5.0
 
@@ -346,7 +354,7 @@ zip 59ms / pdf 118ms（优化前首轮 399–591ms；固定调用开销约 -330m
 - Add `.msp` installer support for app viewer
 - Add `.m3u` and `.m3u8` highlighting definitions support
 - Add ShellScript syntax extensions for `.bashrc`, `.bash_profile`, `.bash_login`, `.profile`, `.bash_logout`, `.zshrc`, `.zprofile`, `.zlogin`, `.zlogout`, `.dashrc`, `.kshrc`, `.mkshrc`, `.ashrc` and `.shrc`
-- Add IDMan (Internet Download Manager) support instead of [QuickLookNext.Plugin.IDManViewer](https://github.com/emako/QuickLook.Plugin.IDManViewer)
+- Add IDMan (Internet Download Manager) support instead of [QuickLook.Plugin.IDManViewer](https://github.com/emako/QuickLook.Plugin.IDManViewer)
 - Support search panel in CSV viewer [#1824](https://github.com/QL-Win/QuickLook/issues/1824)
 - Add ShellScriptDetector and register in FormatDetector
 - Add Graphviz (`.gv` and `.dot`) support for image viewer

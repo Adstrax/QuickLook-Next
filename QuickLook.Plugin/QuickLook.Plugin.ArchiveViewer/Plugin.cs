@@ -1,0 +1,167 @@
+﻿// Copyright © 2017-2026 QL-Win Contributors
+//
+// This file is part of QuickLookNext program.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+using QuickLook.Common.Plugin;
+using QuickLook.Common.Plugin.MoreMenu;
+using QuickLook.Plugin.ArchiveViewer.ArchiveFile;
+using QuickLook.Plugin.ArchiveViewer.ChromiumResourcePackage;
+using QuickLook.Plugin.ArchiveViewer.CompoundFileBinary;
+using QuickLook.Plugin.ArchiveViewer.DSStore;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Windows;
+
+namespace QuickLook.Plugin.ArchiveViewer;
+
+public sealed partial class Plugin : IViewer, IMoreMenu
+{
+    private static readonly string[] _extensions =
+    [
+        // List of supported archive file extensions
+        ".asar",    // Electron archive (used to package Electron app resources)
+        ".7z",      // 7-Zip compressed archive (uses LZMA/LZMA2 compression)
+        ".bz2",     // bzip2 compressed file (often used with tar, e.g. .tar.bz2)
+        ".cb7",     // Comic book archive based on 7z format
+        ".cbr",     // Comic book archive based on RAR format
+        ".cbt",     // Comic book archive based on TAR format
+        ".cbz",     // Comic book archive based on ZIP format
+        ".crx",     // Chrome extension package (used for Chrome browser add-ons)
+        ".gz",      // gzip compressed file (commonly used with tar, e.g. .tar.gz)
+        ".jar",     // Java archive (used for Java applications; ZIP-based)
+        ".lz",      // lzip compressed file (uses LZMA compression)
+        ".nupkg",   // NuGet package (for distributing .NET libraries; ZIP-based)
+        ".snupkg",  // Symbol NuGet package (stores debug symbols; ZIP-based)
+        ".rar",     // RAR compressed archive (proprietary compression format)
+        ".tar",     // TAR archive (packs multiple files without compression)
+        ".tgz",     // Gzipped TAR archive (short for .tar.gz)
+        ".vsix",    // Visual Studio extension package (ZIP-based)
+        ".xz",      // XZ compressed file (uses LZMA2 compression)
+        ".zip",     // ZIP compressed archive (most common compression format)
+        ".whl",     // Python Wheel package (ZIP-based)
+        ".egg",     // Python Egg package (ZIP-based)
+        ".pyz",     // Python Zip application (ZIP-based)
+
+        // List of supported compound file binary file extensions
+        ".cfb",     // Compound File Binary format (used by older Microsoft Office files)
+        ".eif",     // QQ emoji file (Compound File Binary format)
+
+        // List of supported chromium resource package file extensions
+        ".pak",     // Chromium resource package file v5, used by Chromium-based applications (e.g., Google Chrome)
+    ];
+
+    private IDisposable _panel;
+    private string _path;
+
+    public int Priority => -5;
+
+    public IEnumerable<IMenuItem> MenuItems => GetMenuItems();
+
+    public void Init()
+    {
+    }
+
+    public bool CanHandle(string path)
+    {
+        if (Directory.Exists(path))
+            return false;
+
+        // macOS .DS_Store metadata file
+        if (Path.GetFileName(path).Equals(".DS_Store", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Windows thumbnail cache (OLE Compound File Binary)
+        if (Path.GetFileName(path).Equals("Thumbs.db", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                byte[] magic = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+                byte[] header = new byte[8];
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                int read = fs.Read(header, 0, 8);
+                if (read >= 8 && header.SequenceEqual(magic)) return true;
+            }
+            catch { }
+            return false;
+        }
+
+        if (path.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+        {
+            // Chromium PAK files usually start with header as version
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var br = new BinaryReader(fs);
+                var version = br.ReadUInt32();
+
+                // Check for Chromium PAK version
+                // if v5 → PASS
+                // if v4 → FAIL (NOT Supported)
+                if (version == 5) return true;
+            }
+            catch
+            {
+                // Ignore file read errors, treat as not handled
+            }
+            return false;
+        }
+
+        return _extensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void Prepare(string path, ContextObject context)
+    {
+        _path = path;
+        context.PreferredSize = new Size { Width = 800, Height = 400 };
+    }
+
+    public void View(string path, ContextObject context)
+    {
+        if (Path.GetFileName(path).Equals(".DS_Store", StringComparison.OrdinalIgnoreCase))
+        {
+            _panel = new DSStoreInfoPanel(path);
+        }
+        else if (Path.GetFileName(path).Equals("Thumbs.db", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".cfb", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".eif", StringComparison.OrdinalIgnoreCase))
+        {
+            _panel = new CompoundInfoPanel(path);
+        }
+        else if (path.EndsWith(".pak", StringComparison.OrdinalIgnoreCase))
+        {
+            _panel = new PakInfoPanel(path);
+        }
+        else
+        {
+            _panel = new ArchiveInfoPanel(path);
+        }
+
+        context.ViewerContent = _panel;
+        context.Title = $"{Path.GetFileName(path)}";
+
+        context.IsBusy = false;
+    }
+
+    public void Cleanup()
+    {
+        GC.SuppressFinalize(this);
+
+        _panel?.Dispose();
+        _panel = null;
+    }
+}
