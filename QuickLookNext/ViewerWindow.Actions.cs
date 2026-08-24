@@ -340,18 +340,23 @@ public partial class ViewerWindow
 
             if (!IsVisible)
             {
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    this.BringToFront(Topmost);
-                    if (SettingHelper.Get("FocusWindowOnOpen", false))
-                        Activate();
-                }), DispatcherPriority.Render);
                 if (!SettingHelper.Get("ShowWindowTransition", true, "QuickLookNext"))
                     this.ShowWithoutTransition();
                 else
                     Show();
             }
         }
+
+        // v3.0.1: raise the preview above other windows on every open or
+        // switch. The 1.2.36 off-screen warm-up makes IsVisible true before
+        // the first real preview, so the old `if (!IsVisible)` guard skipped
+        // BringToFront and the preview could open behind other windows.
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            this.BringToFront(Topmost);
+            if (SettingHelper.Get("FocusWindowOnOpen", false))
+                Activate();
+        }), DispatcherPriority.Render);
 
         // Get the content size (and do any slow prepare work).
         try

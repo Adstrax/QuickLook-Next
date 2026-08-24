@@ -2,6 +2,19 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.0.1
+
+- 修复预览窗口可能被其他窗口挡住：1.2.36 的离屏预热让窗口在首次预览前就已
+  “可见”，而 BringToFront 只在 `!IsVisible` 时执行，导致预热后预览打开不置前；
+  现在每次打开 / 切换预览都会把窗口提到最前（仍不抢焦点，顶部置顶开关行为不变）
+
+## QuickLook-Next 3.0.0
+
+- 恢复老插件兼容：插件契约（`QuickLook.Common` 接口与程序集、`QuickLook.Plugin.*`
+  前缀、元数据文件名、注册表关联）全部改回旧名，老插件无需重新编译即可安装与加载
+- 应用本体保持 QuickLook-Next 命名（`QuickLook-Next.exe`、命名空间 `QuickLookNext.*`、
+  管道 / 互斥体 `QuickLookNext.App.*`、设置域 `QuickLookNext`）
+
 ## QuickLook-Next 2.0.0
 
 - 全面改名定型：可执行文件改为 `QuickLook-Next.exe`，程序集与 C# 命名空间改为
@@ -10,13 +23,6 @@
 - 设置域名同步改为 `QuickLookNext`：原主题 / 语言 / 背景等设置与用户插件目录不再
   沿用，需要重新设置；第三方 `QuickLook.Plugin.*` 插件需按 `QuickLookNext.Plugin.*`
   适配
-
-## QuickLook-Next 3.0.0
-
-- 恢复老插件兼容：插件契约（`QuickLook.Common` 接口与程序集、`QuickLook.Plugin.*`
-  前缀、元数据文件名、注册表关联）全部改回旧名，老插件无需重新编译即可安装与加载
-- 应用本体保持 QuickLook-Next 命名（`QuickLook-Next.exe`、命名空间 `QuickLookNext.*`、
-  管道 / 互斥体 `QuickLookNext.App.*`、设置域 `QuickLookNext`）
 
 ## QuickLook-Next 1.5.0
 
