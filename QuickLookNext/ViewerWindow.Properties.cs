@@ -191,15 +191,17 @@ public partial class ViewerWindow : INotifyPropertyChanged
                 break;
 
             case nameof(ContextObject.Title):
-                if (!string.IsNullOrWhiteSpace(ContextObject.Title))
+                Dispatcher?.Invoke(() =>
                 {
-                    Dispatcher?.Invoke(() =>
-                    {
-                        // We can not update the Title when ShowInTaskbar is false
-                        // https://github.com/QL-Win/QuickLook/issues/1628
-            Title = $"QuickLook-Next - {ContextObject.Title}";
-                    });
-                }
+                    // We can not update the Title when ShowInTaskbar is false
+                    // https://github.com/QL-Win/QuickLook/issues/1628
+                    // v3.1.0: reset the title when a plugin (e.g. PEViewer)
+                    // provides an empty title, so switching between previews
+                    // never leaves the previous file's title behind.
+                    Title = string.IsNullOrWhiteSpace(ContextObject.Title)
+                        ? "QuickLook-Next"
+                        : $"QuickLook-Next - {ContextObject.Title}";
+                });
                 break;
 
             default:

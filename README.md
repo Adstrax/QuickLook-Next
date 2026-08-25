@@ -73,7 +73,8 @@ dotnet build QuickLookNext.slnx -c Release
 
 ## 支持的文件格式
 
-文件夹预览由主程序内置的 InfoPanel 提供，内置 14 个常用插件，覆盖日常所有格式：
+文件夹预览由主程序内置的 InfoPanel 提供，内置 25 个插件（含恢复的 11 个
+插件），覆盖日常与专业格式：
 
 | 插件 | 用途 |
 |---|---|
@@ -91,6 +92,17 @@ dotnet build QuickLookNext.slnx -c Release
 | CLSIDViewer | 系统 shell 特殊对象（我的电脑、回收站等） |
 | AppViewer | 应用安装包详情（apk/ipa/msi/dmg/deb/rpm 等） |
 | PluginInstaller | .qlplugin 插件安装 |
+| BinaryViewer | 二进制文件（bin/hex） |
+| CertViewer | 数字证书（cer/crt/pem/pfx/p12 等） |
+| ChmViewer | CHM 帮助文档 |
+| DbViewer | 数据库（SQLite 等） |
+| DumpViewer | 崩溃转储（dmp） |
+| ELFViewer | ELF 可执行文件（Linux 二进制） |
+| HelixViewer | 3D 模型（stl/obj/3ds/fbx/glb/gltf/dae 等） |
+| MailViewer | 邮件（eml/msg） |
+| PEViewer | PE 可执行文件（exe/dll/sys 等） |
+| PrefetchViewer | Windows 预读取文件（pf） |
+| ThumbnailViewer | 设计文件缩略图（cdr/fig/kra/pdn/sketch/xd 等） |
 
 ## 更新历史
 

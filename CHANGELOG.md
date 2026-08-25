@@ -2,6 +2,14 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.1.0
+
+- 恢复全部被精简掉的预览插件：BinaryViewer（bin/hex）、CertViewer（证书）、
+  ChmViewer（CHM）、DbViewer（数据库）、DumpViewer（dmp）、ELFViewer（ELF）、
+  HelixViewer（3D 模型）、MailViewer（eml/msg）、PEViewer（PE）、
+  PrefetchViewer（pf）、ThumbnailViewer（设计文件缩略图），内置插件由 14 个
+  恢复为 25 个，预览覆盖与完整版一致
+
 ## QuickLook-Next 3.0.5
 
 - 移除 ImageViewer 内嵌 Excalidraw 模板中的演示 Firebase API Key
