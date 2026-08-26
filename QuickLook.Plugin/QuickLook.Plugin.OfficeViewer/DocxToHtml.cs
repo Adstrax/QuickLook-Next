@@ -468,7 +468,9 @@ internal static class DocxToHtml
         var scrollHover = "rgba(0,0,0,.45)";
         var headerBg = "rgba(0,0,0,.04)";
 
-        sb.Append($"html,body{{height:100%}}body{{margin:0;color:{fg};background:transparent;" +
+        // v3.17.0 fix: opaque white paper - transparent pages can composite to
+        // black on some window setups.
+        sb.Append($"html,body{{height:100%}}body{{margin:0;color:{fg};background:#FFFFFF;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6}");
         sb.Append("::-webkit-scrollbar{width:8px;height:8px}");
         sb.Append("::-webkit-scrollbar-track{background:transparent}");
@@ -491,7 +493,7 @@ internal static class DocxToHtml
     private static string ErrorHtml(string message)
     {
         return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:#1A1A1A;" +
-            "background:transparent;font-family:'Segoe UI',sans-serif}}</style></head>" +
+            "background:#FFFFFF;font-family:'Segoe UI',sans-serif}}</style></head>" +
             $"<body><div class=\"error\" style=\"padding:24px\">{message}</div></body></html>";
     }
 }

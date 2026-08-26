@@ -32,7 +32,9 @@ public sealed class SpreadsheetPanel : OfficePanelBase
         sb.Append(":root{--fg:#1A1A1A;--border:rgba(0,0,0,.12);" +
             "--head-bg:#F3F3F3;--alt-bg:rgba(0,0,0,.02);--error:#C42B1C;" +
             "--scroll-thumb:rgba(0,0,0,.28);--scroll-thumb-hover:rgba(0,0,0,.45)}");
-        sb.Append("html,body{height:100%}body{margin:0;color:var(--fg);background:transparent;" +
+        // v3.17.0 fix: opaque white surface - transparent WebView2 pages can
+        // composite to black on some window setups.
+        sb.Append("html,body{height:100%}body{margin:0;color:var(--fg);background:#FFFFFF;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
         sb.Append("::-webkit-scrollbar{width:8px;height:8px}");
         sb.Append("::-webkit-scrollbar-track{background:transparent}");

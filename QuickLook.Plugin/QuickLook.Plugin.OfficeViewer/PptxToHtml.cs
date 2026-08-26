@@ -309,7 +309,9 @@ internal static class PptxToHtml
         var scrollThumb = "rgba(0,0,0,.28)";
         var scrollHover = "rgba(0,0,0,.45)";
 
-        sb.Append("html,body{height:100%}body{margin:0;background:transparent;" +
+        // v3.17.0 fix: opaque light backdrop - transparent pages can composite
+        // to black on some window setups.
+        sb.Append("html,body{height:100%}body{margin:0;background:#F3F3F3;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
         sb.Append("::-webkit-scrollbar{width:8px;height:8px}");
         sb.Append("::-webkit-scrollbar-track{background:transparent}");
@@ -333,7 +335,7 @@ internal static class PptxToHtml
     private static string ErrorHtml(string message)
     {
         return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:#1A1A1A;" +
-            "background:transparent;font-family:'Segoe UI',sans-serif}}</style></head>" +
+            "background:#F3F3F3;font-family:'Segoe UI',sans-serif}}</style></head>" +
             $"<body><div class=\"error\" style=\"padding:24px\">{message}</div></body></html>";
     }
 }
