@@ -95,15 +95,17 @@ internal sealed class TrayMenuWindow : Window
         FontFamily = new FontFamily(TranslationHelper.Get("UI_FontFamily", failsafe: "Segoe UI"));
         FontSize = 13;
 
-        _textBrush = CreateBrush(isDark ? "#F5F5F5" : "#1A1A1A");
-        _disabledTextBrush = CreateBrush(isDark ? "#9E9E9E" : "#7A7A7A");
-        _hoverBrush = CreateBrush(isDark ? "#14FFFFFF" : "#10000000");
-        _separatorBrush = CreateBrush(isDark ? "#14FFFFFF" : "#10000000");
-        _borderBrush = CreateBrush(isDark ? "#26FFFFFF" : "#26000000");
-        _checkBrush = CreateBrush(isDark ? "#60CDFF" : "#005FB8");
+        // v3.11.0: shared palette - identical colors across the tray menu and
+        // the plugin manager panel, accent follows the system accent.
+        _textBrush = ThemePalette.Text(isDark);
+        _disabledTextBrush = ThemePalette.SecondaryText(isDark);
+        _hoverBrush = ThemePalette.Hover(isDark);
+        _separatorBrush = ThemePalette.Separator(isDark);
+        _borderBrush = ThemePalette.Border(isDark);
+        _checkBrush = ThemePalette.Accent(isDark);
         // v1.2.37: translucent overlay over the frosted acrylic - keep the
         // alpha moderate so the blur shows through while text stays readable.
-        _tintBrush = CreateBrush(isDark ? "#8C20242A" : "#B8F8F6F4");
+        _tintBrush = ThemePalette.Tint(isDark);
 
         _root = BuildMenu(entries);
 
@@ -230,13 +232,6 @@ internal sealed class TrayMenuWindow : Window
         // windows need the DWM backdrop attribute set once the window is
         // actually visible for it to take effect reliably.
         ApplyBackdrop();
-    }
-
-    private static Brush CreateBrush(string hex)
-    {
-        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-        brush.Freeze();
-        return brush;
     }
 
     private StackPanel BuildMenu(IReadOnlyList<TrayMenuEntry> entries)

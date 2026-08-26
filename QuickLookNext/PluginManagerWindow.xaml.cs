@@ -294,20 +294,20 @@ public partial class PluginManagerWindow : Window
 
     private void ApplyTheme()
     {
-        if (_isDark)
-        {
-            SetBrush("TintBrush", "#8C20242A");
-            SetBrush("PanelBorderBrush", "#26FFFFFF");
-            SetBrush("TextBrush", "#FFF5F5F5");
-            SetBrush("SecondaryTextBrush", "#FF9E9E9E");
-            SetBrush("RowHoverBrush", "#14FFFFFF");
-            SetBrush("SeparatorBrush", "#14FFFFFF");
-            SetBrush("BadgeBrush", "#1860CDFF");
-            SetBrush("BadgeTextBrush", "#FF60CDFF");
-            SetBrush("ButtonBgBrush", "#14FFFFFF");
-            SetBrush("ButtonHoverBrush", "#24FFFFFF");
-            SetBrush("DangerBrush", "#FFFF7B72");
-        }
+        // v3.11.0: shared palette for both light and dark; the accent follows
+        // the system accent (badge text / background come from the same
+        // accent, so the panel matches the tray menu).
+        SetBrush("TintBrush", ThemePalette.Tint(_isDark));
+        SetBrush("PanelBorderBrush", ThemePalette.Border(_isDark));
+        SetBrush("TextBrush", ThemePalette.Text(_isDark));
+        SetBrush("SecondaryTextBrush", ThemePalette.SecondaryText(_isDark));
+        SetBrush("RowHoverBrush", ThemePalette.Hover(_isDark));
+        SetBrush("SeparatorBrush", ThemePalette.Separator(_isDark));
+        SetBrush("BadgeBrush", ThemePalette.AccentTint(_isDark));
+        SetBrush("BadgeTextBrush", ThemePalette.Accent(_isDark));
+        SetBrush("ButtonBgBrush", ThemePalette.ButtonBg(_isDark));
+        SetBrush("ButtonHoverBrush", ThemePalette.ButtonHover(_isDark));
+        SetBrush("DangerBrush", ThemePalette.Danger(_isDark));
 
         // Dragging a borderless window: the header bar acts as the caption.
         headerBar.MouseLeftButtonDown += (_, e) =>
@@ -326,11 +326,11 @@ public partial class PluginManagerWindow : Window
         };
     }
 
-    private void SetBrush(string key, string hex)
+    private void SetBrush(string key, Brush brush)
     {
         // Brushes declared in XAML resources are frozen and cannot be
-        // mutated, so swap in a new unfrozen brush for the dark theme.
-        Resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        // mutated, so swap in a new unfrozen brush.
+        Resources[key] = brush;
     }
 
     private static string Tr(string key, string failsafe)

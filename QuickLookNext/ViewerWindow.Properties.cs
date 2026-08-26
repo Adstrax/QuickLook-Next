@@ -32,6 +32,11 @@ namespace QuickLookNext;
 
 public partial class ViewerWindow : INotifyPropertyChanged
 {
+    // v3.11.0: the content fade-in runs once for the first preview only.
+    // Applying it on every preview switch made the content dip in opacity and
+    // read as a flicker.
+    private bool _firstContentFadePending = true;
+
     private readonly ResourceDictionary _darkDict = new()
     {
         Source = new Uri("pack://application:,,,/QuickLook.Common;component/Styles/MainWindowStyles.Dark.xaml")
@@ -138,11 +143,13 @@ public partial class ViewerWindow : INotifyPropertyChanged
                 {
                     UpdateLayout();
 
-                    // v3.9.0: fade the freshly-ready content in softly instead
-                    // of popping it in. Respects the ShowWindowTransition
-                    // option like the window show animation.
-                    if (SettingHelper.Get("ShowWindowTransition", true, "QuickLookNext"))
+                    // v3.9.0/v3.11.0: fade the first preview's content in
+                    // softly; preview switches stay at full opacity so they
+                    // never flicker. Respects the ShowWindowTransition option.
+                    if (_firstContentFadePending &&
+                        SettingHelper.Get("ShowWindowTransition", true, "QuickLookNext"))
                     {
+                        _firstContentFadePending = false;
                         var fade = (Storyboard)FindResource("ContentFadeInStoryboard");
                         fade.Begin(container);
                     }
