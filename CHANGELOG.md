@@ -2,6 +2,20 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.14.0
+
+### 新功能（第二阶段：Word 自研渲染）
+
+- docx / docm 预览改为自研渲染：手写 OOXML 解析（标题、加粗/斜体/下划线/
+  删除线/颜色/字号/高亮、对齐、项目符号与编号列表、表格含合并单元格、
+  内嵌图片）→ 样式化 HTML → WebView2 显示，与 Excel 预览同一套圆角 /
+  毛玻璃 / 深浅色观感
+- 其余 Office 格式（.doc/.ppt/.pptx/.odt 等）继续由系统预览组件兜底
+
+### 工程
+
+- 冒烟测试新增 test.docx（标题/格式/列表/表格）覆盖自研 Word 预览
+
 ## QuickLook-Next 3.13.0
 
 ### 修复（Excel 预览）

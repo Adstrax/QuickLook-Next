@@ -37,12 +37,14 @@ public sealed class Plugin : IViewer
         ".vsd", ".vsdx",
     ];
 
-    // v3.12.0: OOXML workbooks rendered by our own SpreadsheetPanel instead of
-    // the Windows system preview component (rounded corners / acrylic / theme).
+    // v3.12.0/v3.14.0: OOXML formats rendered by our own panels instead of the
+    // Windows system preview component (rounded corners / acrylic / theme).
     private static readonly HashSet<string> SelfRenderedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".xlsx",
         ".xlsm",
+        ".docx",
+        ".docm",
     };
 
     private object _panel;
@@ -119,15 +121,29 @@ public sealed class Plugin : IViewer
 
     public void View(string path, ContextObject context)
     {
-        // v3.12.0: self-rendered spreadsheets - no system component, so the
+        // v3.12.0/v3.14.0: self-rendered OOXML - no system component, so the
         // preview inherits the app's backdrop / corners / theme.
-        if (SelfRenderedExtensions.Contains(Path.GetExtension(path)))
+        var extension = Path.GetExtension(path);
+        if (SelfRenderedExtensions.Contains(extension))
         {
-            var spreadsheet = new SpreadsheetPanel();
-            _panel = spreadsheet;
-            context.ViewerContent = spreadsheet;
-            context.Title = Path.GetFileName(path);
-            spreadsheet.LoadSpreadsheet(path);
+            if (extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase))
+            {
+                var spreadsheet = new SpreadsheetPanel();
+                _panel = spreadsheet;
+                context.ViewerContent = spreadsheet;
+                context.Title = Path.GetFileName(path);
+                spreadsheet.LoadSpreadsheet(path);
+            }
+            else
+            {
+                var document = new DocumentPanel();
+                _panel = document;
+                context.ViewerContent = document;
+                context.Title = Path.GetFileName(path);
+                document.LoadDocument(path);
+            }
+
             context.IsBusy = false;
             return;
         }
@@ -203,6 +219,8 @@ public sealed class Plugin : IViewer
             previewPanel.Dispose();
         else if (_panel is SpreadsheetPanel spreadsheetPanel)
             spreadsheetPanel.Dispose();
+        else if (_panel is DocumentPanel documentPanel)
+            documentPanel.Dispose();
         _panel = null;
     }
 }

@@ -158,6 +158,28 @@ for ($i = 0; $i -lt $xlsxData.Count; $i++) {
 Add-XlsxEntry $xlsxZip 'xl/worksheets/sheet1.xml' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><worksheet xmlns=`"http://schemas.openxmlformats.org/spreadsheetml/2006/main`"><sheetData>$xlsxRows</sheetData></worksheet>"
 $xlsxZip.Dispose()
 $xlsxFs.Dispose()
+# v3.14.0: a minimal but valid docx (heading / formatting / list / table) for
+# the self-rendered Word preview.
+$docxPath = Join-Path $smoke 'test.docx'
+$docxFs = [System.IO.File]::Open($docxPath, [System.IO.FileMode]::Create)
+$docxZip = New-Object System.IO.Compression.ZipArchive($docxFs,
+    [System.IO.Compression.ZipArchiveMode]::Create)
+$wNs = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+Add-XlsxEntry $docxZip '[Content_Types].xml' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><Types xmlns=`"http://schemas.openxmlformats.org/package/2006/content-types`"><Default Extension=`"rels`" ContentType=`"application/vnd.openxmlformats-package.relationships+xml`"/><Default Extension=`"xml`" ContentType=`"application/xml`"/><Override PartName=`"/word/document.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml`"/><Override PartName=`"/word/styles.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml`"/><Override PartName=`"/word/numbering.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml`"/></Types>"
+Add-XlsxEntry $docxZip '_rels/.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'
+Add-XlsxEntry $docxZip 'word/_rels/document.xml.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/></Relationships>'
+Add-XlsxEntry $docxZip 'word/styles.xml' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style></w:styles>'
+Add-XlsxEntry $docxZip 'word/numbering.xml' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>'
+$docxBody = "<w:document xmlns:w=`"$wNs`"><w:body>"
+$docxBody += '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>QuickLook-Next 测试文档</w:t></w:r></w:p>'
+$docxBody += '<w:p><w:r><w:t>普通文本，</w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>加粗</w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t>斜体</w:t></w:r><w:r><w:rPr><w:color w:val="C00000"/><w:sz w:val="28"/></w:rPr><w:t>红色大字</w:t></w:r></w:p>'
+$docxBody += '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>项目一</w:t></w:r></w:p>'
+$docxBody += '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>项目二</w:t></w:r></w:p>'
+$docxBody += '<w:tbl><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/></w:tcPr><w:p><w:r><w:t>合并表头</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:p><w:r><w:t>单元格 A</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>单元格 B</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
+$docxBody += '</w:body></w:document>'
+Add-XlsxEntry $docxZip 'word/document.xml' $docxBody
+$docxZip.Dispose()
+$docxFs.Dispose()
 
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
@@ -213,6 +235,8 @@ $previews += @{ File = 'test-mermaid.md'; Title = 'test-mermaid.md' }
 $previews += @{ File = 'test-math.md'; Title = 'test-math.md' }
 # v3.12.0: self-rendered spreadsheet preview.
 $previews += @{ File = 'test.xlsx'; Title = 'test.xlsx' }
+# v3.14.0: self-rendered Word document preview.
+$previews += @{ File = 'test.docx'; Title = 'test.docx' }
 # v3.8.0: folder preview (InfoPanel) coverage - InfoPanel shows no title.
 $previews += @{ Folder = $smoke; Title = 'ql-smoke'; CheckTitle = $false }
 foreach ($pv in $previews) {
