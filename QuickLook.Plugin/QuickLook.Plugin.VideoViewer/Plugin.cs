@@ -28,7 +28,18 @@ namespace QuickLook.Plugin.VideoViewer;
 
 public sealed class Plugin : IViewer
 {
-    private static readonly MediaInfoNative _mediaInfo;
+    // v3.3.0: load MediaInfo natively on first actual use instead of in the
+    // static ctor. Creating the plugin instance during startup used to force
+    // MediaInfo.dll (~8 MB) into every resident process even when no media
+    // file was ever previewed.
+    private static readonly Lazy<MediaInfoNative> _mediaInfo = new(() =>
+    {
+        var lib = new MediaInfoNative(Path.Combine(
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            Environment.Is64BitProcess ? @"runtimes\win-x64\native\" : @"runtimes\win-x86\native\"));
+        lib.Option("Cover_Data", "base64");
+        return lib;
+    });
     private static readonly Dictionary<string, MediaInfoSnapshot> SnapshotCache = [];
     private const int MaxCacheEntries = 48;
 
@@ -73,14 +84,6 @@ public sealed class Plugin : IViewer
     private ViewerPanel _vp;
 
     public int Priority => -3;
-
-    static Plugin()
-    {
-        _mediaInfo = new(Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-            Environment.Is64BitProcess ? @"runtimes\win-x64\native\" : @"runtimes\win-x86\native\"));
-        _mediaInfo.Option("Cover_Data", "base64");
-    }
 
     public void Init()
     {
@@ -195,16 +198,17 @@ public sealed class Plugin : IViewer
     {
         try
         {
-            _mediaInfo.Open(path);
-            var videoCodec = _mediaInfo.Get(StreamKind.Video, 0, "Format");
-            var audioCodec = _mediaInfo.Get(StreamKind.Audio, 0, "Format");
+            var lib = _mediaInfo.Value;
+            lib.Open(path);
+            var videoCodec = lib.Get(StreamKind.Video, 0, "Format");
+            var audioCodec = lib.Get(StreamKind.Audio, 0, "Format");
 
             if (videoCodec == "Unable to load MediaInfo library") // should not happen
                 return null;
 
-            int.TryParse(_mediaInfo.Get(StreamKind.Video, 0, "Width"), out var width);
-            int.TryParse(_mediaInfo.Get(StreamKind.Video, 0, "Height"), out var height);
-            double.TryParse(_mediaInfo.Get(StreamKind.Video, 0, "Rotation"), out var rotation);
+            int.TryParse(lib.Get(StreamKind.Video, 0, "Width"), out var width);
+            int.TryParse(lib.Get(StreamKind.Video, 0, "Height"), out var height);
+            double.TryParse(lib.Get(StreamKind.Video, 0, "Rotation"), out var rotation);
 
             // Correct rotation: on some machine the value "90" becomes "90000" by some reason
             if (rotation > 360)
@@ -220,11 +224,11 @@ public sealed class Plugin : IViewer
                     rotation, null, null, null, null, null);
 
             return new MediaInfoSnapshot(false, hasAudio, audioCodec, width, height, rotation,
-                _mediaInfo.Get(StreamKind.General, 0, "Title"),
-                _mediaInfo.Get(StreamKind.General, 0, "Performer"),
-                _mediaInfo.Get(StreamKind.General, 0, "Album"),
-                _mediaInfo.Get(StreamKind.General, 0, "Cover_Data"),
-                _mediaInfo.Get(StreamKind.General, 0, "Lyrics"));
+                lib.Get(StreamKind.General, 0, "Title"),
+                lib.Get(StreamKind.General, 0, "Performer"),
+                lib.Get(StreamKind.General, 0, "Album"),
+                lib.Get(StreamKind.General, 0, "Cover_Data"),
+                lib.Get(StreamKind.General, 0, "Lyrics"));
         }
         catch
         {

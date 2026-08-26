@@ -153,16 +153,11 @@ public sealed partial class Plugin : IViewer, IMoreMenu
             // Warm-up is best-effort; never break startup.
         }
 
-        try
-        {
-            // Load the ImageMagick native library so exotic formats decode
-            // instantly on first use as well.
-            using var img = new MagickImage(MagickColors.Transparent, 1, 1);
-        }
-        catch
-        {
-            // Warm-up is best-effort; never break startup.
-        }
+        // v3.3.0: the ImageMagick native library (~24 MB) is deliberately NOT
+        // pre-loaded at startup anymore. Most previews (png/jpg/gif/bmp/webp)
+        // go through WPF/WIC above, and keeping Magick.Native resident in the
+        // tray process for every user costs ~24 MB of RAM. The native library
+        // still loads lazily the first time an exotic format actually needs it.
     }
 
     public bool CanHandle(string path)

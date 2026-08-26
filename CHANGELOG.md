@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.4.0
+
+### 更轻（内存）
+
+- MediaInfo 原生库改为按需加载：VideoViewer 不再在启动时把 MediaInfo.dll
+  （约 8MB）载入常驻进程，只有实际预览媒体文件时才加载
+- 移除启动时的 ImageMagick 原生库预热（约 24MB）：png / jpg / gif 等常见
+  格式仍走 WPF/WIC 快速解码，Magick.Native 在首次预览非常见格式时才按需加载
+
 ## QuickLook-Next 3.3.0
 
 ### 更快
