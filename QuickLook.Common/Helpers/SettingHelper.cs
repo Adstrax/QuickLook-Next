@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Xml;
 
@@ -28,8 +27,10 @@ public static class SettingHelper
 {
     public static readonly string LocalDataPath =
         IsPortableVersion()
-            ? Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
-                @"UserData\")
+            // v3.2.0 fix: the portable marker and UserData live next to the
+            // exe (AppContext.BaseDirectory). QuickLook.Common.dll may sit in
+            // lib\, so the assembly location is no longer the app root.
+            ? Path.Combine(AppContext.BaseDirectory, @"UserData\")
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 @"pooi.moe\QuickLookNext\");
 
@@ -69,8 +70,7 @@ public static class SettingHelper
 
     public static bool IsPortableVersion()
     {
-        var lck = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
-            "portable.lock");
+        var lck = Path.Combine(AppContext.BaseDirectory, "portable.lock");
 
         return File.Exists(lck);
     }

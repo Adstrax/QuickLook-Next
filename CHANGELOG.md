@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.2.1
+
+- 修复 3.2.0 发布包中设置/托盘菜单显示原始键（如 `icon_CheckUpdate`、
+  `icon-Restart`）的问题：`QuickLook.Common.dll` 移入 `lib\` 后，翻译文件
+  定位改为基于程序根目录（`AppContext.BaseDirectory`），不再依赖
+  `QuickLook.Common.dll` 所在目录
+- 同步修复便携模式的便携标记（`portable.lock`）检测：同样改为基于程序根目录，
+  保证发布包解压后数据目录跟随程序目录
+
 ## QuickLook-Next 3.2.0
 
 ### 性能

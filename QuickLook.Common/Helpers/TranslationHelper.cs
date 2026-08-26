@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Xml.XPath;
 
 namespace QuickLook.Common.Helpers;
@@ -36,9 +36,11 @@ public static class TranslationHelper
         if (file == null)
         {
             var subDir = domain == "QuickLookNext" ? string.Empty : $"QuickLook.Plugin\\{domain}";
-            file = Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), // path of QuickLook.Common.dll
-                subDir, "Translations.config");
+            // v3.2.0 fix: resolve against the app root (exe directory), not
+            // the location of QuickLook.Common.dll. The release package keeps
+            // QuickLook.Common.dll inside lib\, and resolving against the
+            // assembly location would look for Translations.config in lib\.
+            file = Path.Combine(AppContext.BaseDirectory, subDir, "Translations.config");
         }
 
         if (!File.Exists(file))
@@ -98,9 +100,7 @@ public static class TranslationHelper
     {
         if (file == null)
         {
-            file = Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                "Translations.config");
+            file = Path.Combine(AppContext.BaseDirectory, "Translations.config");
         }
 
         if (!File.Exists(file))
