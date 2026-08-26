@@ -1,47 +1,26 @@
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.Wpf;
 using MiniExcelLibs;
 using QuickLook.Common.Helpers;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
 
 namespace QuickLook.Plugin.OfficeViewer;
 
 /// <summary>
 /// v3.12.0: self-rendered spreadsheet preview. The workbook is read with
-/// MiniExcel and rendered as a styled HTML table in WebView2, so the preview
-/// inherits the app's rounded corners / acrylic / theme instead of hosting
-/// the Windows system preview component.
+/// MiniExcel and rendered as a styled HTML table in WebView2.
 /// </summary>
-public sealed class SpreadsheetPanel : UserControl, IDisposable
+public sealed class SpreadsheetPanel : OfficePanelBase
 {
     private const int MaxRows = 300;
     private const int MaxColumns = 50;
 
-    private readonly WebView2 _webView = new();
-
-    public SpreadsheetPanel()
+    public SpreadsheetPanel(string path)
     {
-        _webView.CreationProperties = new CoreWebView2CreationProperties
-        {
-            UserDataFolder = Path.Combine(SettingHelper.LocalDataPath, @"WebView2_Data\"),
-        };
-        // Transparent so the window's acrylic backdrop shows through.
-        _webView.DefaultBackgroundColor = System.Drawing.Color.Transparent;
-        Content = _webView;
-    }
-
-    public void LoadSpreadsheet(string path)
-    {
-        var html = BuildHtml(path);
-        _ = _webView.EnsureCoreWebView2Async().ContinueWith(_ =>
-            Dispatcher.BeginInvoke(() => _webView.NavigateToString(html)));
+        SetFrameInfo(path, "Excel 工作表");
+        Navigate(BuildHtml(path));
     }
 
     private static string BuildHtml(string path)
@@ -65,8 +44,6 @@ public sealed class SpreadsheetPanel : UserControl, IDisposable
         }
         sb.Append("html,body{height:100%}body{margin:0;color:var(--fg);background:transparent;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
-        // v3.13.0: slim, theme-aware scrollbar that blends into the acrylic
-        // backdrop instead of the thick default white-track WebView2 bar.
         sb.Append("::-webkit-scrollbar{width:8px;height:8px}");
         sb.Append("::-webkit-scrollbar-track{background:transparent}");
         sb.Append("::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:4px}");
@@ -120,7 +97,6 @@ public sealed class SpreadsheetPanel : UserControl, IDisposable
                     cells.Add(kv.Value is null ? string.Empty : WebUtility.HtmlEncode(kv.Value.ToString()));
                 }
 
-                // Trim trailing empty cells so short rows do not stretch the table.
                 while (cells.Count > 0 && cells[^1].Length == 0)
                     cells.RemoveAt(cells.Count - 1);
 
@@ -148,10 +124,5 @@ public sealed class SpreadsheetPanel : UserControl, IDisposable
         }
 
         return name;
-    }
-
-    public void Dispose()
-    {
-        _webView.Dispose();
     }
 }

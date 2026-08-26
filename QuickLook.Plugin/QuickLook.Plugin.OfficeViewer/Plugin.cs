@@ -131,28 +131,22 @@ public sealed class Plugin : IViewer
             if (extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase) ||
                 extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase))
             {
-                var spreadsheet = new SpreadsheetPanel();
-                _panel = spreadsheet;
-                context.ViewerContent = spreadsheet;
+                _panel = new SpreadsheetPanel(path);
+                context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
-                spreadsheet.LoadSpreadsheet(path);
             }
             else if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase) ||
                 extension.Equals(".docm", StringComparison.OrdinalIgnoreCase))
             {
-                var document = new DocumentPanel();
-                _panel = document;
-                context.ViewerContent = document;
+                _panel = new DocumentPanel(path);
+                context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
-                document.LoadDocument(path);
             }
             else
             {
-                var presentation = new PresentationPanel();
-                _panel = presentation;
-                context.ViewerContent = presentation;
+                _panel = new PresentationPanel(path);
+                context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
-                presentation.LoadPresentation(path);
             }
 
             context.IsBusy = false;

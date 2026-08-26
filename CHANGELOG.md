@@ -2,6 +2,14 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.16.0
+
+### 更美观（Office 预览布局）
+
+- Excel / Word / PowerPoint 预览统一改为类似 PDF 的结构：左侧 170px 框架区
+  （透明，透出毛玻璃背景，显示文件名 / 类型 / 大小），右侧文档区为不模糊的
+  纯色表面（浅色白 / 深色 #1E1E1E），阅读更舒适
+
 ## QuickLook-Next 3.15.0
 
 ### 新功能（第三阶段：PowerPoint 自研渲染）
