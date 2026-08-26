@@ -2,6 +2,16 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.19.0
+
+### 修复（托盘菜单二级菜单）
+
+- 修复二级菜单打开后点击父菜单其他区域导致整个菜单关闭：子菜单现在知道
+  自己的父菜单，点击父菜单 / 子菜单区域都不再被外部点击钩子误判
+  （通过 WindowFromPoint 精确判断点击是否落在任一相关菜单窗口上）
+- 修复二级菜单同样存在“先显示背景再出现选项”的闪动（ShowSubmenuAt 的
+  MoveWindow 不再强制重绘）
+
 ## QuickLook-Next 3.18.0
 
 ### 修复（托盘菜单）

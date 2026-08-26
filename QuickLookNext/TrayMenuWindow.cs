@@ -70,6 +70,9 @@ internal sealed class TrayMenuWindow : Window
     private bool _accentApplied;
     // v1.3.7: the flyout opened by a submenu row (theme/backdrop/options).
     private TrayMenuWindow _childMenu;
+    // v3.19.0: the menu that opened this flyout, so clicks over the parent
+    // menu are not treated as "outside" by the child's mouse hook.
+    private TrayMenuWindow _parentMenu;
 
     private TrayMenuWindow(IReadOnlyList<TrayMenuEntry> entries, bool isDark, int autoCloseMs)
     {
@@ -371,6 +374,7 @@ internal sealed class TrayMenuWindow : Window
         }
 
         var child = new TrayMenuWindow(children, _isDark, autoCloseMs: 0);
+        child._parentMenu = this;
         _childMenu = child;
         child.Closed += ChildMenu_Closed;
 
@@ -549,13 +553,14 @@ internal sealed class TrayMenuWindow : Window
         InstallHooks();
         Show();
 
-        // Correct to exact physical pixels (see ShowAt).
+        // v3.19.0: no forced repaint after Show - same as ShowAt, so the
+        // submenu does not flash its background before the items are visible.
         MoveWindow(hwnd,
             (int)Math.Round(left * scaleX),
             (int)Math.Round(top * scaleY),
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
-            true);
+            false);
     }
 
     private static bool TryGetAnchorRect(FrameworkElement anchor, out Rect rect)
@@ -690,12 +695,35 @@ internal sealed class TrayMenuWindow : Window
         if (x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom)
             return true;
 
-        // v3.0.3: a click inside an open submenu must not count as an outside
-        // click. Without this, the parent's low-level mouse hook can close the
-        // menus before the submenu receives the click, so the first quick click
-        // on a submenu item (e.g. 语言 -> 跟随系统) was silently swallowed.
-        if (_childMenu is { IsVisible: true } child && child.IsPointInsideWindow(x, y))
+        // v3.19.0: clicks over any related QuickLook menu window (this window,
+        // an open child flyout, or the parent menu that opened this flyout)
+        // are never "outside". Without this, clicking the parent menu while a
+        // submenu is open closed the submenu - and closing the submenu also
+        // closed the parent (ChildMenu_Closed), so the whole menu vanished.
+        var under = User32.WindowFromPoint(new User32.POINT(x, y));
+        if (under == IntPtr.Zero)
+            return false;
+
+        var root = User32.GetAncestor(under, User32.GA_ROOT);
+        return root != IntPtr.Zero && IsRelatedMenuHwnd(root);
+    }
+
+    private bool IsRelatedMenuHwnd(nint hwnd)
+    {
+        if (hwnd == new WindowInteropHelper(this).Handle)
             return true;
+
+        if (_childMenu is { IsVisible: true } child &&
+            hwnd == new WindowInteropHelper(child).Handle)
+        {
+            return true;
+        }
+
+        if (_parentMenu is { IsVisible: true } parent &&
+            hwnd == new WindowInteropHelper(parent).Handle)
+        {
+            return true;
+        }
 
         return false;
     }
