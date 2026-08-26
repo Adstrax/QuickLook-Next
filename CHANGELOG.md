@@ -2,6 +2,17 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.8.0
+
+### 更美观
+
+- 文件夹 / 文件信息面板（InfoPanel）排版升级：图标放进圆角柔和底色容器，
+  修改时间与大小两行元数据加上 MDL2 小图标，字号与间距更克制
+
+### 工程
+
+- 冒烟测试新增文件夹预览覆盖（InfoPanel 渲染路径），并优化测试输出
+
 ## QuickLook-Next 3.7.0
 
 ### 更美观

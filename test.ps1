@@ -170,17 +170,21 @@ $previews += @{ File = 'test-pe.exe'; Title = 'test-pe.exe'; CheckTitle = $false
 $previews += @{ File = 'test.bin'; Title = 'test.bin' }
 $previews += @{ File = 'test-mermaid.md'; Title = 'test-mermaid.md' }
 $previews += @{ File = 'test-math.md'; Title = 'test-math.md' }
+# v3.8.0: folder preview (InfoPanel) coverage - InfoPanel shows no title.
+$previews += @{ Folder = $smoke; Title = 'ql-smoke'; CheckTitle = $false }
 foreach ($pv in $previews) {
     $before = Get-LogLength
-    & $exe (Join-Path $smoke $pv.File)
+    $target = if ($pv.Folder) { $pv.Folder } else { Join-Path $smoke $pv.File }
+    $label = if ($pv.Folder) { $pv.Title } else { $pv.File }
+    & $exe $target
     Start-Sleep -Seconds 12
     $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
-    Assert ($null -ne $alive) "预览 $($pv.File) 后进程存活"
+    Assert ($null -ne $alive) "预览 $label 后进程存活"
     if ($pv.CheckTitle -ne $false) {
         $titles = Get-QuickLookNextWindows $p.Id
         Assert (($titles -join ' ') -match [regex]::Escape($pv.Title)) "预览窗口出现: $($pv.Title)"
     }
-    Assert ((Get-LogLength) -eq $before) "预览 $($pv.File) 无错误（日志零新增）"
+    Assert ((Get-LogLength) -eq $before) "预览 $label 无错误（日志零新增）"
 
     # v1.2.36: regression guard - the preview window must be centered on the
     # screen that contains it (the off-screen warm-up once broke this).
