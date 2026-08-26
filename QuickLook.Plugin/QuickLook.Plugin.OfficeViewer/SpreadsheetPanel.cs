@@ -54,15 +54,24 @@ public sealed class SpreadsheetPanel : UserControl, IDisposable
         if (isDark)
         {
             sb.Append(":root{--fg:#F5F5F5;--border:rgba(255,255,255,.14);" +
-                "--head-bg:#22262C;--alt-bg:rgba(255,255,255,.03);--error:#FF7B72}");
+                "--head-bg:#22262C;--alt-bg:rgba(255,255,255,.03);--error:#FF7B72;" +
+                "--scroll-thumb:rgba(255,255,255,.28);--scroll-thumb-hover:rgba(255,255,255,.45)}");
         }
         else
         {
             sb.Append(":root{--fg:#1A1A1A;--border:rgba(0,0,0,.12);" +
-                "--head-bg:#F3F3F3;--alt-bg:rgba(0,0,0,.02);--error:#C42B1C}");
+                "--head-bg:#F3F3F3;--alt-bg:rgba(0,0,0,.02);--error:#C42B1C;" +
+                "--scroll-thumb:rgba(0,0,0,.28);--scroll-thumb-hover:rgba(0,0,0,.45)}");
         }
         sb.Append("html,body{height:100%}body{margin:0;color:var(--fg);background:transparent;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
+        // v3.13.0: slim, theme-aware scrollbar that blends into the acrylic
+        // backdrop instead of the thick default white-track WebView2 bar.
+        sb.Append("::-webkit-scrollbar{width:8px;height:8px}");
+        sb.Append("::-webkit-scrollbar-track{background:transparent}");
+        sb.Append("::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:4px}");
+        sb.Append("::-webkit-scrollbar-thumb:hover{background:var(--scroll-thumb-hover)}");
+        sb.Append("::-webkit-scrollbar-corner{background:transparent}");
         sb.Append(".wrap{padding:16px;overflow:auto;height:100%;box-sizing:border-box}");
         sb.Append("table{border-collapse:collapse;font-size:13px;min-width:100%}");
         sb.Append("th,td{border:1px solid var(--border);padding:5px 10px;white-space:nowrap}");

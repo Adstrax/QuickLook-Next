@@ -2,6 +2,13 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.13.0
+
+### 修复（Excel 预览）
+
+- 表格滚动条改为细窄样式（8px、圆角滑块、透明轨道），并随深浅色主题与
+  毛玻璃背景适配，不再显示又粗又不搭调的默认滚动条
+
 ## QuickLook-Next 3.12.0
 
 ### 新功能（第一阶段：Excel 自研渲染）
