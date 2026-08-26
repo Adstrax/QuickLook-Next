@@ -43,6 +43,32 @@ public sealed class PluginManager
     // plugin's Init is ensured on demand (EnsurePluginReady).
     private readonly ManualResetEventSlim _loadGate = new(false);
     private readonly ConcurrentDictionary<IViewer, InitState> _initStates = new();
+    // v3.4.0: rarely-used built-in plugins are NOT loaded at startup. They are
+    // loaded on demand when a preview request reaches MatchLazyPlugin (or a
+    // More-menu action asks for them by name), which keeps their assemblies
+    // and any natives their static ctors touch out of the resident process.
+    private static readonly HashSet<string> LazyBuiltinPluginNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "QuickLook.Plugin.AppViewer",
+        "QuickLook.Plugin.BinaryViewer",
+        "QuickLook.Plugin.CertViewer",
+        "QuickLook.Plugin.ChmViewer",
+        "QuickLook.Plugin.CLSIDViewer",
+        "QuickLook.Plugin.DbViewer",
+        "QuickLook.Plugin.DumpViewer",
+        "QuickLook.Plugin.ELFViewer",
+        "QuickLook.Plugin.HelixViewer",
+        "QuickLook.Plugin.MailViewer",
+        "QuickLook.Plugin.MediaInfoViewer",
+        "QuickLook.Plugin.PEViewer",
+        "QuickLook.Plugin.PluginInstaller",
+        "QuickLook.Plugin.PrefetchViewer",
+        "QuickLook.Plugin.ThumbnailViewer",
+    };
+
+    private readonly object _lazyLock = new();
+    private List<(long Seq, string Path)> _pendingLazy = [];
+    private readonly Dictionary<IViewer, long> _seqByPlugin = [];
 
     private PluginManager()
     {
@@ -150,10 +176,126 @@ public sealed class PluginManager
                 return can;
             });
 
+        // v3.4.0: no eager plugin claimed the file - try the rarely-used
+        // built-ins, loading them on demand.
+        matched ??= instance.MatchLazyPlugin(path);
+
         var selected = matched ?? DefaultPlugin;
         instance.EnsurePluginReady(selected);
 
         return selected.GetType().CreateInstance<IViewer>();
+    }
+
+    /// <summary>
+    /// v3.4.0: loads the rarely-used built-in plugins one by one (in
+    /// discovery order) on the first preview no eager plugin claims, then
+    /// matches across the now-complete LoadedPlugins list so the highest
+    /// priority plugin wins (same semantics as eager loading). Everything
+    /// loaded stays in LoadedPlugins, so later rare previews are instant.
+    /// </summary>
+    private IViewer MatchLazyPlugin(string path)
+    {
+        lock (_lazyLock)
+        {
+            // Load every pending rare plugin (first rare preview pays this
+            // one-time cost), then match across the priority-sorted list.
+            while (_pendingLazy.Count > 0)
+                LoadLazyPluginAt(0);
+
+            foreach (var plugin in LoadedPlugins)
+            {
+                try
+                {
+                    if (plugin.CanHandle(path))
+                        return plugin;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// v3.4.0: loads one pending lazy plugin by assembly name (used by
+    /// More-menu actions such as "show media info" that target a plugin which
+    /// never matches in FindMatch, e.g. MediaInfoViewer).
+    /// </summary>
+    internal IViewer LoadPluginByName(string assemblyName)
+    {
+        if (string.IsNullOrEmpty(assemblyName))
+            return null;
+
+        lock (_lazyLock)
+        {
+            for (var i = 0; i < _pendingLazy.Count; i++)
+            {
+                if (!string.Equals(
+                        Path.GetFileNameWithoutExtension(_pendingLazy[i].Path),
+                        assemblyName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                return LoadLazyPluginAt(i);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// v3.4.0: loads the plugin at the given index of _pendingLazy, removes it
+    /// from the pending list and inserts it into LoadedPlugins keeping the
+    /// (priority, discovery-order) sort. Must be called with _lazyLock held.
+    /// </summary>
+    private IViewer LoadLazyPluginAt(int index)
+    {
+        var (seq, lib) = _pendingLazy[index];
+        _pendingLazy.RemoveAt(index);
+
+        IViewer instance = null;
+        try
+        {
+            foreach (var t in Assembly.LoadFrom(lib).GetExportedTypes())
+            {
+                if (t.IsInterface || t.IsAbstract || !typeof(IViewer).IsAssignableFrom(t))
+                    continue;
+
+                instance = t.CreateInstance<IViewer>();
+                break;
+            }
+        }
+        catch (Exception ex)
+        {
+            ProcessHelper.WriteLog($"Failed to load plugin {Path.GetFileName(lib)}: {ex}");
+            return null;
+        }
+
+        if (instance is null)
+            return null;
+
+        _seqByPlugin[instance] = seq;
+        EnsurePluginReady(instance);
+        LoadedPlugins.Add(instance);
+
+        // Keep the priority + discovery-order sort so ties stay deterministic.
+        LoadedPlugins.Sort((a, b) =>
+        {
+            var byPriority = b.Priority.CompareTo(a.Priority);
+            if (byPriority != 0)
+                return byPriority;
+
+            var seqA = _seqByPlugin.TryGetValue(a, out var sa) ? sa : long.MaxValue;
+            var seqB = _seqByPlugin.TryGetValue(b, out var sb) ? sb : long.MaxValue;
+            return seqA.CompareTo(seqB);
+        });
+
+        return instance;
     }
 
     private void LoadPluginsCore()
@@ -171,16 +313,22 @@ public sealed class PluginManager
             // so an unstable sort alone would shuffle which one wins CanHandle
             // for extensions claimed by several plugins.
             var discovered = new List<(long Seq, IViewer Plugin)>();
-            LoadPlugins(App.UserPluginPath, discovered);
-            LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), discovered);
+            var pendingLazy = new List<(long Seq, string Path)>();
+            LoadPlugins(App.UserPluginPath, discovered, pendingLazy);
+            LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), discovered, pendingLazy);
+            pendingLazy.Sort(static (a, b) => a.Seq.CompareTo(b.Seq));
             discovered.Sort(static (a, b) =>
             {
                 var byPriority = b.Plugin.Priority.CompareTo(a.Plugin.Priority);
                 return byPriority != 0 ? byPriority : a.Seq.CompareTo(b.Seq);
             });
             loaded = new List<IViewer>(discovered.Count);
-            foreach (var (_, plugin) in discovered)
+            foreach (var (seq, plugin) in discovered)
+            {
                 loaded.Add(plugin);
+                _seqByPlugin[plugin] = seq;
+            }
+            _pendingLazy = pendingLazy;
             App.RecordStartupPhase("plugins-assemblies-loaded");
         }
         catch (Exception e)
@@ -220,7 +368,8 @@ public sealed class PluginManager
         public readonly ManualResetEventSlim Done = new(false);
     }
 
-    private void LoadPlugins(string folder, List<(long Seq, IViewer Plugin)> loaded)
+    private void LoadPlugins(string folder, List<(long Seq, IViewer Plugin)> loaded,
+        List<(long Seq, string Path)> pendingLazy)
     {
         if (!Directory.Exists(folder))
             return;
@@ -239,6 +388,17 @@ public sealed class PluginManager
         Parallel.For(0, libs.Length, i =>
         {
             var lib = libs[i];
+
+            // v3.4.0: defer rarely-used built-in plugins to first use instead
+            // of loading their assemblies into every resident process.
+            if (LazyBuiltinPluginNames.Contains(Path.GetFileNameWithoutExtension(lib)))
+            {
+                lock (sync)
+                {
+                    pendingLazy.Add((i, lib));
+                }
+                return;
+            }
 
             try
             {

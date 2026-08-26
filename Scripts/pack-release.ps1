@@ -118,6 +118,30 @@ Get-ChildItem -LiteralPath $package -Recurse -Filter *.pdb |
 Remove-Item -LiteralPath (Join-Path $package 'QuickLook-Next.dll.config') `
     -ErrorAction SilentlyContinue
 
+# v3.4.0: 运行时用不到的文件不进发布包：
+# - *.xml 是 IntelliSense 文档（约 4MB）
+# - 插件目录下的 *.deps.json 只对 dotnet 工具链有意义（插件走
+#   Assembly.LoadFrom）；根目录的 QuickLook-Next.deps.json 是 apphost 必需的，
+#   必须保留
+# - *.dylib 是 macOS 原生库（Windows 包不需要）
+Get-ChildItem -LiteralPath $package -Recurse -File |
+    Where-Object {
+        $_.Extension -in '.xml', '.dylib' -or
+        ($_.Name -like '*.deps.json' -and $_.FullName -like '*\QuickLook.Plugin\*')
+    } |
+    Remove-Item -Force
+
+# v3.4.0: VideoViewer 根目录偶尔残留的 MediaInfo.dll 冗余副本（插件实际从
+# runtimes\win-x64\native\ 加载），只保留 runtimes 那份。
+$videoRootMediaInfo = Join-Path $package 'QuickLook.Plugin\QuickLook.Plugin.VideoViewer\MediaInfo.dll'
+$videoRuntimeMediaInfo = Join-Path $package `
+    'QuickLook.Plugin\QuickLook.Plugin.VideoViewer\runtimes\win-x64\native\MediaInfo.dll'
+if ((Test-Path -LiteralPath $videoRootMediaInfo) -and
+    (Test-Path -LiteralPath $videoRuntimeMediaInfo)) {
+    Remove-Item -LiteralPath $videoRootMediaInfo -Force
+    Write-Host '已移除 VideoViewer 根目录冗余的 MediaInfo.dll'
+}
+
 # 便携标记：设置数据目录跟随程序目录
 Set-Content -LiteralPath (Join-Path $package 'portable.lock') `
     -Value 'This file makes QuickLook-Next portable.' -Encoding ASCII

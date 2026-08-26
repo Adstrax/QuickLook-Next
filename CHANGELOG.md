@@ -2,6 +2,22 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.5.0
+
+### 更轻（内存 / 体积）
+
+- 罕见格式插件按需加载：启动只载入常用插件（文本/图片/Markdown/视频/PDF/
+  压缩包/字体/HTML/CSV/Office），3D、数据库、PE、邮件、CHM 等 15 个罕见
+  插件在首次预览对应格式时才加载，常驻进程不再预载这些程序集和原生库
+- 发布包清理：移除 IntelliSense 的 *.xml 文档（约 4MB）、插件目录下的
+  *.deps.json、macOS 原生库（*.dylib），并移除 VideoViewer 根目录冗余的
+  MediaInfo.dll 副本（zip 61MB -> 60.4MB）
+
+### 修复
+
+- 修复打包脚本可能误删根目录 QuickLook-Next.deps.json（apphost 必需文件）的
+  问题，只清理插件目录下的 deps.json
+
 ## QuickLook-Next 3.4.0
 
 ### 更轻（内存）

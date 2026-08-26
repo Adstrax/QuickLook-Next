@@ -238,6 +238,10 @@ public class ViewWindowManager : IDisposable
             return p.GetType().Assembly.GetName().Name == plugin;
         });
 
+        // v3.4.0: rare built-ins (e.g. MediaInfoViewer) are lazy-loaded; a
+        // More-menu action can still target them by assembly name.
+        matchedPlugin ??= pluginManager.LoadPluginByName(plugin);
+
         if (matchedPlugin != null)
         {
             pluginManager.EnsurePluginReady(matchedPlugin);
