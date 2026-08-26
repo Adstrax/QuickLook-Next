@@ -91,7 +91,10 @@ internal sealed class TrayMenuWindow : Window
         Topmost = true;
         SizeToContent = SizeToContent.WidthAndHeight;
         UseLayoutRounding = true;
-        Background = Brushes.Transparent;
+        // v3.18.0: paint the panel tint on the window itself so the very
+        // first frame already shows the menu surface (never a blank/black
+        // background while the content lays out).
+        Background = _tintBrush;
         FontFamily = new FontFamily(TranslationHelper.Get("UI_FontFamily", failsafe: "Segoe UI"));
         FontSize = 13;
 
@@ -228,10 +231,11 @@ internal sealed class TrayMenuWindow : Window
     {
         base.OnContentRendered(e);
 
-        // Re-apply after first paint, like the preview window does; some WPF
-        // windows need the DWM backdrop attribute set once the window is
-        // actually visible for it to take effect reliably.
-        ApplyBackdrop();
+        // v3.18.0: only re-apply the backdrop when the first attempt failed -
+        // re-applying after every first paint made the menu flash its
+        // background before the items were visible.
+        if (!_accentApplied)
+            ApplyBackdrop();
     }
 
     private StackPanel BuildMenu(IReadOnlyList<TrayMenuEntry> entries)
@@ -488,12 +492,14 @@ internal sealed class TrayMenuWindow : Window
         // Correct to exact physical pixels (handles mixed-DPI monitors where
         // the pre-show DIP placement may have been interpreted on another
         // monitor's scale). Same values in the common case, so no flicker.
+        // v3.18.0: bRepaint=false - the post-show MoveWindow must not force a
+        // repaint right after Show, which caused a background-only frame.
         MoveWindow(hwnd,
             (int)Math.Round(left * scaleX),
             (int)Math.Round(top * scaleY),
             (int)Math.Round(menuWidth * scaleX),
             (int)Math.Round(menuHeight * scaleY),
-            true);
+            false);
     }
 
     /// <summary>
@@ -627,12 +633,34 @@ internal sealed class TrayMenuWindow : Window
             if (message is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_MBUTTONDOWN or WM_XBUTTONDOWN)
             {
                 var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
-                if (!IsPointInsideWindow(data.pt.X, data.pt.Y))
+                // v3.18.0: clicks on the taskbar / tray icon area do not close
+                // the menu - the tray icon's own left/right click handlers
+                // toggle it instead, so clicking the icon no longer makes the
+                // menu disappear (and right-click no longer flickers).
+                if (!IsPointInsideWindow(data.pt.X, data.pt.Y) &&
+                    !IsPointOverTaskbar(data.pt.X, data.pt.Y))
+                {
                     ScheduleClose();
+                }
             }
         }
 
         return CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+    }
+
+    private static bool IsPointOverTaskbar(int x, int y)
+    {
+        var hwnd = User32.WindowFromPoint(new User32.POINT(x, y));
+        if (hwnd == IntPtr.Zero)
+            return false;
+
+        var root = User32.GetAncestor(hwnd, User32.GA_ROOT);
+        if (root == IntPtr.Zero)
+            return false;
+
+        var buffer = new System.Text.StringBuilder(128);
+        User32.GetClassName(root, buffer, buffer.Capacity);
+        return buffer.ToString() is "Shell_TrayWnd" or "NotifyIconOverflowWindow";
     }
 
     private nint KeyboardHookProc(int nCode, nint wParam, nint lParam)

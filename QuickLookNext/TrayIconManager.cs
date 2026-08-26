@@ -61,7 +61,25 @@ internal partial class TrayIconManager : IDisposable
         // from a system tray context menu.
         _icon.RightClick += (_, _) =>
         {
+            // v3.18.0: right-clicking the icon while the menu is open toggles
+            // it closed instead of closing-and-reopening (which flickered).
+            if (TrayMenuWindow.IsOpen)
+            {
+                TrayMenuWindow.CloseCurrentMenu();
+                return;
+            }
+
             TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme());
+        };
+
+        // v3.18.0: left-click toggles the menu too, so clicking the tray icon
+        // behaves predictably instead of silently closing an open menu.
+        _icon.LeftClick += (_, _) =>
+        {
+            if (TrayMenuWindow.IsOpen)
+                TrayMenuWindow.CloseCurrentMenu();
+            else
+                TrayMenuWindow.ShowMenu(BuildMenuEntries(), IsDarkTheme());
         };
     }
 
