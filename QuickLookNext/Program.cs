@@ -25,6 +25,30 @@ namespace QuickLookNext;
 
 public static class Program
 {
+    // v3.3.0: once-per-process index of every DLL under the app directory
+    // (simple assembly name -> full path). The release package keeps
+    // third-party libraries in lib\, so most AssemblyResolve hits are served
+    // by an O(1) lookup instead of a recursive directory scan per miss.
+    private static readonly Lazy<Dictionary<string, string>> AssemblyIndex = new(BuildAssemblyIndex);
+
+    private static Dictionary<string, string> BuildAssemblyIndex()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var dll in Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll", SearchOption.AllDirectories))
+            {
+                map.TryAdd(Path.GetFileNameWithoutExtension(dll), dll);
+            }
+        }
+        catch
+        {
+            // Indexing is best-effort; the recursive fallback below still works.
+        }
+
+        return map;
+    }
+
     /// <summary>
     /// Application entry point. A second instance exists only to forward the
     /// requested path to the running instance; doing that before WPF starts
@@ -55,6 +79,12 @@ public static class Program
                 // e.g. "System.Memory, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
                 if (e.Name.Split(',').FirstOrDefault() is string assemblyName)
                 {
+                    if (AssemblyIndex.Value.TryGetValue(assemblyName, out var indexedPath))
+                    {
+                        return Assembly.LoadFrom(indexedPath);
+                    }
+
+                    // Fallback for files added after startup (rare): scan once.
                     foreach (var libPath in FetchFiles(AppDomain.CurrentDomain.BaseDirectory, assemblyName + ".dll"))
                     {
                         return Assembly.LoadFrom(libPath);

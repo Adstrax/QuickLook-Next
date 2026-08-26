@@ -62,6 +62,56 @@ if (Test-Path -LiteralPath (Join-Path $release 'runtimes')) {
 Copy-Item -LiteralPath (Join-Path $release 'QuickLook.Plugin') `
     -Destination (Join-Path $package 'QuickLook.Plugin') -Recurse -Force
 
+# v3.3.0: 把多个插件各自携带的共享依赖去重到 lib\ 一份（程序启动时的
+# AssemblyResolve 兜底会从 lib\ 加载托管程序集；WebView2Loader.dll 是原生
+# 加载器，一并收进 lib\ 后由 lib 里的 WebView2 托管程序集解析）。只处理
+# 纯托管或与托管程序集成对的原生加载器；带独立原生库的（MediaInfo、
+# SQLitePCLRaw、freetype 等）保持原位。只有字节完全一致的副本才会被移除。
+$dedupeLibNames = @(
+    'UtfUnknown.dll',
+    'PureSharpCompress.dll',
+    'ICSharpCode.SharpZipLib.dll',
+    'System.ComponentModel.Composition.dll',
+    'Microsoft.Bcl.HashCode.dll',
+    'Microsoft.Extensions.Logging.Abstractions.dll',
+    'Microsoft.Extensions.DependencyInjection.Abstractions.dll',
+    'Microsoft.Web.WebView2.Core.dll',
+    'Microsoft.Web.WebView2.WinForms.dll',
+    'Microsoft.Web.WebView2.Wpf.dll',
+    'WebView2Loader.dll'
+)
+
+# 确保去重清单里的每个文件在 lib\ 有基准副本（没有就从插件目录取一份）
+foreach ($name in $dedupeLibNames) {
+    $libCopy = Join-Path $lib $name
+    if (Test-Path -LiteralPath $libCopy) {
+        continue
+    }
+    $first = Get-ChildItem -LiteralPath (Join-Path $package 'QuickLook.Plugin') `
+        -Recurse -Filter $name -File -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -ne $first) {
+        Copy-Item -LiteralPath $first.FullName -Destination $libCopy -Force
+    }
+}
+
+$removedDedup = 0
+foreach ($name in $dedupeLibNames) {
+    $libCopy = Join-Path $lib $name
+    if (-not (Test-Path -LiteralPath $libCopy)) {
+        continue
+    }
+    $libHash = (Get-FileHash -LiteralPath $libCopy -Algorithm SHA256).Hash
+    Get-ChildItem -LiteralPath (Join-Path $package 'QuickLook.Plugin') `
+        -Recurse -Filter $name -File -ErrorAction SilentlyContinue |
+        Where-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash -eq $libHash } |
+        ForEach-Object {
+            Remove-Item -LiteralPath $_.FullName -Force
+            $removedDedup++
+        }
+}
+Write-Host "已去重共享依赖：移除 $removedDedup 个重复文件"
+
 # 发布包不需要调试符号，也不需要 .NET Framework 时代的 App.config
 Get-ChildItem -LiteralPath $package -Recurse -Filter *.pdb |
     Remove-Item -Force

@@ -240,6 +240,7 @@ public class ViewWindowManager : IDisposable
 
         if (matchedPlugin != null)
         {
+            pluginManager.EnsurePluginReady(matchedPlugin);
             BeginShowNewWindow(path, matchedPlugin);
         }
     }

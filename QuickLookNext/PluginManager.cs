@@ -20,11 +20,13 @@ using QuickLook.Common.Helpers;
 using QuickLook.Common.Plugin;
 using QuickLook.Plugin.InfoPanel;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml;
@@ -36,6 +38,11 @@ public sealed class PluginManager
 {
     private static PluginManager _instance;
     private readonly Task _loadTask;
+    // v3.3.0: phase-1 gate - previews only wait until plugin ASSEMBLIES are
+    // discovered; per-plugin Init continues in the background and the matched
+    // plugin's Init is ensured on demand (EnsurePluginReady).
+    private readonly ManualResetEventSlim _loadGate = new(false);
+    private readonly ConcurrentDictionary<IViewer, InitState> _initStates = new();
 
     private PluginManager()
     {
@@ -54,7 +61,55 @@ public sealed class PluginManager
 
     internal void EnsureLoaded()
     {
-        _loadTask.GetAwaiter().GetResult();
+        // v3.3.0: only waits for assembly discovery + instance creation, not
+        // for every plugin's Init (which runs in the background and is ensured
+        // per-plugin by EnsurePluginReady).
+        _loadGate.Wait();
+    }
+
+    /// <summary>
+    /// v3.3.0: makes sure a specific plugin's Init has run. The background
+    /// load task initializes plugins in order; if it has not reached this one
+    /// yet, the caller runs the Init itself (and any concurrent caller waits
+    /// for it). This keeps a preview from waiting on the Init of unrelated
+    /// plugins (e.g. TextViewer's ~300 ms syntax-highlighting build).
+    /// </summary>
+    internal void EnsurePluginReady(IViewer plugin)
+    {
+        if (plugin is null)
+            return;
+
+        var state = _initStates.GetOrAdd(plugin, static _ => new InitState());
+        if (Interlocked.Exchange(ref state.Started, 1) == 0)
+        {
+            try
+            {
+                var timer = App.IsStartupTimingEnabled ? Stopwatch.StartNew() : null;
+                plugin.Init();
+                if (timer is { IsRunning: true })
+                {
+                    timer.Stop();
+                    App.RecordPluginInitPhase(
+                        plugin.GetType().Assembly.GetName().Name ?? plugin.GetType().Name,
+                        timer.ElapsedMilliseconds);
+                }
+            }
+            catch (Exception e)
+            {
+                ProcessHelper.WriteLog(e.ToString());
+            }
+            finally
+            {
+                state.Done.Set();
+            }
+        }
+        else
+        {
+            // Another thread is (or has already finished) initializing this
+            // plugin; wait for completion so the preview never runs View on
+            // half-initialized static state.
+            state.Done.Wait();
+        }
     }
 
     internal static PluginManager GetInstance()
@@ -95,11 +150,15 @@ public sealed class PluginManager
                 return can;
             });
 
-        return (matched ?? DefaultPlugin).GetType().CreateInstance<IViewer>();
+        var selected = matched ?? DefaultPlugin;
+        instance.EnsurePluginReady(selected);
+
+        return selected.GetType().CreateInstance<IViewer>();
     }
 
     private void LoadPluginsCore()
     {
+        List<IViewer> loaded = null;
         try
         {
             // v1.3.11: finish uninstalls that were parked because a plugin
@@ -119,40 +178,10 @@ public sealed class PluginManager
                 var byPriority = b.Plugin.Priority.CompareTo(a.Plugin.Priority);
                 return byPriority != 0 ? byPriority : a.Seq.CompareTo(b.Seq);
             });
-            var loaded = new List<IViewer>(discovered.Count);
+            loaded = new List<IViewer>(discovered.Count);
             foreach (var (_, plugin) in discovered)
                 loaded.Add(plugin);
             App.RecordStartupPhase("plugins-assemblies-loaded");
-
-            // v3.2.0: plugin Init calls (syntax-highlighting theme loading,
-            // static provider registration, SQLite native init, ...) are
-            // independent per plugin. Running them serially cost ~1.2 s of
-            // startup (the app's very first preview waits for this task), so
-            // run them in parallel instead. Each plugin writes its own static
-            // state, so there is no cross-plugin race; errors are still
-            // isolated per plugin and never take down startup.
-            Parallel.ForEach(loaded, plugin =>
-            {
-                try
-                {
-                    var timer = App.IsStartupTimingEnabled ? Stopwatch.StartNew() : null;
-                    plugin.Init();
-                    if (timer is { IsRunning: true })
-                    {
-                        timer.Stop();
-                        App.RecordPluginInitPhase(
-                            plugin.GetType().Assembly.GetName().Name ?? plugin.GetType().Name,
-                            timer.ElapsedMilliseconds);
-                    }
-                }
-                catch (Exception e)
-                {
-                    ProcessHelper.WriteLog(e.ToString());
-                }
-            });
-
-            LoadedPlugins = loaded;
-            App.RecordStartupPhase("plugins-inited");
         }
         catch (Exception e)
         {
@@ -160,6 +189,35 @@ public sealed class PluginManager
             // simply fall back to the default InfoPanel plugin.
             ProcessHelper.WriteLog(e.ToString());
         }
+        finally
+        {
+            // Publish whatever was discovered and open the gate so previews can
+            // start matching even if a plugin failed to load.
+            LoadedPlugins = loaded ?? [];
+            _loadGate.Set();
+        }
+
+        if (loaded is null)
+            return;
+
+        // v3.3.0: phase 2 - initialize plugins in the background, but each one
+        // lazily: a preview that matches a plugin not yet reached initializes
+        // it on demand (EnsurePluginReady) instead of waiting for all of them.
+        foreach (var plugin in loaded)
+            EnsurePluginReady(plugin);
+
+        App.RecordStartupPhase("plugins-inited");
+    }
+
+    /// <summary>
+    /// Tracks one plugin's one-time Init state so a background pre-warm and a
+    /// preview-triggered Init never run twice, and callers can wait for an
+    /// in-flight Init.
+    /// </summary>
+    private sealed class InitState
+    {
+        public int Started;
+        public readonly ManualResetEventSlim Done = new(false);
     }
 
     private void LoadPlugins(string folder, List<(long Seq, IViewer Plugin)> loaded)

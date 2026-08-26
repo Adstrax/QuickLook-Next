@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using QuickLook.Common.NativeMethods;
+using Wpf.Ui.Controls;
 using Wpf.Ui.Violeta.Win32;
 using OSThemeHelper = QuickLook.Common.Helpers.OSThemeHelper;
 using ToolTipIcon = Wpf.Ui.Violeta.Win32.ToolTipIcon;
@@ -107,6 +108,9 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = themeGroupLabel,
+                // v3.3.0: top-level entries get Fluent glyphs so the menu
+                // reads like a real settings surface instead of plain text.
+                Icon = FontSymbols.Color,
                 Children =
                 [
                     ..ThemeModes.Select(mode => new TrayMenuEntry
@@ -120,6 +124,7 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = languageGroupLabel,
+                Icon = FontSymbols.LocaleLanguage,
                 Children =
                 [
                     new TrayMenuEntry
@@ -139,6 +144,7 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = backdropGroupLabel,
+                Icon = FontSymbols.Photo,
                 Children =
                 [
                     ..BackdropModes.Select(mode => new TrayMenuEntry
@@ -152,11 +158,13 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_Settings", failsafe: "Options"),
+                Icon = FontSymbols.Settings,
                 Children =
                 [
                     new TrayMenuEntry
                     {
                         Header = TranslationHelper.Get("Icon_RunAtStartup"),
+                        Icon = FontSymbols.PowerButton,
                         Command = ToggleAutorun,
                         IsChecked = AutoStartupHelper.IsAutorun(),
                         IsEnabled = !App.IsUWP,
@@ -164,12 +172,14 @@ internal partial class TrayIconManager : IDisposable
                     new TrayMenuEntry
                     {
                         Header = TranslationHelper.Get("Icon_CloseOnLostFocus"),
+                        Icon = FontSymbols.RedEye,
                         Command = ToggleCloseOnLostFocus,
                         IsChecked = SettingHelper.Get("CloseOnLostFocus", false),
                     },
                     new TrayMenuEntry
                     {
                         Header = TranslationHelper.Get("Icon_HideTopBarByDefault", failsafe: "Hide Top Bar by Default"),
+                        Icon = FontSymbols.ChevronUp,
                         Command = ToggleHideTopBarByDefault,
                         IsChecked = SettingHelper.Get("HideTopBarByDefault", true, "QuickLookNext"),
                     },
@@ -179,11 +189,13 @@ internal partial class TrayIconManager : IDisposable
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_CheckUpdate"),
+                Icon = FontSymbols.Download,
                 Command = () => Updater.CheckForUpdates(),
             },
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_GetPlugin"),
+                Icon = FontSymbols.CloudDownload,
                 // v1.3.9: .NET Core no longer shells out by default, so a
                 // bare Process.Start(url) throws; UseShellExecute opens the
                 // default browser instead.
@@ -193,22 +205,26 @@ internal partial class TrayIconManager : IDisposable
             {
                 // v1.3.11: plugin management panel (uninstall user plugins).
                 Header = TranslationHelper.Get("Icon_PluginManager", failsafe: "Manage &Plugins..."),
+                Icon = FontSymbols.Puzzle,
                 Command = PluginManagerWindow.ShowWindow,
             },
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_OpenDataFolder"),
+                Icon = FontSymbols.FolderOpen,
                 Command = () => Process.Start("explorer.exe", SettingHelper.LocalDataPath),
             },
             TrayMenuEntry.Separator,
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_Restart"),
+                Icon = FontSymbols.Sync,
                 Command = () => GetInstance().Restart(forced: true),
             },
             new TrayMenuEntry
             {
                 Header = TranslationHelper.Get("Icon_Quit"),
+                Icon = FontSymbols.Cancel,
                 Command = () => System.Windows.Application.Current.Shutdown(),
             },
         ];

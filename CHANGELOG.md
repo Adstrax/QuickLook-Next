@@ -2,6 +2,27 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.3.0
+
+### 更快
+
+- 插件初始化改为按需懒加载：预览只等待插件程序集发现，不再等待全部插件的
+  Init 完成；命中的插件立即初始化，无关插件的初始化在后台继续，启动后立刻
+  空格预览不再被其他插件拖慢
+- 程序集解析增加 lib 索引缓存：发布包布局下解析缺失程序集时不再每次全目录
+  扫描，冷启动更快
+
+### 更轻
+
+- 发布包共享依赖去重：WebView2、UtfUnknown、SharpZipLib、PureSharpCompress
+  等跨插件重复的共享 DLL 统一收进 lib\ 一份（字节级校验，带独立原生库的
+  MediaInfo / SQLite / freetype 等保持原位），一次移除 44 个重复文件
+
+### 更美观
+
+- 托盘菜单各项添加 Fluent 图标（主题、语言、背景、选项、检查更新、获取插件、
+  插件管理、数据目录、重启、退出）
+
 ## QuickLook-Next 3.2.1
 
 - 修复 3.2.0 发布包中设置/托盘菜单显示原始键（如 `icon_CheckUpdate`、
