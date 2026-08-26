@@ -2,6 +2,13 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.9.0
+
+### 更美观
+
+- 预览内容就绪时加入轻微淡入动画（120ms），预览切换不再生硬；跟随
+  ShowWindowTransition 选项，可在设置中关闭
+
 ## QuickLook-Next 3.8.0
 
 ### 更美观

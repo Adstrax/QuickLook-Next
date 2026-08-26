@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Violeta.Appearance;
 
@@ -134,7 +135,18 @@ public partial class ViewerWindow : INotifyPropertyChanged
                 // measured and drawn. Only on the UI thread: some plugins set
                 // IsBusy=false from a background thread.
                 if (ContextObject.ViewerContent != null && CheckAccess())
+                {
                     UpdateLayout();
+
+                    // v3.9.0: fade the freshly-ready content in softly instead
+                    // of popping it in. Respects the ShowWindowTransition
+                    // option like the window show animation.
+                    if (SettingHelper.Get("ShowWindowTransition", true, "QuickLookNext"))
+                    {
+                        var fade = (Storyboard)FindResource("ContentFadeInStoryboard");
+                        fade.Begin(container);
+                    }
+                }
 
                 // Hidden test hook: record when content actually becomes ready
                 // (spinner dismissed) so benches can measure preview latency.

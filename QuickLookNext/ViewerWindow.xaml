@@ -34,6 +34,14 @@
             <converters:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter" />
             <converters:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter" />
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <!-- v3.9.0: subtle fade-in of the preview content once it becomes
+                 ready (tied to the ShowWindowTransition option). -->
+            <Storyboard x:Key="ContentFadeInStoryboard">
+                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                 From="0.85"
+                                 To="1"
+                                 Duration="0:0:0.12" />
+            </Storyboard>
         </ResourceDictionary>
     </Window.Resources>
     <WindowChrome.WindowChrome>
