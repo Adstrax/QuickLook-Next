@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.6.0
+
+### 更快 / 更轻（Markdown 预览）
+
+- Markdown 预览不再无条件加载 mermaid（2.9MB）与 MathJax（2.1MB）：
+  只有文档里检测到 mermaid 代码块或数学公式时才按需注入对应脚本。
+  普通 Markdown 预览跳过约 5MB 的 JavaScript 解析，WebView2 页面加载与
+  内存占用都更低；带图表 / 公式的文档渲染功能保持不变
+
 ## QuickLook-Next 3.5.0
 
 ### 更轻（内存 / 体积）

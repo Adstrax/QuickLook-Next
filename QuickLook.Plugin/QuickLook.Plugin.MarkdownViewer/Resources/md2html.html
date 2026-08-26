@@ -24,7 +24,6 @@
     <script src="highlight.js/highlight.min.js"></script>
 
     <script src="js/markdownItAnchor.umd.js"></script>
-    <script src="js/mermaid.min.js"></script>
   </head>
   <body class="markdown-body">
     <link rel="stylesheet" href="css/github-markdown.css" />
@@ -217,6 +216,16 @@
     </div>
 
     <script>
+      // v3.5.0: mermaid (2.9 MB) and MathJax (2.1 MB) are only loaded when the
+      // document actually needs them. Plain markdown previews skip ~5 MB of
+      // JavaScript parsing entirely.
+      function loadScript(src, onLoad) {
+        var s = document.createElement("script");
+        s.src = src;
+        if (onLoad) s.onload = onLoad;
+        document.head.appendChild(s);
+      }
+
       var md = window
         .markdownit({
           html: true,
@@ -283,41 +292,43 @@
         processFrontmatter(rawContent)
       );
 
-      // Initialize Mermaid after markdown rendering
-      if (window.mermaid) {
+      // Initialize Mermaid lazily after markdown rendering
+      const mermaidDiagrams = document.querySelectorAll(".mermaid");
+      if (mermaidDiagrams.length > 0) {
         // Determine theme based on system preference
         const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: isDarkMode ? 'dark' : 'default',
-          securityLevel: 'loose', // Allow HTML in diagrams for enhanced features
-          fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif',
-          themeVariables: {
-            primaryColor: isDarkMode ? '#58a6ff' : '#0969da',
-            primaryTextColor: isDarkMode ? '#f0f6fc' : '#24292f',
-            primaryBorderColor: isDarkMode ? '#30363d' : '#d0d7de',
-            lineColor: isDarkMode ? '#484f58' : '#656d76',
-            sectionBkgColor: isDarkMode ? '#21262d' : '#f6f8fa',
-            altSectionBkgColor: isDarkMode ? '#161b22' : '#ffffff',
-            gridColor: isDarkMode ? '#21262d' : '#f6f8fa',
-            cScale0: isDarkMode ? '#58a6ff' : '#0969da',
-            cScale1: isDarkMode ? '#a5f3fc' : '#54aeff',
-            cScale2: isDarkMode ? '#ff7b72' : '#d1242f'
-          }
-        });
-        
-        // Render Mermaid diagrams with error handling
-        setTimeout(() => {
+
+        loadScript("js/mermaid.min.js", function () {
+          if (!window.mermaid) return;
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDarkMode ? 'dark' : 'default',
+            securityLevel: 'loose', // Allow HTML in diagrams for enhanced features
+            fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif',
+            themeVariables: {
+              primaryColor: isDarkMode ? '#58a6ff' : '#0969da',
+              primaryTextColor: isDarkMode ? '#f0f6fc' : '#24292f',
+              primaryBorderColor: isDarkMode ? '#30363d' : '#d0d7de',
+              lineColor: isDarkMode ? '#484f58' : '#656d76',
+              sectionBkgColor: isDarkMode ? '#21262d' : '#f6f8fa',
+              altSectionBkgColor: isDarkMode ? '#161b22' : '#ffffff',
+              gridColor: isDarkMode ? '#21262d' : '#f6f8fa',
+              cScale0: isDarkMode ? '#58a6ff' : '#0969da',
+              cScale1: isDarkMode ? '#a5f3fc' : '#54aeff',
+              cScale2: isDarkMode ? '#ff7b72' : '#d1242f'
+            }
+          });
+
+          // Render Mermaid diagrams with error handling
           try {
-            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+            mermaid.init(undefined, mermaidDiagrams);
           } catch (error) {
             console.warn('Mermaid rendering error:', error);
           }
-        }, 100);
-        
+        });
+
         // Listen for theme changes and re-render diagrams
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
           if (window.mermaid) {
             const newTheme = e.matches ? 'dark' : 'default';
             mermaid.initialize({
@@ -328,9 +339,9 @@
             });
             
             // Re-render all Mermaid diagrams
-            setTimeout(() => {
+            setTimeout(function () {
               try {
-                mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                mermaid.init(undefined, mermaidDiagrams);
               } catch (error) {
                 console.warn('Mermaid re-rendering error:', error);
               }
@@ -699,8 +710,12 @@
           inlineMath: [['$', '$'], ['\\(', '\\)']]
         }
       };
-    </script>
 
-    <script id="MathJax-script" async src="mathjax/tex-mml-svg.js"></script>
+      // Load MathJax only when the document contains math syntax
+      var hasMath = /\$\$|\\\(|\\\[|\$[^$\r\n]{1,120}\$/.test(rawContent);
+      if (hasMath) {
+        loadScript("mathjax/tex-mml-svg.js");
+      }
+    </script>
   </body>
 </html>
