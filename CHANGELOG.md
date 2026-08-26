@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.17.0
+
+### Office 预览调整
+
+- 移除 Excel / Word 预览的左侧框架（没有缩略图时框架无意义），内容区铺满
+  窗口
+- Office 内容区暂时固定为浅色纸面渲染（白色背景 + 深色文字），不再跟随
+  应用深浅色主题，避免深色模式下文字难读
+
 ## QuickLook-Next 3.16.0
 
 ### 更美观（Office 预览布局）

@@ -1,5 +1,3 @@
-using QuickLook.Common.Helpers;
-
 namespace QuickLook.Plugin.OfficeViewer;
 
 /// <summary>
@@ -9,7 +7,6 @@ public sealed class PresentationPanel : OfficePanelBase
 {
     public PresentationPanel(string path)
     {
-        SetFrameInfo(path, "PowerPoint 演示文稿");
-        Navigate(PptxToHtml.Convert(path, OSThemeHelper.AppsUseDarkTheme()));
+        Navigate(PptxToHtml.Convert(path));
     }
 }

@@ -1,5 +1,3 @@
-using QuickLook.Common.Helpers;
-
 namespace QuickLook.Plugin.OfficeViewer;
 
 /// <summary>
@@ -9,7 +7,6 @@ public sealed class DocumentPanel : OfficePanelBase
 {
     public DocumentPanel(string path)
     {
-        SetFrameInfo(path, "Word 文档");
-        Navigate(DocxToHtml.Convert(path, OSThemeHelper.AppsUseDarkTheme()));
+        Navigate(DocxToHtml.Convert(path));
     }
 }

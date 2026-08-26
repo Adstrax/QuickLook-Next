@@ -24,7 +24,7 @@ internal static class DocxToHtml
     private static readonly XNamespace R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private static readonly XNamespace A = "http://schemas.openxmlformats.org/drawingml/2006/main";
 
-    internal static string Convert(string path, bool isDark)
+    internal static string Convert(string path)
     {
         var sb = new StringBuilder();
         try
@@ -35,7 +35,7 @@ internal static class DocxToHtml
             var numbering = ReadXml(archive, "word/numbering.xml");
             var rels = ReadRels(archive, "word/_rels/document.xml.rels");
             if (document is null)
-                return ErrorHtml(isDark, "这不是有效的 Word 文档（缺少 document.xml）。");
+                return ErrorHtml("这不是有效的 Word 文档（缺少 document.xml）。");
 
             var styleNames = BuildStyleMap(styles);
             var numberingFormats = BuildNumberingFormats(numbering);
@@ -91,14 +91,14 @@ internal static class DocxToHtml
             }
 
             sb.Append("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>");
-            AppendCss(sb, isDark);
+            AppendCss(sb);
             sb.Append("</style></head><body><div class=\"doc\">")
               .Append(html)
               .Append("</div></body></html>");
         }
         catch (Exception e)
         {
-            return ErrorHtml(isDark, "无法读取此 Word 文档：" + WebUtility.HtmlEncode(e.Message));
+            return ErrorHtml("无法读取此 Word 文档：" + WebUtility.HtmlEncode(e.Message));
         }
 
         return sb.ToString();
@@ -459,14 +459,14 @@ internal static class DocxToHtml
         };
     }
 
-    private static void AppendCss(StringBuilder sb, bool isDark)
+    private static void AppendCss(StringBuilder sb)
     {
-        var fg = isDark ? "#F5F5F5" : "#1A1A1A";
-        var secondary = isDark ? "#9E9E9E" : "#6A6A6A";
-        var border = isDark ? "rgba(255,255,255,.14)" : "rgba(0,0,0,.12)";
-        var scrollThumb = isDark ? "rgba(255,255,255,.28)" : "rgba(0,0,0,.28)";
-        var scrollHover = isDark ? "rgba(255,255,255,.45)" : "rgba(0,0,0,.45)";
-        var headerBg = isDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.04)";
+        // v3.17.0: fixed light paper rendering, independent of the app theme.
+        var fg = "#1A1A1A";
+        var border = "rgba(0,0,0,.12)";
+        var scrollThumb = "rgba(0,0,0,.28)";
+        var scrollHover = "rgba(0,0,0,.45)";
+        var headerBg = "rgba(0,0,0,.04)";
 
         sb.Append($"html,body{{height:100%}}body{{margin:0;color:{fg};background:transparent;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6}");
@@ -488,10 +488,9 @@ internal static class DocxToHtml
         sb.Append($".error{{color:#C42B1C;padding:24px;font-size:14px}}");
     }
 
-    private static string ErrorHtml(bool isDark, string message)
+    private static string ErrorHtml(string message)
     {
-        var fg = isDark ? "#F5F5F5" : "#1A1A1A";
-        return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:{fg};" +
+        return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:#1A1A1A;" +
             "background:transparent;font-family:'Segoe UI',sans-serif}}</style></head>" +
             $"<body><div class=\"error\" style=\"padding:24px\">{message}</div></body></html>";
     }

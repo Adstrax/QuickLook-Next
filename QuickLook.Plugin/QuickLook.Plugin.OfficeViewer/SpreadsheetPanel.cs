@@ -19,29 +19,19 @@ public sealed class SpreadsheetPanel : OfficePanelBase
 
     public SpreadsheetPanel(string path)
     {
-        SetFrameInfo(path, "Excel 工作表");
         Navigate(BuildHtml(path));
     }
 
     private static string BuildHtml(string path)
     {
-        var isDark = OSThemeHelper.AppsUseDarkTheme();
         var rows = ReadRows(path);
 
         var sb = new StringBuilder();
         sb.Append("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>");
-        if (isDark)
-        {
-            sb.Append(":root{--fg:#F5F5F5;--border:rgba(255,255,255,.14);" +
-                "--head-bg:#22262C;--alt-bg:rgba(255,255,255,.03);--error:#FF7B72;" +
-                "--scroll-thumb:rgba(255,255,255,.28);--scroll-thumb-hover:rgba(255,255,255,.45)}");
-        }
-        else
-        {
-            sb.Append(":root{--fg:#1A1A1A;--border:rgba(0,0,0,.12);" +
-                "--head-bg:#F3F3F3;--alt-bg:rgba(0,0,0,.02);--error:#C42B1C;" +
-                "--scroll-thumb:rgba(0,0,0,.28);--scroll-thumb-hover:rgba(0,0,0,.45)}");
-        }
+        // v3.17.0: fixed light paper rendering - never theme-adapted.
+        sb.Append(":root{--fg:#1A1A1A;--border:rgba(0,0,0,.12);" +
+            "--head-bg:#F3F3F3;--alt-bg:rgba(0,0,0,.02);--error:#C42B1C;" +
+            "--scroll-thumb:rgba(0,0,0,.28);--scroll-thumb-hover:rgba(0,0,0,.45)}");
         sb.Append("html,body{height:100%}body{margin:0;color:var(--fg);background:transparent;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
         sb.Append("::-webkit-scrollbar{width:8px;height:8px}");

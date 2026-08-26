@@ -24,14 +24,14 @@ internal static class PptxToHtml
     private static readonly XNamespace A = "http://schemas.openxmlformats.org/drawingml/2006/main";
     private static readonly XNamespace R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
-    internal static string Convert(string path, bool isDark)
+    internal static string Convert(string path)
     {
         try
         {
             using var archive = ZipFile.OpenRead(path);
             var presentation = ReadXml(archive, "ppt/presentation.xml");
             if (presentation?.Root is null)
-                return ErrorHtml(isDark, "这不是有效的 PPT 演示文稿（缺少 presentation.xml）。");
+                return ErrorHtml("这不是有效的 PPT 演示文稿（缺少 presentation.xml）。");
 
             var presRels = ReadRels(archive, "ppt/_rels/presentation.xml.rels");
             var sldSz = presentation.Root.Element(P + "sldSz");
@@ -53,13 +53,13 @@ internal static class PptxToHtml
                         continue;
 
                     var slidePath = "ppt/" + target.TrimStart('/');
-                    slides.Append(SlideToHtml(archive, slidePath, slideW, slideH, count, isDark));
+                    slides.Append(SlideToHtml(archive, slidePath, slideW, slideH, count));
                 }
             }
 
             var sb = new StringBuilder();
             sb.Append("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>");
-            AppendCss(sb, isDark, slideW);
+            AppendCss(sb);
             sb.Append("</style></head><body><div class=\"deck\">")
               .Append(slides)
               .Append("</div></body></html>");
@@ -67,12 +67,12 @@ internal static class PptxToHtml
         }
         catch (Exception e)
         {
-            return ErrorHtml(isDark, "无法读取此 PPT 演示文稿：" + WebUtility.HtmlEncode(e.Message));
+            return ErrorHtml("无法读取此 PPT 演示文稿：" + WebUtility.HtmlEncode(e.Message));
         }
     }
 
     private static string SlideToHtml(
-        ZipArchive archive, string slidePath, double slideW, double slideH, int index, bool isDark)
+        ZipArchive archive, string slidePath, double slideW, double slideH, int index)
     {
         var slide = ReadXml(archive, slidePath);
         if (slide?.Root is null)
@@ -84,7 +84,7 @@ internal static class PptxToHtml
 
         var cSld = slide.Root.Element(P + "cSld");
         var spTree = cSld?.Element(P + "spTree");
-        var background = SlideBackground(cSld, isDark);
+        var background = SlideBackground(cSld);
 
         var shapes = new StringBuilder();
         if (spTree is not null)
@@ -92,7 +92,7 @@ internal static class PptxToHtml
             foreach (var shape in spTree.Elements())
             {
                 if (shape.Name == P + "sp")
-                    shapes.Append(ShapeToHtml(shape, rels, archive, isDark));
+                    shapes.Append(ShapeToHtml(shape, rels, archive));
                 else if (shape.Name == P + "pic")
                     shapes.Append(PictureToHtml(shape, rels, archive));
             }
@@ -107,7 +107,7 @@ internal static class PptxToHtml
     }
 
     private static string ShapeToHtml(
-        XElement sp, Dictionary<string, string> rels, ZipArchive archive, bool isDark)
+        XElement sp, Dictionary<string, string> rels, ZipArchive archive)
     {
         var pos = GetPosition(sp);
         if (pos is null)
@@ -118,7 +118,7 @@ internal static class PptxToHtml
         if (txBody is not null)
         {
             foreach (var para in txBody.Elements(A + "p"))
-                content.Append(ParagraphToHtml(para, isDark));
+                content.Append(ParagraphToHtml(para));
         }
 
         if (content.Length == 0)
@@ -164,7 +164,7 @@ internal static class PptxToHtml
             """;
     }
 
-    private static string ParagraphToHtml(XElement para, bool isDark)
+    private static string ParagraphToHtml(XElement para)
     {
         var sb = new StringBuilder();
         var pPr = para.Element(A + "pPr");
@@ -234,13 +234,13 @@ internal static class PptxToHtml
         return null;
     }
 
-    private static string SlideBackground(XElement cSld, bool isDark)
+    private static string SlideBackground(XElement cSld)
     {
         var rgb = cSld?.Element(P + "bg")?.Descendants(A + "srgbClr")
             .FirstOrDefault()?.Attribute("val")?.Value;
         if (!string.IsNullOrEmpty(rgb) && rgb.Length >= 6)
             return "#" + rgb[..6];
-        return isDark ? "#1E1E1E" : "#FFFFFF";
+        return "#FFFFFF";
     }
 
     private static (double Left, double Top, double Width, double Height)? GetPosition(XElement shape)
@@ -304,10 +304,10 @@ internal static class PptxToHtml
         return map;
     }
 
-    private static void AppendCss(StringBuilder sb, bool isDark, double slideWidth)
+    private static void AppendCss(StringBuilder sb)
     {
-        var scrollThumb = isDark ? "rgba(255,255,255,.28)" : "rgba(0,0,0,.28)";
-        var scrollHover = isDark ? "rgba(255,255,255,.45)" : "rgba(0,0,0,.45)";
+        var scrollThumb = "rgba(0,0,0,.28)";
+        var scrollHover = "rgba(0,0,0,.45)";
 
         sb.Append("html,body{height:100%}body{margin:0;background:transparent;" +
             "font-family:'Segoe UI',Helvetica,Arial,sans-serif}");
@@ -325,15 +325,14 @@ internal static class PptxToHtml
             "border-radius:4px;box-sizing:border-box}");
         sb.Append(".slide img{position:absolute;object-fit:contain}");
         sb.Append(".slide-no{position:absolute;right:10px;bottom:8px;font-size:12px;" +
-            $"color:{(isDark ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.45)")};" +
+            "color:rgba(0,0,0,.45);" +
             "font-weight:600;pointer-events:none}");
         sb.Append(".error{color:#C42B1C;padding:24px;font-size:14px}");
     }
 
-    private static string ErrorHtml(bool isDark, string message)
+    private static string ErrorHtml(string message)
     {
-        var fg = isDark ? "#F5F5F5" : "#1A1A1A";
-        return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:{fg};" +
+        return $"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>body{{margin:0;color:#1A1A1A;" +
             "background:transparent;font-family:'Segoe UI',sans-serif}}</style></head>" +
             $"<body><div class=\"error\" style=\"padding:24px\">{message}</div></body></html>";
     }
