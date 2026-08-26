@@ -123,6 +123,27 @@ public partial class PluginManagerWindow : Window
 
     private Border BuildRow(PluginEntry entry)
     {
+        // v3.7.0: a tinted plugin glyph makes each row read as a card instead
+        // of a bare text line.
+        var icon = new Border
+        {
+            Background = (Brush)Resources["ButtonBgBrush"],
+            CornerRadius = new CornerRadius(6),
+            Width = 28,
+            Height = 28,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0),
+            Child = new TextBlock
+            {
+                Text = "\uEA86", // Segoe MDL2 Assets: Puzzle
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 14,
+                Foreground = (Brush)Resources["SecondaryTextBrush"],
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+
         var name = new TextBlock
         {
             Text = entry.Name,
@@ -174,12 +195,15 @@ public partial class PluginManagerWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        Grid.SetColumn(namePanel, 0);
+        Grid.SetColumn(icon, 0);
+        grid.Children.Add(icon);
+        Grid.SetColumn(namePanel, 1);
         grid.Children.Add(namePanel);
-        Grid.SetColumn(description, 1);
+        Grid.SetColumn(description, 2);
         grid.Children.Add(description);
-        Grid.SetColumn(badge, 2);
+        Grid.SetColumn(badge, 3);
         grid.Children.Add(badge);
 
         if (entry.IsUserPlugin)
@@ -195,7 +219,7 @@ public partial class PluginManagerWindow : Window
             };
             uninstall.Click += (_, _) => Uninstall(entry, uninstall);
 
-            Grid.SetColumn(uninstall, 3);
+            Grid.SetColumn(uninstall, 4);
             grid.Children.Add(uninstall);
         }
 

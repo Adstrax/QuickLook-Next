@@ -2,6 +2,18 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.7.0
+
+### 更美观
+
+- 插件管理面板：每行插件加上带底色的拼图图标，行呈现为卡片式布局
+
+### 工程
+
+- 冒烟测试补强：新增罕见格式覆盖（test-pe.exe 走 PEViewer、test.bin 走
+  BinaryViewer）与 mermaid / 数学公式 Markdown 覆盖，按需加载与 WebView2
+  懒加载路径今后有回归会立刻被测试拦下（此前这类问题曾漏过一轮）
+
 ## QuickLook-Next 3.6.0
 
 ### 更快 / 更轻（Markdown 预览）

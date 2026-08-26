@@ -111,6 +111,18 @@ if (-not (Test-Path (Join-Path $smoke 'test.mp4'))) {
 if (-not (Test-Path (Join-Path $smoke 'test.pdf'))) {
     curl.exe -sL -o (Join-Path $smoke 'test.pdf') "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf"
 }
+# v3.7.0: rare-format coverage (on-demand plugin loading) + mermaid/math
+# markdown paths. These used to be untested, which let a lazy-loading
+# regression slip through.
+[System.IO.File]::WriteAllBytes(
+    (Join-Path $smoke 'test.bin'),
+    [byte[]](0..9))
+Copy-Item -LiteralPath (Join-Path $root 'Build\Release\QuickLook-Next.exe') `
+    -Destination (Join-Path $smoke 'test-pe.exe') -Force
+Set-Content -Path (Join-Path $smoke 'test-mermaid.md') `
+    -Value "## 图`n`n``````mermaid`ngraph TD;`n  A-->B;`n``````" -Encoding UTF8
+Set-Content -Path (Join-Path $smoke 'test-math.md') `
+    -Value "## 公式`n`n质能方程 $E=mc^2$ 或 $$\int_0^1 x dx$$" -Encoding UTF8
 
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
@@ -151,14 +163,23 @@ if (Test-Path (Join-Path $smoke 'test.mp4')) {
 if (Test-Path (Join-Path $smoke 'test.pdf')) {
     $previews += @{ File = 'test.pdf'; Title = 'test.pdf' }
 }
+# v3.7.0: rare-format previews exercise the on-demand lazy plugin loading.
+# PEViewer deliberately shows no window title (full-bleed PE info panel), so
+# only the process-alive and no-error assertions apply to it.
+$previews += @{ File = 'test-pe.exe'; Title = 'test-pe.exe'; CheckTitle = $false }
+$previews += @{ File = 'test.bin'; Title = 'test.bin' }
+$previews += @{ File = 'test-mermaid.md'; Title = 'test-mermaid.md' }
+$previews += @{ File = 'test-math.md'; Title = 'test-math.md' }
 foreach ($pv in $previews) {
     $before = Get-LogLength
     & $exe (Join-Path $smoke $pv.File)
     Start-Sleep -Seconds 12
     $alive = Get-Process -Id $p.Id -ErrorAction SilentlyContinue
     Assert ($null -ne $alive) "预览 $($pv.File) 后进程存活"
-    $titles = Get-QuickLookNextWindows $p.Id
-    Assert (($titles -join ' ') -match [regex]::Escape($pv.Title)) "预览窗口出现: $($pv.Title)"
+    if ($pv.CheckTitle -ne $false) {
+        $titles = Get-QuickLookNextWindows $p.Id
+        Assert (($titles -join ' ') -match [regex]::Escape($pv.Title)) "预览窗口出现: $($pv.Title)"
+    }
     Assert ((Get-LogLength) -eq $before) "预览 $($pv.File) 无错误（日志零新增）"
 
     # v1.2.36: regression guard - the preview window must be centered on the
