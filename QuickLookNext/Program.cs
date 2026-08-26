@@ -16,6 +16,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace QuickLookNext;
 
@@ -31,6 +35,51 @@ public static class Program
     [STAThread]
     public static void Main()
     {
+        // v3.2.0: register the assembly-resolution fallback before anything
+        // touches App (or any third-party assembly). The release package keeps
+        // the root clean by moving every non-entry DLL into lib\; resolution
+        // falls back to searching the whole app directory recursively.
+        AppDomain.CurrentDomain.AssemblyResolve += (_, e) =>
+        {
+            // Ignore the resource fails
+            // e.g. "QuickLookNext.resources, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+            if (e.Name.Contains(".resources,"))
+            {
+                return null;
+            }
+
+            try
+            {
+                // Manually resolve the assembly fails
+                // https://github.com/QL-Win/QuickLook/issues/1618
+                // e.g. "System.Memory, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+                if (e.Name.Split(',').FirstOrDefault() is string assemblyName)
+                {
+                    foreach (var libPath in FetchFiles(AppDomain.CurrentDomain.BaseDirectory, assemblyName + ".dll"))
+                    {
+                        return Assembly.LoadFrom(libPath);
+                    }
+                }
+            }
+            catch
+            {
+                // There is no way to resolve it
+            }
+
+            return null;
+
+            static IEnumerable<string> FetchFiles(string rootPath, string targetFileName)
+            {
+                foreach (var file in Directory.GetFiles(rootPath, "*" + Path.GetExtension(targetFileName), SearchOption.AllDirectories))
+                {
+                    if (string.Equals(Path.GetFileName(file), targetFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yield return file;
+                    }
+                }
+            }
+        };
+
         if (StartupForwarder.TryForwardToRunningInstance())
             return;
 

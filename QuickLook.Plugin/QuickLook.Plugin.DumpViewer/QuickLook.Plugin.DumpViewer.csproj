@@ -17,7 +17,6 @@
         <LangVersion>latest</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{8F54E7BB-58BD-4F03-BC49-B53031294D41}</ProjectGuid>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <Platforms>AnyCPU;x64;ARM64</Platforms>

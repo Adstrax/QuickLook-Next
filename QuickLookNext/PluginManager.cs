@@ -106,23 +106,50 @@ public sealed class PluginManager
             // file was locked while the previous instance was still running.
             CleanupPendingUninstalls(App.UserPluginPath);
 
-            var loaded = new List<IViewer>();
-            LoadPlugins(App.UserPluginPath, loaded);
-            LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), loaded);
+            // Keep a monotonic discovery sequence alongside each plugin so the
+            // priority sort stays deterministic: parallel discovery changes
+            // the raw list order run to run, and 13 plugins share Priority 0,
+            // so an unstable sort alone would shuffle which one wins CanHandle
+            // for extensions claimed by several plugins.
+            var discovered = new List<(long Seq, IViewer Plugin)>();
+            LoadPlugins(App.UserPluginPath, discovered);
+            LoadPlugins(Path.Combine(App.AppPath, @"QuickLook.Plugin\"), discovered);
+            discovered.Sort(static (a, b) =>
+            {
+                var byPriority = b.Plugin.Priority.CompareTo(a.Plugin.Priority);
+                return byPriority != 0 ? byPriority : a.Seq.CompareTo(b.Seq);
+            });
+            var loaded = new List<IViewer>(discovered.Count);
+            foreach (var (_, plugin) in discovered)
+                loaded.Add(plugin);
             App.RecordStartupPhase("plugins-assemblies-loaded");
-            loaded.Sort(static (a, b) => b.Priority.CompareTo(a.Priority));
 
-            foreach (var plugin in loaded)
+            // v3.2.0: plugin Init calls (syntax-highlighting theme loading,
+            // static provider registration, SQLite native init, ...) are
+            // independent per plugin. Running them serially cost ~1.2 s of
+            // startup (the app's very first preview waits for this task), so
+            // run them in parallel instead. Each plugin writes its own static
+            // state, so there is no cross-plugin race; errors are still
+            // isolated per plugin and never take down startup.
+            Parallel.ForEach(loaded, plugin =>
             {
                 try
                 {
+                    var timer = App.IsStartupTimingEnabled ? Stopwatch.StartNew() : null;
                     plugin.Init();
+                    if (timer is { IsRunning: true })
+                    {
+                        timer.Stop();
+                        App.RecordPluginInitPhase(
+                            plugin.GetType().Assembly.GetName().Name ?? plugin.GetType().Name,
+                            timer.ElapsedMilliseconds);
+                    }
                 }
                 catch (Exception e)
                 {
                     ProcessHelper.WriteLog(e.ToString());
                 }
-            }
+            });
 
             LoadedPlugins = loaded;
             App.RecordStartupPhase("plugins-inited");
@@ -135,15 +162,26 @@ public sealed class PluginManager
         }
     }
 
-    private void LoadPlugins(string folder, List<IViewer> loaded)
+    private void LoadPlugins(string folder, List<(long Seq, IViewer Plugin)> loaded)
     {
         if (!Directory.Exists(folder))
             return;
 
+        var libs = Directory.GetFiles(folder, "QuickLook.Plugin.*.dll", SearchOption.AllDirectories);
+        if (libs.Length == 0)
+            return;
+
+        // v3.2.0: loading 25 plugin assemblies (LoadFrom + GetExportedTypes +
+        // instance creation) serially cost ~1.2 s of startup. The assemblies
+        // are independent, so discover and instantiate them in parallel and
+        // only synchronize the final list add.
+        var sync = new object();
         var failedPlugins = new List<(string Plugin, Exception Error)>();
 
-        foreach (var lib in Directory.GetFiles(folder, "QuickLook.Plugin.*.dll", SearchOption.AllDirectories))
+        Parallel.For(0, libs.Length, i =>
         {
+            var lib = libs[i];
+
             try
             {
                 foreach (var t in Assembly.LoadFrom(lib).GetExportedTypes())
@@ -151,7 +189,11 @@ public sealed class PluginManager
                     if (t.IsInterface || t.IsAbstract || !typeof(IViewer).IsAssignableFrom(t))
                         continue;
 
-                    loaded.Add(t.CreateInstance<IViewer>());
+                    var instance = t.CreateInstance<IViewer>();
+                    lock (sync)
+                    {
+                        loaded.Add((i, instance));
+                    }
                 }
             }
             // 0x80131515: ERROR_ASSEMBLY_FILE_BLOCKED - Windows blocked the assembly due to security policy
@@ -170,9 +212,12 @@ public sealed class PluginManager
             {
                 // Log the error
                 ProcessHelper.WriteLog($"Failed to load plugin {Path.GetFileName(lib)}: {ex}");
-                failedPlugins.Add((Path.GetFileName(lib), ex));
+                lock (sync)
+                {
+                    failedPlugins.Add((Path.GetFileName(lib), ex));
+                }
             }
-        }
+        });
 
         if (failedPlugins.Any())
         {

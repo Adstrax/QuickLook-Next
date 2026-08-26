@@ -67,6 +67,7 @@ public partial class App : Application
     // be measured instead of guessed.
     internal static bool IsStartupTimingEnabled { get; private set; }
     private static readonly Stopwatch StartupSw = new();
+    private static readonly object StartupDiagLock = new();
 
     // Smoke-test / bench diagnostics directory. The test scripts redirect it
     // into the repository (E:\Codex\QK-Lite\<version>\ql-smoke) with the
@@ -119,47 +120,6 @@ public partial class App : Application
             );
         }
 
-        // Occurs when the resolution of an assembly fails
-        AppDomain.CurrentDomain.AssemblyResolve += (_, e) =>
-        {
-            // Ignore the resource fails
-            // e.g. "QuickLookNext.resources, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
-            if (e.Name.Contains(".resources,"))
-            {
-                return null;
-            }
-
-            try
-            {
-                // Manually resolve the assembly fails
-                // https://github.com/QL-Win/QuickLook/issues/1618
-                // e.g. "System.Memory, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
-                if (e.Name.Split(',').FirstOrDefault() is string assemblyName)
-                {
-                    foreach (var libPath in FetchFiles(AppDomain.CurrentDomain.BaseDirectory, assemblyName + ".dll"))
-                    {
-                        return Assembly.LoadFrom(libPath);
-                    }
-                }
-            }
-            catch
-            {
-                // There is no way to resolve it
-            }
-
-            return null;
-
-            static IEnumerable<string> FetchFiles(string rootPath, string targetFileName)
-            {
-                foreach (var file in Directory.GetFiles(rootPath, "*" + Path.GetExtension(targetFileName), SearchOption.AllDirectories))
-                {
-                    if (string.Equals(Path.GetFileName(file), targetFileName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        yield return file;
-                    }
-                }
-            }
-        };
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -444,6 +404,35 @@ public partial class App : Application
             File.AppendAllText(
                 Path.Combine(dir, "startup.txt"),
                 $"{StartupSw.ElapsedMilliseconds}|{phase}{Environment.NewLine}");
+        }
+        catch
+        {
+            // The hook is for measurement only; never break startup.
+        }
+    }
+
+    /// <summary>
+    /// /test-startup diagnostic: record how long each plugin's Init took so
+    /// startup bottlenecks can be attributed to a specific plugin instead of
+    /// measured as one opaque "plugins-inited" number.
+    /// </summary>
+    internal static void RecordPluginInitPhase(string pluginName, long elapsedMs)
+    {
+        if (!IsStartupTimingEnabled)
+            return;
+
+        try
+        {
+            // Plugin Inits run on parallel worker threads; serialize the
+            // append so lines never interleave.
+            lock (StartupDiagLock)
+            {
+                var dir = SmokeDir;
+                Directory.CreateDirectory(dir);
+                File.AppendAllText(
+                    Path.Combine(dir, "plugin-init.txt"),
+                    $"{elapsedMs}|{pluginName}{Environment.NewLine}");
+            }
         }
         catch
         {

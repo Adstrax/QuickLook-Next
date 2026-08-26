@@ -18,7 +18,6 @@
         <LangVersion>latest</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{45E94893-3076-4A8E-8969-6955B6340739}</ProjectGuid>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <Platforms>AnyCPU;x64;ARM64</Platforms>
@@ -65,7 +64,6 @@
         <DebugType>full</DebugType>
         <PlatformTarget>x86</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
@@ -75,7 +73,6 @@
         <DebugType>pdbonly</DebugType>
         <PlatformTarget>x86</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <ItemGroup>

@@ -6,7 +6,7 @@
         <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64' and '$(Platform)' != 'x86'">win-x64</RuntimeIdentifier>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <NoWarn>$(NoWarn);CA1416;SYSLIB0050</NoWarn>
+        <NoWarn>$(NoWarn);CA1416;SYSLIB0050;NU1701</NoWarn>
         <OutputType>Library</OutputType>
         <TargetFramework>net10.0-windows</TargetFramework>
         <RootNamespace>QuickLook.Plugin.FontViewer</RootNamespace>

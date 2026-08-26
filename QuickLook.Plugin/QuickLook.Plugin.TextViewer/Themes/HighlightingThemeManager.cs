@@ -22,10 +22,12 @@ using QuickLook.Plugin.TextViewer.Detectors;
 using QuickLook.Plugin.TextViewer.Themes.HighlightingDefinitions;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace QuickLook.Plugin.TextViewer.Themes;
@@ -148,15 +150,24 @@ public class HighlightingThemeManager
         Light = new HighlightingManager();
         Dark = new HighlightingManager();
 
+        var items = new ConcurrentQueue<(string Name, HighlightingManager Hlm,
+            string[] Exts, XshdSyntaxDefinition Xshd)>();
+
         Assembly assembly = Assembly.GetExecutingAssembly();
         string[] resourceNames = assembly.GetManifestResourceNames();
 
-        foreach (var resourceName in resourceNames.Where(name => name.Contains(".Syntax.")))
+        // v3.2.0: loading ~250 XSHD syntax files (XML parse + regex rule
+        // compilation) serially cost ~1 s of startup. Parsing (LoadXshd) is
+        // fully independent, and compilation (HighlightingLoader.Load) only
+        // needs referenced definitions to already be registered - a handful
+        // of files reference C#/JavaScript, so RegisterHighlightings retries
+        // those in a second round after the base definitions land.
+        Parallel.ForEach(resourceNames.Where(name => name.Contains(".Syntax.")), resourceName =>
         {
             using Stream s = assembly.GetManifestResourceStream(resourceName);
 
             if (s == null)
-                continue;
+                return;
 
             Debug.WriteLine(resourceName);
 
@@ -166,21 +177,23 @@ public class HighlightingThemeManager
                 var name = EmbeddedResource.GetFileNameWithoutExtension(resourceName);
                 using var reader = new XmlTextReader(s);
                 var xshd = HighlightingLoader.LoadXshd(reader);
-                var highlightingDefinition = HighlightingLoader.Load(xshd, hlm);
                 if (xshd.Extensions.Count > 0)
-                    hlm.RegisterHighlighting(name, [.. xshd.Extensions], highlightingDefinition);
+                    items.Enqueue((name, hlm, [.. xshd.Extensions], xshd));
             }
             catch (Exception e)
             {
                 ProcessHelper.WriteLog(e.ToString());
             }
-        }
+        });
 
-        AddHighlightingManager(Light, nameof(Light));
-        AddHighlightingManager(Dark, nameof(Dark));
+        AddHighlightingManager(Light, nameof(Light), items);
+        AddHighlightingManager(Dark, nameof(Dark), items);
+
+        RegisterHighlightings(items);
     }
 
-    private static void AddHighlightingManager(HighlightingManager hlm, string dirName)
+    private static void AddHighlightingManager(HighlightingManager hlm, string dirName,
+        ConcurrentQueue<(string Name, HighlightingManager Hlm, string[] Exts, XshdSyntaxDefinition Xshd)> items)
     {
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         if (string.IsNullOrEmpty(assemblyPath))
@@ -190,7 +203,11 @@ public class HighlightingThemeManager
         if (!Directory.Exists(syntaxPath))
             return;
 
-        foreach (var file in Directory.EnumerateFiles(syntaxPath, "*.xshd").OrderBy(f => f))
+        var files = Directory.EnumerateFiles(syntaxPath, "*.xshd").OrderBy(f => f).ToArray();
+        if (files.Length == 0)
+            return;
+
+        Parallel.ForEach(files, file =>
         {
             try
             {
@@ -199,14 +216,79 @@ public class HighlightingThemeManager
                 using var fileStream = new FileStream(Path.GetFullPath(file), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 using var reader = new XmlTextReader(fileStream);
                 var xshd = HighlightingLoader.LoadXshd(reader);
-                var highlightingDefinition = HighlightingLoader.Load(xshd, hlm);
                 if (xshd.Extensions.Count > 0)
-                    hlm.RegisterHighlighting(ext, [.. xshd.Extensions], highlightingDefinition);
+                    items.Enqueue((ext, hlm, [.. xshd.Extensions], xshd));
             }
             catch (Exception e)
             {
                 ProcessHelper.WriteLog(e.ToString());
             }
+        });
+    }
+
+    /// <summary>
+    /// Compiles and registers parsed XSHD definitions. A definition whose
+    /// rules reference another definition (e.g. <c>reference="JavaScript"</c>)
+    /// can only compile once that definition is registered, so the batch is
+    /// retried in rounds: every round compiles everything it can in parallel,
+    /// registers the successes, and defers the rest to the next round.
+    /// </summary>
+    private static void RegisterHighlightings(
+        ConcurrentQueue<(string Name, HighlightingManager Hlm, string[] Exts, XshdSyntaxDefinition Xshd)> items)
+    {
+        var remaining = items.ToList();
+
+        while (remaining.Count > 0)
+        {
+            var loaded = new ConcurrentQueue<(HighlightingManager Hlm, string Name,
+                string[] Exts, IHighlightingDefinition Def)>();
+
+            Parallel.ForEach(remaining, item =>
+            {
+                try
+                {
+                    var def = HighlightingLoader.Load(item.Xshd, item.Hlm);
+                    loaded.Enqueue((item.Hlm, item.Name, item.Exts, def));
+                }
+                catch (HighlightingDefinitionInvalidException)
+                {
+                    // Referenced definition not registered yet; retry next round.
+                }
+                catch (Exception e)
+                {
+                    ProcessHelper.WriteLog(e.ToString());
+                }
+            });
+
+            if (loaded.IsEmpty)
+                break; // circular or unresolvable references; nothing more to do
+
+            var loadedList = loaded.ToList();
+
+            // Registration mutates the HighlightingManager dictionaries; do it
+            // on one thread to stay thread-safe.
+            foreach (var item in loadedList)
+            {
+                try
+                {
+                    item.Hlm.RegisterHighlighting(item.Name, item.Exts, item.Def);
+                }
+                catch (Exception e)
+                {
+                    ProcessHelper.WriteLog(e.ToString());
+                }
+            }
+
+            remaining = remaining
+                .Where(item => !loadedList.Any(l =>
+                    l.Name == item.Name && ReferenceEquals(l.Hlm, item.Hlm)))
+                .ToList();
+        }
+
+        foreach (var leftover in remaining)
+        {
+            ProcessHelper.WriteLog(
+                $"Skipped highlighting definition {leftover.Name}: references could not be resolved.");
         }
     }
 

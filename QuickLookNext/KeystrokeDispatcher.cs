@@ -36,11 +36,14 @@ internal class KeystrokeDispatcher : IDisposable
     private User32.WinEventProc _winEventProc; // keep reference to prevent GC
     private bool _isPreviewRequest;
     private bool _spaceIsDown;
+    // v3.2.0: TickCount64 (monotonic milliseconds since boot) instead of
+    // DateTime.Now.Ticks: cheaper on the keyboard hot path and immune to
+    // wall-clock adjustments.
     private long _spaceHoldTick;
     private long _lastInvalidKeyPressTick;
 
-    private const long HOLD_TO_PREVIEW_DURATION = TimeSpan.TicksPerMillisecond * 750;
-    private const long VALID_KEY_PRESS_DELAY = TimeSpan.TicksPerSecond * 1;
+    private const long HOLD_TO_PREVIEW_DURATION = 750;
+    private const long VALID_KEY_PRESS_DELAY = 1000;
 
     protected KeystrokeDispatcher()
     {
@@ -83,7 +86,7 @@ internal class KeystrokeDispatcher : IDisposable
         if (!_validKeys.Contains(e.KeyCode))
         {
             Debug.WriteLine($"Invalid keypress: key={e.KeyCode},down={isKeyDown}, time={_lastInvalidKeyPressTick}");
-            _lastInvalidKeyPressTick = DateTime.Now.Ticks;
+            _lastInvalidKeyPressTick = Environment.TickCount64;
             return;
         }
 
@@ -92,7 +95,7 @@ internal class KeystrokeDispatcher : IDisposable
             return;
 
         // skip if key is valid but too close after pressing an invalid key
-        if (DateTime.Now.Ticks - _lastInvalidKeyPressTick < VALID_KEY_PRESS_DELAY)
+        if (Environment.TickCount64 - _lastInvalidKeyPressTick < VALID_KEY_PRESS_DELAY)
             return;
         _lastInvalidKeyPressTick = 0L;
 
@@ -102,7 +105,7 @@ internal class KeystrokeDispatcher : IDisposable
             if (_spaceIsDown)
                 return;
 
-            _spaceHoldTick = DateTime.Now.Ticks;
+            _spaceHoldTick = Environment.TickCount64;
         }
 
         // check if the valid key is a preview request
@@ -119,7 +122,7 @@ internal class KeystrokeDispatcher : IDisposable
         if (_isPreviewRequest)
         {
             if (isKeyDown || e.KeyCode != Keys.Space ||
-                DateTime.Now.Ticks - _spaceHoldTick >= HOLD_TO_PREVIEW_DURATION)
+                Environment.TickCount64 - _spaceHoldTick >= HOLD_TO_PREVIEW_DURATION)
             {
                 InvokeRoutine(e.KeyCode, isKeyDown);
 

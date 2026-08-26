@@ -2,6 +2,28 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.2.0
+
+### 性能
+
+- 插件加载提速：25 个插件程序集的发现与实例化从串行改为并行，启动时的
+  插件就绪时间从约 2.5s 降到约 0.4s（-84%）
+- TextViewer 语法高亮提速：248 个 XSHD 语法文件改为并行解析 + 分层编译，
+  高亮初始化从约 1.1s 降到约 0.3s
+- 空格键热路径改用单调时钟（`Environment.TickCount64`），并清理了 PE 解析中
+  一次性的跳字节缓冲分配
+
+### 发布包
+
+- 发布包目录整理：根目录不再与十几个 dll / config 混杂，第三方运行库统一收进
+  `lib\` 子目录，用户只需双击根目录的 `QuickLook-Next.exe`
+- 移除 .NET Framework 时代的 `QuickLook-Next.dll.config` 与调试符号
+
+### 工程
+
+- 构建警告从 31 个清理到 1 个：移除失效的 ruleset 引用，改用 .NET 10 的
+  `X509CertificateLoader` / 强类型公钥 API，修复 PE 读取的 CA2022 等
+
 ## QuickLook-Next 3.1.0
 
 - 恢复全部被精简掉的预览插件：BinaryViewer（bin/hex）、CertViewer（证书）、

@@ -25,8 +25,8 @@ internal static class CertUtils
                 try
                 {
                     var cert = !string.IsNullOrEmpty(password)
-                        ? new X509Certificate2(path, password)
-                        : new X509Certificate2(path);
+                        ? X509CertificateLoader.LoadPkcs12FromFile(path, password)
+                        : X509CertificateLoader.LoadPkcs12FromFile(path, null);
                     return new CertLoadResult(true, cert, string.Empty, null);
                 }
                 catch (Exception ex)
@@ -54,7 +54,7 @@ internal static class CertUtils
                     try
                     {
                         var raw = Convert.FromBase64String(b64);
-                        var cert = new X509Certificate2(raw);
+                        var cert = X509CertificateLoader.LoadCertificate(raw);
                         return new CertLoadResult(true, cert, string.Empty, text);
                     }
                     catch (Exception ex)
@@ -73,7 +73,7 @@ internal static class CertUtils
                 {
                     try
                     {
-                        var cert = new X509Certificate2(bytes);
+                        var cert = X509CertificateLoader.LoadCertificate(bytes);
                         return new CertLoadResult(true, cert, string.Empty, null);
                     }
                     catch

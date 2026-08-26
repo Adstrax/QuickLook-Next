@@ -84,20 +84,12 @@ file static class Create
             throw new ArgumentException("Offset is before the current position in the stream.");
         }
 
-        // Skip bytes until reaching the target offset
-        while (bytesToSkip > 0)
-        {
-            int bytesSkipped = (int)Math.Min(bytesToSkip, int.MaxValue);
-            stream.Read(new byte[bytesSkipped], 0, bytesSkipped);
-            bytesToSkip -= bytesSkipped;
-        }
+        // Skip bytes until reaching the target offset (seek instead of
+        // reading into a throwaway buffer).
+        stream.Seek(bytesToSkip, SeekOrigin.Current);
 
-        // Read the required number of bytes
-        int bytesRead = stream.Read(buffer, 0, count);
-        if (bytesRead < count)
-        {
-            throw new EndOfStreamException("The stream has fewer bytes available than requested.");
-        }
+        // Read the required number of bytes, failing on a short read.
+        stream.ReadExactly(buffer, 0, count);
 
         return buffer;
     }

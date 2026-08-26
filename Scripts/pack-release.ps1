@@ -1,7 +1,13 @@
 # 生成用户友好的发布包：Build\Release -> Build\Package -> Build\QuickLook-Next-<version>.zip
 #
-# 解压后 QuickLook-Next.exe 直接位于根目录（不再藏在 Build\Release 深处），
-# 插件保留在 QuickLook.Plugin 子目录，并带 portable.lock（数据目录跟随程序目录）。
+# 目录结构（v3.2.0 起）：
+#   根目录：QuickLook-Next.exe（用户双击它）、QuickLook-Next.dll、
+#           QuickLook-Next.deps.json、QuickLook-Next.runtimeconfig.json、
+#           Translations.config、QLPlugin.ico、portable.lock
+#   lib\：  其余所有运行库 DLL（第三方依赖 + QuickLook.Common）
+#   runtimes\：原生运行库
+#   QuickLook.Plugin\：内置插件
+# 不再把十几个 dll / config 文件与 exe 混在根目录。
 #
 # 用法：
 #   .\Scripts\pack-release.ps1             # 只整理到 Build\Package
@@ -29,16 +35,38 @@ if (Test-Path $package) {
 }
 New-Item -ItemType Directory -Path $package | Out-Null
 
-# exe 与全部运行文件放到根目录；插件保留 QuickLook.Plugin 子目录；去掉 pdb
-Get-ChildItem -LiteralPath $release |
-    Where-Object { $_.Name -ne 'QuickLook.Plugin' -and $_.Extension -ne '.pdb' } |
-    Copy-Item -Destination $package -Recurse -Force
+# 根目录只放程序入口和它必需的清单/配置
+foreach ($name in @('QuickLook-Next.exe', 'QuickLook-Next.dll',
+        'QuickLook-Next.deps.json', 'QuickLook-Next.runtimeconfig.json',
+        'Translations.config', 'QLPlugin.ico')) {
+    $src = Join-Path $release $name
+    if (Test-Path -LiteralPath $src) {
+        Copy-Item -LiteralPath $src -Destination $package -Force
+    }
+}
+
+# 其余所有托管 DLL 收进 lib\ 子目录（程序启动时的 AssemblyResolve 兜底会
+# 递归搜索整个程序目录，lib 里的程序集可以正常加载）。主程序 QuickLook-Next.dll
+# 必须留在根目录（apphost 靠它启动）。
+$lib = Join-Path $package 'lib'
+New-Item -ItemType Directory -Path $lib | Out-Null
+Get-ChildItem -LiteralPath $release -Filter *.dll -File |
+    Where-Object { $_.Name -ne 'QuickLook-Next.dll' } |
+    Copy-Item -Destination $lib -Force
+
+# 原生运行库与内置插件保持子目录
+if (Test-Path -LiteralPath (Join-Path $release 'runtimes')) {
+    Copy-Item -LiteralPath (Join-Path $release 'runtimes') `
+        -Destination $package -Recurse -Force
+}
 Copy-Item -LiteralPath (Join-Path $release 'QuickLook.Plugin') `
     -Destination (Join-Path $package 'QuickLook.Plugin') -Recurse -Force
 
-# 发布包不需要调试符号
+# 发布包不需要调试符号，也不需要 .NET Framework 时代的 App.config
 Get-ChildItem -LiteralPath $package -Recurse -Filter *.pdb |
     Remove-Item -Force
+Remove-Item -LiteralPath (Join-Path $package 'QuickLook-Next.dll.config') `
+    -ErrorAction SilentlyContinue
 
 # 便携标记：设置数据目录跟随程序目录
 Set-Content -LiteralPath (Join-Path $package 'portable.lock') `

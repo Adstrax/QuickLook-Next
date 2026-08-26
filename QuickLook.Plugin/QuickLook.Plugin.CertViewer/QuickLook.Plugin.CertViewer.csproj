@@ -17,7 +17,6 @@
         <LangVersion>preview</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
         <ProjectGuid>{C8B9F6D1-1234-4AAB-9C3D-ABCDEF123456}</ProjectGuid>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <Platforms>AnyCPU;x64;ARM64</Platforms>
@@ -31,7 +30,6 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <PlatformTarget>x86</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
@@ -41,7 +39,6 @@
         <DefineConstants>TRACE</DefineConstants>
         <PlatformTarget>x86</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
@@ -52,7 +49,6 @@
         <DefineConstants>DEBUG;TRACE</DefineConstants>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
@@ -62,7 +58,6 @@
         <DefineConstants>TRACE</DefineConstants>
         <PlatformTarget>AnyCPU</PlatformTarget>
         <ErrorReport>prompt</ErrorReport>
-        <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
 
     <ItemGroup>

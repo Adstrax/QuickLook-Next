@@ -87,7 +87,20 @@ public partial class CertViewerControl : UserControl, IDisposable
         var pk = cert.PublicKey;
         items.Add(new("[Public Key]", ""));
         items.Add(new("  Algorithm", pk.Oid.FriendlyName));
-        try { items.Add(new("  Length", pk.Key.KeySize.ToString())); } catch { }
+        try
+        {
+            // v3.2.0: PublicKey.Key is obsolete (SYSLIB0027); query the
+            // strongly-typed key so the bit length keeps working on .NET 10.
+            var keySize = cert.GetRSAPublicKey()?.KeySize
+                ?? cert.GetECDsaPublicKey()?.KeySize
+                ?? cert.GetDSAPublicKey()?.KeySize;
+            if (keySize is int size)
+                items.Add(new("  Length", size.ToString()));
+        }
+        catch
+        {
+            // Not a known key algorithm; leave the length out.
+        }
         items.Add(new("  Key Blob", pk.EncodedKeyValue.Format(true)));
         items.Add(new("  Parameters", pk.EncodedParameters.Format(true)));
 
