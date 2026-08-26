@@ -37,7 +37,7 @@ public sealed class Plugin : IViewer
         ".vsd", ".vsdx",
     ];
 
-    // v3.12.0/v3.14.0: OOXML formats rendered by our own panels instead of the
+    // v3.12.0-v3.15.0: OOXML formats rendered by our own panels instead of the
     // Windows system preview component (rounded corners / acrylic / theme).
     private static readonly HashSet<string> SelfRenderedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -45,6 +45,8 @@ public sealed class Plugin : IViewer
         ".xlsm",
         ".docx",
         ".docm",
+        ".pptx",
+        ".pptm",
     };
 
     private object _panel;
@@ -121,7 +123,7 @@ public sealed class Plugin : IViewer
 
     public void View(string path, ContextObject context)
     {
-        // v3.12.0/v3.14.0: self-rendered OOXML - no system component, so the
+        // v3.12.0-v3.15.0: self-rendered OOXML - no system component, so the
         // preview inherits the app's backdrop / corners / theme.
         var extension = Path.GetExtension(path);
         if (SelfRenderedExtensions.Contains(extension))
@@ -135,13 +137,22 @@ public sealed class Plugin : IViewer
                 context.Title = Path.GetFileName(path);
                 spreadsheet.LoadSpreadsheet(path);
             }
-            else
+            else if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase) ||
+                extension.Equals(".docm", StringComparison.OrdinalIgnoreCase))
             {
                 var document = new DocumentPanel();
                 _panel = document;
                 context.ViewerContent = document;
                 context.Title = Path.GetFileName(path);
                 document.LoadDocument(path);
+            }
+            else
+            {
+                var presentation = new PresentationPanel();
+                _panel = presentation;
+                context.ViewerContent = presentation;
+                context.Title = Path.GetFileName(path);
+                presentation.LoadPresentation(path);
             }
 
             context.IsBusy = false;
@@ -221,6 +232,8 @@ public sealed class Plugin : IViewer
             spreadsheetPanel.Dispose();
         else if (_panel is DocumentPanel documentPanel)
             documentPanel.Dispose();
+        else if (_panel is PresentationPanel presentationPanel)
+            presentationPanel.Dispose();
         _panel = null;
     }
 }

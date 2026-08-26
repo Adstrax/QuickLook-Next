@@ -180,6 +180,32 @@ $docxBody += '</w:body></w:document>'
 Add-XlsxEntry $docxZip 'word/document.xml' $docxBody
 $docxZip.Dispose()
 $docxFs.Dispose()
+# v3.15.0: a minimal but valid pptx (two positioned text-box slides) for the
+# self-rendered PowerPoint preview.
+$pptxPath = Join-Path $smoke 'test.pptx'
+$pptxFs = [System.IO.File]::Open($pptxPath, [System.IO.FileMode]::Create)
+$pptxZip = New-Object System.IO.Compression.ZipArchive($pptxFs,
+    [System.IO.Compression.ZipArchiveMode]::Create)
+$pNs = 'http://schemas.openxmlformats.org/presentationml/2006/main'
+$aNs = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+$rNs = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+Add-XlsxEntry $pptxZip '[Content_Types].xml' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><Types xmlns=`"http://schemas.openxmlformats.org/package/2006/content-types`"><Default Extension=`"rels`" ContentType=`"application/vnd.openxmlformats-package.relationships+xml`"/><Default Extension=`"xml`" ContentType=`"application/xml`"/><Override PartName=`"/ppt/presentation.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml`"/><Override PartName=`"/ppt/slides/slide1.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.presentationml.slide+xml`"/><Override PartName=`"/ppt/slides/slide2.xml`" ContentType=`"application/vnd.openxmlformats-officedocument.presentationml.slide+xml`"/></Types>"
+Add-XlsxEntry $pptxZip '_rels/.rels' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><Relationships xmlns=`"http://schemas.openxmlformats.org/package/2006/relationships`"><Relationship Id=`"rId1`" Type=`"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument`" Target=`"ppt/presentation.xml`"/></Relationships>"
+Add-XlsxEntry $pptxZip 'ppt/_rels/presentation.xml.rels' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><Relationships xmlns=`"http://schemas.openxmlformats.org/package/2006/relationships`"><Relationship Id=`"rId1`" Type=`"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`" Target=`"slides/slide1.xml`"/><Relationship Id=`"rId2`" Type=`"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide`" Target=`"slides/slide2.xml`"/></Relationships>"
+Add-XlsxEntry $pptxZip 'ppt/presentation.xml' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><p:presentation xmlns:p=`"$pNs`" xmlns:r=`"$rNs`"><p:sldSz cx=`"12192000`" cy=`"6858000`"/><p:sldIdLst><p:sldId id=`"256`" r:id=`"rId1`"/><p:sldId id=`"257`" r:id=`"rId2`"/></p:sldIdLst></p:presentation>"
+$slideXml1 = "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><p:sld xmlns:p=`"$pNs`" xmlns:a=`"$aNs`" xmlns:r=`"$rNs`"><p:cSld><p:spTree>"
+$slideXml1 += '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="2286000"/><a:ext cx="11277600" cy="1524000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="zh-CN" sz="5400" b="1"/><a:t>QuickLook-Next 演示文稿</a:t></a:r></a:p></p:txBody></p:sp>'
+$slideXml1 += '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Subtitle"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="2286000" y="4114800"/><a:ext cx="7620000" cy="914400"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="zh-CN" sz="2400"/><a:t>自研渲染测试</a:t></a:r></a:p></p:txBody></p:sp>'
+$slideXml1 += '</p:spTree></p:cSld></p:sld>'
+Add-XlsxEntry $pptxZip 'ppt/slides/slide1.xml' $slideXml1
+$slideXml2 = "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><p:sld xmlns:p=`"$pNs`" xmlns:a=`"$aNs`" xmlns:r=`"$rNs`"><p:cSld><p:spTree>"
+$slideXml2 += '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Body"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="914400" y="914400"/><a:ext cx="10363200" cy="5029200"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="zh-CN" sz="2800" b="1"/><a:t>要点列表</a:t></a:r></a:p><a:p><a:r><a:rPr lang="zh-CN" sz="2000"/><a:t>第一点：标题、文本、定位都支持</a:t></a:r></a:p></p:txBody></p:sp>'
+$slideXml2 += '</p:spTree></p:cSld></p:sld>'
+Add-XlsxEntry $pptxZip 'ppt/slides/slide2.xml' $slideXml2
+Add-XlsxEntry $pptxZip 'ppt/slides/_rels/slide1.xml.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>'
+Add-XlsxEntry $pptxZip 'ppt/slides/_rels/slide2.xml.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>'
+$pptxZip.Dispose()
+$pptxFs.Dispose()
 
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
@@ -237,6 +263,8 @@ $previews += @{ File = 'test-math.md'; Title = 'test-math.md' }
 $previews += @{ File = 'test.xlsx'; Title = 'test.xlsx' }
 # v3.14.0: self-rendered Word document preview.
 $previews += @{ File = 'test.docx'; Title = 'test.docx' }
+# v3.15.0: self-rendered PowerPoint preview.
+$previews += @{ File = 'test.pptx'; Title = 'test.pptx' }
 # v3.8.0: folder preview (InfoPanel) coverage - InfoPanel shows no title.
 $previews += @{ Folder = $smoke; Title = 'ql-smoke'; CheckTitle = $false }
 foreach ($pv in $previews) {

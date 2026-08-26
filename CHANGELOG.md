@@ -2,6 +2,21 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.15.0
+
+### 新功能（第三阶段：PowerPoint 自研渲染）
+
+- pptx / pptm 预览改为自研渲染：手写 OOXML 解析，按 EMU 坐标定位每一页的
+  文本框 / 形状 / 图片，支持加粗、斜体、下划线、字号、颜色、对齐与幻灯片
+  背景，渲染成纵向排列的可滚动幻灯片页，与 Excel / Word 预览同一套圆角 /
+  毛玻璃 / 深浅色观感
+- 至此 Office 三件套（xlsx、docx、pptx）全部自研渲染；其余旧格式
+  （.doc/.xls/.ppt/.odt/.vsd 等）继续由系统预览组件兜底
+
+### 工程
+
+- 冒烟测试新增 test.pptx（两页定位文本框）覆盖自研 PPT 预览
+
 ## QuickLook-Next 3.14.0
 
 ### 新功能（第二阶段：Word 自研渲染）
