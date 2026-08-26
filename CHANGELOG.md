@@ -2,6 +2,28 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.10.0
+
+### 更快
+
+- 罕见格式按扩展名预判：首次预览 .db / .exe / .stl 等文件时只加载对应插件
+  （如 DbViewer / PEViewer / HelixViewer），不再一次性加载全部 15 个懒插件
+
+### 更轻
+
+- 应用图标无损压缩：app.ico 的 BMP 帧重编码为 PNG（1457KB -> 92KB，9 帧
+  像素完全一致），exe 体积约 1.6MB -> 0.25MB
+- 发布包移除 ChmViewer 的 x86 / arm64 运行库（x64 包用不到）
+
+### 更美观
+
+- 托盘菜单子菜单补图标：主题选项（系统/亮色/暗色）与语言「跟随系统」
+
+### 工程
+
+- 新增 GitHub Actions CI：push / PR 自动构建并跑完整冒烟测试
+  （CI 无 DWM 时跳过 Acrylic 断言），旧 AppVeyor 配置已由工作流替代
+
 ## QuickLook-Next 3.9.0
 
 ### 更美观

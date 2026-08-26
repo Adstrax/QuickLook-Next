@@ -116,6 +116,15 @@ internal partial class TrayIconManager : IDisposable
                     ..ThemeModes.Select(mode => new TrayMenuEntry
                     {
                         Header = TranslationHelper.Get(mode.Key, failsafe: mode.Name),
+                        // v3.10.0: submenu items get glyphs too (System = auto,
+                        // Light / Dark match the theme).
+                        Icon = mode.Theme switch
+                        {
+                            Themes.None => FontSymbols.Sync,
+                            Themes.Light => FontSymbols.Light,
+                            Themes.Dark => FontSymbols.Contrast,
+                            _ => null,
+                        },
                         Command = () => SetThemeMode(mode.Theme),
                         IsChecked = currentTheme == mode.Theme,
                     }),
@@ -130,6 +139,7 @@ internal partial class TrayIconManager : IDisposable
                     new TrayMenuEntry
                     {
                         Header = TranslationHelper.Get("Icon_Language_FollowSystem", failsafe: "Follow System"),
+                        Icon = FontSymbols.Globe,
                         Command = () => SetLanguage(string.Empty),
                         IsChecked = string.IsNullOrEmpty(currentLanguage),
                     },

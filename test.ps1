@@ -143,7 +143,13 @@ Assert ($null -ne $alive) '启动后进程存活'
 Assert $trayMenuSeen '托盘菜单窗口出现并自动关闭'
 $diagFile = Join-Path $smoke 'tray-menu-dwm.txt'
 $dwmDiag = if (Test-Path $diagFile) { Get-Content $diagFile -Raw } else { '' }
-Assert ($dwmDiag -match 'accent-applied=True') '托盘菜单 Acrylic 已应用（WCA 调用成功）'
+if ($env:QL_SMOKE_CI -eq '1') {
+    # CI runners may not have DWM compositing; skip the Acrylic assertion.
+    Write-Host 'SKIP: 托盘菜单 Acrylic（CI 环境）' -ForegroundColor Yellow
+}
+else {
+    Assert ($dwmDiag -match 'accent-applied=True') '托盘菜单 Acrylic 已应用（WCA 调用成功）'
+}
 Assert ($dwmDiag -match 'more-menu-opened=true') 'More 菜单复用同一 Acrylic 菜单路径'
 Assert ((Get-LogLength) -eq $before) '插件加载无失败（日志零新增）'
 

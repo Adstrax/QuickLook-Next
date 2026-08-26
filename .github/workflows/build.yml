@@ -1,0 +1,44 @@
+name: build
+
+on:
+  push:
+    branches: [lite, main]
+  pull_request:
+    branches: [lite, main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Release
+        run: dotnet build QuickLookNext.slnx -c Release --nologo
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuickLookNext-Release
+          path: Build/Release
+          if-no-files-found: error
+
+  # v3.10.0: the full GUI smoke test runs on every push/PR. QL_SMOKE_CI lets
+  # test.ps1 relax the DWM-dependent Acrylic assertion on headless runners.
+  smoke:
+    runs-on: windows-latest
+    needs: build
+    env:
+      QL_SMOKE_CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Smoke test
+        shell: pwsh
+        run: ./test.ps1

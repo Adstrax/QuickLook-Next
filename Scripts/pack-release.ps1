@@ -142,6 +142,16 @@ if ((Test-Path -LiteralPath $videoRootMediaInfo) -and
     Write-Host '已移除 VideoViewer 根目录冗余的 MediaInfo.dll'
 }
 
+# v3.10.0: x64 发布包不需要 x86/arm64 的原生运行库（ChmViewer 的
+# runtimes\win-x86 / win-arm64 只有 WebView2Loader，x64 包用不到）。
+foreach ($archDir in @('win-x86', 'win-arm64')) {
+    $chmArch = Join-Path $package "QuickLook.Plugin\QuickLook.Plugin.ChmViewer\runtimes\$archDir"
+    if (Test-Path -LiteralPath $chmArch) {
+        Remove-Item -LiteralPath $chmArch -Recurse -Force
+        Write-Host "已移除 ChmViewer 的 $archDir 运行库"
+    }
+}
+
 # 便携标记：设置数据目录跟随程序目录
 Set-Content -LiteralPath (Join-Path $package 'portable.lock') `
     -Value 'This file makes QuickLook-Next portable.' -Encoding ASCII

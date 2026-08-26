@@ -66,6 +66,119 @@ public sealed class PluginManager
         "QuickLook.Plugin.ThumbnailViewer",
     };
 
+    // v3.10.0: extension -> lazy built-in plugins that declare it, ordered by
+    // (priority desc). Lets the first rare-format preview load only the plugin
+    // that can actually handle the file instead of all 15 pending ones.
+    // Mirrors each plugin's own extension list; .bin/.dylib overlaps are
+    // ordered by priority (ELFViewer 11 > BinaryViewer -10).
+    private static readonly Dictionary<string, string[]> LazyExtensionHints = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".qlplugin"] = ["QuickLook.Plugin.PluginInstaller"],
+        [".chm"] = ["QuickLook.Plugin.ChmViewer"],
+        [".pf"] = ["QuickLook.Plugin.PrefetchViewer"],
+        [".eml"] = ["QuickLook.Plugin.MailViewer"],
+        [".msg"] = ["QuickLook.Plugin.MailViewer"],
+        [".db"] = ["QuickLook.Plugin.DbViewer"],
+        [".db3"] = ["QuickLook.Plugin.DbViewer"],
+        [".lite"] = ["QuickLook.Plugin.DbViewer"],
+        [".litedb"] = ["QuickLook.Plugin.DbViewer"],
+        [".sdb"] = ["QuickLook.Plugin.DbViewer"],
+        [".sqlite"] = ["QuickLook.Plugin.DbViewer"],
+        [".sqlite3"] = ["QuickLook.Plugin.DbViewer"],
+        [".dmp"] = ["QuickLook.Plugin.DumpViewer"],
+        [".dump"] = ["QuickLook.Plugin.DumpViewer"],
+        [".hdmp"] = ["QuickLook.Plugin.DumpViewer"],
+        [".mdmp"] = ["QuickLook.Plugin.DumpViewer"],
+        [".minidump"] = ["QuickLook.Plugin.DumpViewer"],
+        [".bin"] = ["QuickLook.Plugin.ELFViewer", "QuickLook.Plugin.BinaryViewer"],
+        [".hex"] = ["QuickLook.Plugin.BinaryViewer"],
+        [".elf"] = ["QuickLook.Plugin.ELFViewer"],
+        [".axf"] = ["QuickLook.Plugin.ELFViewer"],
+        [".ko"] = ["QuickLook.Plugin.ELFViewer"],
+        [".mod"] = ["QuickLook.Plugin.ELFViewer"],
+        [".o"] = ["QuickLook.Plugin.ELFViewer"],
+        [".out"] = ["QuickLook.Plugin.ELFViewer"],
+        [".prx"] = ["QuickLook.Plugin.ELFViewer"],
+        [".puff"] = ["QuickLook.Plugin.ELFViewer"],
+        [".so"] = ["QuickLook.Plugin.ELFViewer"],
+        [".dylib"] = ["QuickLook.Plugin.ELFViewer"],
+        [".uimage"] = ["QuickLook.Plugin.ELFViewer"],
+        [".3ds"] = ["QuickLook.Plugin.HelixViewer"],
+        [".3mf"] = ["QuickLook.Plugin.HelixViewer"],
+        [".blend"] = ["QuickLook.Plugin.HelixViewer"],
+        [".dae"] = ["QuickLook.Plugin.HelixViewer"],
+        [".dxf"] = ["QuickLook.Plugin.HelixViewer"],
+        [".fbx"] = ["QuickLook.Plugin.HelixViewer"],
+        [".glb"] = ["QuickLook.Plugin.HelixViewer"],
+        [".gltf"] = ["QuickLook.Plugin.HelixViewer"],
+        [".lwo"] = ["QuickLook.Plugin.HelixViewer"],
+        [".obj"] = ["QuickLook.Plugin.HelixViewer"],
+        [".pcd"] = ["QuickLook.Plugin.HelixViewer"],
+        [".ply"] = ["QuickLook.Plugin.HelixViewer"],
+        [".pmx"] = ["QuickLook.Plugin.HelixViewer"],
+        [".stl"] = ["QuickLook.Plugin.HelixViewer"],
+        [".cdr"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".fig"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".kra"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".pdn"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".pip"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".pix"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".sketch"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".xd"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".xmind"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".apk"] = ["QuickLook.Plugin.AppViewer"],
+        [".aab"] = ["QuickLook.Plugin.AppViewer"],
+        [".aar"] = ["QuickLook.Plugin.AppViewer"],
+        [".appx"] = ["QuickLook.Plugin.AppViewer"],
+        [".appxbundle"] = ["QuickLook.Plugin.AppViewer"],
+        [".appimage"] = ["QuickLook.Plugin.AppViewer"],
+        [".ddeb"] = ["QuickLook.Plugin.AppViewer"],
+        [".deb"] = ["QuickLook.Plugin.AppViewer"],
+        [".dmg"] = ["QuickLook.Plugin.AppViewer"],
+        [".hap"] = ["QuickLook.Plugin.AppViewer"],
+        [".har"] = ["QuickLook.Plugin.AppViewer"],
+        [".ipa"] = ["QuickLook.Plugin.AppViewer"],
+        [".msi"] = ["QuickLook.Plugin.AppViewer"],
+        [".msix"] = ["QuickLook.Plugin.AppViewer"],
+        [".msixbundle"] = ["QuickLook.Plugin.AppViewer"],
+        [".msp"] = ["QuickLook.Plugin.AppViewer"],
+        [".nupkg"] = ["QuickLook.Plugin.AppViewer"],
+        [".rpm"] = ["QuickLook.Plugin.AppViewer"],
+        [".snupkg"] = ["QuickLook.Plugin.AppViewer"],
+        [".wgt"] = ["QuickLook.Plugin.AppViewer"],
+        [".wgtu"] = ["QuickLook.Plugin.AppViewer"],
+        [".cer"] = ["QuickLook.Plugin.CertViewer"],
+        [".certSigningRequest"] = ["QuickLook.Plugin.CertViewer"],
+        [".crt"] = ["QuickLook.Plugin.CertViewer"],
+        [".csr"] = ["QuickLook.Plugin.CertViewer"],
+        [".keystore"] = ["QuickLook.Plugin.CertViewer"],
+        [".mobileprovision"] = ["QuickLook.Plugin.CertViewer"],
+        [".p12"] = ["QuickLook.Plugin.CertViewer"],
+        [".p7s"] = ["QuickLook.Plugin.CertViewer"],
+        [".pem"] = ["QuickLook.Plugin.CertViewer"],
+        [".pfx"] = ["QuickLook.Plugin.CertViewer"],
+        [".pkcs7"] = ["QuickLook.Plugin.CertViewer"],
+        [".pvk"] = ["QuickLook.Plugin.CertViewer"],
+        [".snk"] = ["QuickLook.Plugin.CertViewer"],
+        [".spc"] = ["QuickLook.Plugin.CertViewer"],
+        [".ax"] = ["QuickLook.Plugin.PEViewer"],
+        [".bpl"] = ["QuickLook.Plugin.PEViewer"],
+        [".cpl"] = ["QuickLook.Plugin.PEViewer"],
+        [".dll"] = ["QuickLook.Plugin.PEViewer"],
+        [".drv"] = ["QuickLook.Plugin.PEViewer"],
+        [".efi"] = ["QuickLook.Plugin.PEViewer"],
+        [".exe"] = ["QuickLook.Plugin.PEViewer"],
+        [".mui"] = ["QuickLook.Plugin.PEViewer"],
+        [".mun"] = ["QuickLook.Plugin.PEViewer"],
+        [".mz"] = ["QuickLook.Plugin.PEViewer"],
+        [".ocx"] = ["QuickLook.Plugin.PEViewer"],
+        [".scr"] = ["QuickLook.Plugin.PEViewer"],
+        [".sys"] = ["QuickLook.Plugin.PEViewer"],
+        [".tlb"] = ["QuickLook.Plugin.PEViewer"],
+        [".vxd"] = ["QuickLook.Plugin.PEViewer"],
+        [".winmd"] = ["QuickLook.Plugin.PEViewer"],
+    };
+
     private readonly object _lazyLock = new();
     private List<(long Seq, string Path)> _pendingLazy = [];
     private readonly Dictionary<IViewer, long> _seqByPlugin = [];
@@ -197,26 +310,98 @@ public sealed class PluginManager
     {
         lock (_lazyLock)
         {
-            // Load every pending rare plugin (first rare preview pays this
-            // one-time cost), then match across the priority-sorted list.
-            while (_pendingLazy.Count > 0)
-                LoadLazyPluginAt(0);
+            if (_pendingLazy.Count == 0)
+                return null;
 
-            foreach (var plugin in LoadedPlugins)
+            // v3.10.0: try the handful of plugins whose declared extensions
+            // match this file first, so a .db preview loads DbViewer instead
+            // of all 15 pending rare plugins.
+            var hinted = new List<string>();
+            if (path.StartsWith("::", StringComparison.Ordinal))
             {
-                try
+                hinted.Add("QuickLook.Plugin.CLSIDViewer");
+            }
+            else
+            {
+                var ext = Path.GetExtension(path);
+                if (!string.IsNullOrEmpty(ext) &&
+                    LazyExtensionHints.TryGetValue(ext, out var names))
                 {
-                    if (plugin.CanHandle(path))
-                        return plugin;
+                    hinted.AddRange(names);
                 }
-                catch (Exception ex)
+            }
+
+            IViewer matched = null;
+            if (hinted.Count > 0)
+            {
+                foreach (var name in hinted)
                 {
-                    Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
+                    var index = FindPendingIndex(name);
+                    if (index < 0)
+                        continue;
+
+                    var plugin = LoadLazyPluginAt(index);
+                    if (plugin is null)
+                        continue;
+
+                    try
+                    {
+                        if (plugin.CanHandle(path))
+                        {
+                            matched = plugin;
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
+                    }
                 }
+            }
+
+            // Unmapped extension, or none of the hinted plugins claimed it:
+            // fall back to loading everything and matching across the full,
+            // priority-sorted list (same semantics as eager loading).
+            if (matched is null)
+            {
+                while (_pendingLazy.Count > 0)
+                    LoadLazyPluginAt(0);
+
+                foreach (var plugin in LoadedPlugins)
+                {
+                    try
+                    {
+                        if (plugin.CanHandle(path))
+                        {
+                            matched = plugin;
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
+                    }
+                }
+            }
+
+            return matched;
+        }
+    }
+
+    private int FindPendingIndex(string assemblyName)
+    {
+        for (var i = 0; i < _pendingLazy.Count; i++)
+        {
+            if (string.Equals(
+                    Path.GetFileNameWithoutExtension(_pendingLazy[i].Path),
+                    assemblyName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
             }
         }
 
-        return null;
+        return -1;
     }
 
     /// <summary>
