@@ -18,6 +18,7 @@
 using QuickLook.Common.Helpers;
 using QuickLook.Common.Plugin;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -36,7 +37,15 @@ public sealed class Plugin : IViewer
         ".vsd", ".vsdx",
     ];
 
-    private PreviewPanel _panel;
+    // v3.12.0: OOXML workbooks rendered by our own SpreadsheetPanel instead of
+    // the Windows system preview component (rounded corners / acrylic / theme).
+    private static readonly HashSet<string> SelfRenderedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".xlsx",
+        ".xlsm",
+    };
+
+    private object _panel;
 
     public int Priority => -1;
 
@@ -51,6 +60,10 @@ public sealed class Plugin : IViewer
 
         if (!Extensions.Any(path.ToLower().EndsWith))
             return false;
+
+        // Self-rendered formats do not depend on a registered system handler.
+        if (SelfRenderedExtensions.Contains(Path.GetExtension(path)))
+            return true;
 
         var previewHandler = ShellExRegister.GetPreviewHandlerGUID(Path.GetExtension(path));
         if (previewHandler == Guid.Empty)
@@ -106,6 +119,19 @@ public sealed class Plugin : IViewer
 
     public void View(string path, ContextObject context)
     {
+        // v3.12.0: self-rendered spreadsheets - no system component, so the
+        // preview inherits the app's backdrop / corners / theme.
+        if (SelfRenderedExtensions.Contains(Path.GetExtension(path)))
+        {
+            var spreadsheet = new SpreadsheetPanel();
+            _panel = spreadsheet;
+            context.ViewerContent = spreadsheet;
+            context.Title = Path.GetFileName(path);
+            spreadsheet.LoadSpreadsheet(path);
+            context.IsBusy = false;
+            return;
+        }
+
         // MS Office interface does not allow loading of protected view (It's also possible that I haven't found a way)
         // Therefore, we need to predict in advance and then let users choose whether to lift the protection
         if (ZoneIdentifierManager.IsZoneBlocked(path))
@@ -152,10 +178,11 @@ public sealed class Plugin : IViewer
 
         try
         {
-            _panel = new PreviewPanel();
-            context.ViewerContent = _panel;
+            var previewPanel = new PreviewPanel();
+            _panel = previewPanel;
+            context.ViewerContent = previewPanel;
             context.Title = Path.GetFileName(path);
-            _panel.PreviewFile(path, context);
+            previewPanel.PreviewFile(path, context);
         }
         catch (Exception e)
         {
@@ -172,7 +199,10 @@ public sealed class Plugin : IViewer
 
     public void Cleanup()
     {
-        _panel?.Dispose();
+        if (_panel is PreviewPanel previewPanel)
+            previewPanel.Dispose();
+        else if (_panel is SpreadsheetPanel spreadsheetPanel)
+            spreadsheetPanel.Dispose();
         _panel = null;
     }
 }

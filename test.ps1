@@ -123,6 +123,41 @@ Set-Content -Path (Join-Path $smoke 'test-mermaid.md') `
     -Value "## 图`n`n``````mermaid`ngraph TD;`n  A-->B;`n``````" -Encoding UTF8
 Set-Content -Path (Join-Path $smoke 'test-math.md') `
     -Value "## 公式`n`n质能方程 $E=mc^2$ 或 $$\int_0^1 x dx$$" -Encoding UTF8
+# v3.12.0: a minimal but valid xlsx (OOXML zip) for the self-rendered
+# spreadsheet preview.
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$xlsxPath = Join-Path $smoke 'test.xlsx'
+$xlsxFs = [System.IO.File]::Open($xlsxPath, [System.IO.FileMode]::Create)
+$xlsxZip = New-Object System.IO.Compression.ZipArchive($xlsxFs,
+    [System.IO.Compression.ZipArchiveMode]::Create)
+function Add-XlsxEntry($zip, $name, $content) {
+    $entry = $zip.CreateEntry($name)
+    $writer = New-Object System.IO.StreamWriter($entry.Open(),
+        (New-Object System.Text.UTF8Encoding($false)))
+    $writer.Write($content)
+    $writer.Dispose()
+}
+Add-XlsxEntry $xlsxZip '[Content_Types].xml' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'
+Add-XlsxEntry $xlsxZip '_rels/.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'
+Add-XlsxEntry $xlsxZip 'xl/workbook.xml' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>'
+Add-XlsxEntry $xlsxZip 'xl/_rels/workbook.xml.rels' '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'
+$xlsxRows = '<row r="1"><c r="A1" t="inlineStr"><is><t>姓名</t></is></c><c r="B1" t="inlineStr"><is><t>部门</t></is></c><c r="C1" t="inlineStr"><is><t>月薪</t></is></c><c r="D1" t="inlineStr"><is><t>入职日期</t></is></c></row>'
+$xlsxData = @(@('张三','研发','18000','2024-03-15'),@('李四','产品','16000','2023-11-02'),@('王五','设计','15000','2025-01-20'))
+for ($i = 0; $i -lt $xlsxData.Count; $i++) {
+    $r = $i + 2
+    $cells = @()
+    for ($c = 0; $c -lt 4; $c++) {
+        $col = [char](65 + $c)
+        $val = $xlsxData[$i][$c]
+        if ($c -eq 2) { $cells += "<c r=`"$col$r`"><v>$val</v></c>" }
+        else { $cells += "<c r=`"$col$r`" t=`"inlineStr`"><is><t>$val</t></is></c>" }
+    }
+    $xlsxRows += "<row r=`"$r`">$($cells -join '')</row>"
+}
+Add-XlsxEntry $xlsxZip 'xl/worksheets/sheet1.xml' "<?xml version=`"1.0`" encoding=`"UTF-8`" standalone=`"yes`"?><worksheet xmlns=`"http://schemas.openxmlformats.org/spreadsheetml/2006/main`"><sheetData>$xlsxRows</sheetData></worksheet>"
+$xlsxZip.Dispose()
+$xlsxFs.Dispose()
 
 # ---------- 4. 启动 + 插件加载 ----------
 Write-Host "== 4/6 启动并验证插件加载 ==" -ForegroundColor Cyan
@@ -176,6 +211,8 @@ $previews += @{ File = 'test-pe.exe'; Title = 'test-pe.exe'; CheckTitle = $false
 $previews += @{ File = 'test.bin'; Title = 'test.bin' }
 $previews += @{ File = 'test-mermaid.md'; Title = 'test-mermaid.md' }
 $previews += @{ File = 'test-math.md'; Title = 'test-math.md' }
+# v3.12.0: self-rendered spreadsheet preview.
+$previews += @{ File = 'test.xlsx'; Title = 'test.xlsx' }
 # v3.8.0: folder preview (InfoPanel) coverage - InfoPanel shows no title.
 $previews += @{ Folder = $smoke; Title = 'ql-smoke'; CheckTitle = $false }
 foreach ($pv in $previews) {

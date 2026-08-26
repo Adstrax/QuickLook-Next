@@ -2,6 +2,20 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.12.0
+
+### 新功能（第一阶段：Excel 自研渲染）
+
+- xlsx / xlsm 预览不再调用 Windows 系统预览组件，改为自研渲染：MiniExcel
+  读取单元格，WebView2 渲染成样式化 HTML 表格，自动获得圆角 / 毛玻璃 /
+  深浅色主题，与图片、文本等预览观感一致
+- 其余 Office 格式（.doc/.docx/.ppt/.pptx/.odt 等）暂保持系统预览组件兜底，
+  后续阶段再逐步自研 Word / PPT 渲染
+
+### 工程
+
+- 冒烟测试新增 test.xlsx（最小合法 OOXML 工作簿）覆盖自研表格预览
+
 ## QuickLook-Next 3.11.0
 
 ### 更美观
