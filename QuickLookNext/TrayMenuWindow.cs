@@ -112,6 +112,9 @@ internal sealed class TrayMenuWindow : Window
         // v1.2.37: translucent overlay over the frosted acrylic - keep the
         // alpha moderate so the blur shows through while text stays readable.
         _tintBrush = ThemePalette.Tint(isDark);
+        // v3.20.0: theme-aware scrollbar thumb (the implicit ScrollBar style
+        // resolves this key through the window resources).
+        Resources["ScrollBarThumbBrush"] = ThemePalette.ScrollbarThumb(isDark);
 
         _root = BuildMenu(entries);
 

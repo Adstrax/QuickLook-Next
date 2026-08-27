@@ -156,6 +156,20 @@ foreach ($archDir in @('win-x86', 'win-arm64')) {
 Set-Content -LiteralPath (Join-Path $package 'portable.lock') `
     -Value 'This file makes QuickLook-Next portable.' -Encoding ASCII
 
+# v3.20.0: 首次使用说明（尤其是 .NET 运行时依赖），随包一起分发
+$firstRunNote = @'
+QuickLook-Next 使用说明
+
+1. 双击根目录的 QuickLook-Next.exe 即可使用。
+2. 选中文件后按空格预览，Esc 关闭。
+3. 需要 .NET 10 Desktop Runtime（Windows 10 / 11）。
+   如果启动时提示缺少运行时，点击提示窗口中的下载按钮安装，然后重新打开。
+   下载地址：https://dotnet.microsoft.com/download/dotnet/10.0
+4. 便携模式：数据目录跟随本文件夹（UserData），可整体移动。
+'@
+Set-Content -LiteralPath (Join-Path $package '使用说明.txt') `
+    -Value $firstRunNote -Encoding UTF8
+
 if (-not $MakeZip) {
     Write-Host "已整理到：$package"
     Write-Host "（加 -Zip 参数可生成压缩包）"

@@ -161,7 +161,9 @@ internal partial class TrayIconManager : IDisposable
                         Command = () => SetLanguage(string.Empty),
                         IsChecked = string.IsNullOrEmpty(currentLanguage),
                     },
-                    ..TranslationHelper.GetAvailableLanguages().Select(language => new TrayMenuEntry
+                    // v3.20.0: most-used languages first, then the rest sorted
+                    // by their native display name.
+                    ..OrderLanguages(TranslationHelper.GetAvailableLanguages()).Select(language => new TrayMenuEntry
                     {
                         Header = LanguageDisplayName(language),
                         Command = () => SetLanguage(language),
@@ -354,6 +356,27 @@ internal partial class TrayIconManager : IDisposable
         {
             return cultureName;
         }
+    }
+
+    /// <summary>
+    /// v3.20.0: languages most people actually use are pinned to the top of
+    /// the picker (in this order); everything else follows alphabetically by
+    /// its native display name.
+    /// </summary>
+    private static readonly string[] CommonLanguages =
+    [
+        "zh-CN", "zh-TW", "en", "ja", "ko", "fr", "de", "es", "pt-BR", "ru",
+        "ar", "hi", "vi", "tr", "id", "nl", "it", "pl", "uk", "th",
+    ];
+
+    private static IOrderedEnumerable<string> OrderLanguages(IEnumerable<string> languages)
+    {
+        return languages.OrderBy(language =>
+        {
+            var index = Array.FindIndex(CommonLanguages,
+                c => string.Equals(c, language, StringComparison.OrdinalIgnoreCase));
+            return index < 0 ? int.MaxValue : index;
+        }).ThenBy(LanguageDisplayName, StringComparer.CurrentCultureIgnoreCase);
     }
 
     // v1.3.6: 顶部状态栏默认隐藏开关 - 开启后鼠标移入内容区不再弹出顶栏，

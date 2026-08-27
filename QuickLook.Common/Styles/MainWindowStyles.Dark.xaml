@@ -11,4 +11,6 @@
     <SolidColorBrush x:Key="CaptionCloseButtonHoverBackground" Color="#FFE81123" />
     <SolidColorBrush x:Key="CaptionCloseButtonPressBackground" Color="#FFB5394B" />
     <SolidColorBrush x:Key="CaptionBackground" Color="#CC0E0E0E" />
+    <!-- v3.20.0: light thumb on dark surfaces. -->
+    <SolidColorBrush x:Key="ScrollBarThumbBrush" Color="#66FFFFFF" />
 </ResourceDictionary>

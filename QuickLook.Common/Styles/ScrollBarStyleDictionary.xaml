@@ -4,6 +4,11 @@
          (text preview, PDF, etc.). 6px wide, transparent track, semi-transparent
          rounded thumb that works on both light and dark backgrounds. -->
 
+    <!-- v3.20.0: theme-aware thumb - dark on light surfaces by default; the
+         dark dictionaries (preview window, tray menu, plugin panel) override
+         this key with a light thumb. -->
+    <SolidColorBrush x:Key="ScrollBarThumbBrush" Color="#59000000" />
+
     <!-- Invisible page buttons (the area above/below the thumb) -->
     <Style x:Key="ScrollBarPageButton" TargetType="{x:Type RepeatButton}">
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -45,7 +50,7 @@
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
                     <Thumb Margin="1,0"
-                           Background="#66FFFFFF"
+                           Background="{DynamicResource ScrollBarThumbBrush}"
                            Style="{StaticResource ScrollBarThumb}" />
                 </Track.Thumb>
                 <Track.IncreaseRepeatButton>
@@ -66,7 +71,7 @@
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
                     <Thumb Margin="0,1"
-                           Background="#66FFFFFF"
+                           Background="{DynamicResource ScrollBarThumbBrush}"
                            Style="{StaticResource ScrollBarThumb}" />
                 </Track.Thumb>
                 <Track.IncreaseRepeatButton>

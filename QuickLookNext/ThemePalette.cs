@@ -29,6 +29,11 @@ internal static class ThemePalette
 
     internal static Brush Danger(bool isDark) => FromHex(isDark ? "#FFFF7B72" : "#FFC42B1C");
 
+    /// <summary>
+    /// v3.20.0: scrollbar thumb - dark on light surfaces, light on dark ones.
+    /// </summary>
+    internal static Brush ScrollbarThumb(bool isDark) => FromHex(isDark ? "#66FFFFFF" : "#59000000");
+
     internal static Brush Accent(bool isDark)
     {
         return LiveAccent() ?? FromHex(isDark ? "#60CDFF" : "#005FB8");

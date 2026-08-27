@@ -308,6 +308,7 @@ public partial class PluginManagerWindow : Window
         SetBrush("ButtonBgBrush", ThemePalette.ButtonBg(_isDark));
         SetBrush("ButtonHoverBrush", ThemePalette.ButtonHover(_isDark));
         SetBrush("DangerBrush", ThemePalette.Danger(_isDark));
+        SetBrush("ScrollBarThumbBrush", ThemePalette.ScrollbarThumb(_isDark));
 
         // Dragging a borderless window: the header bar acts as the caption.
         headerBar.MouseLeftButtonDown += (_, e) =>
