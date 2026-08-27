@@ -2,6 +2,21 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.21.0
+
+### 更美观
+
+- 语言菜单显示名修正：中文改为「简体中文」「繁体中文」（不再显示
+  「中文（中国）」「中文（台湾）」）
+
+### 工程
+
+- README 图文并茂重写：加入图片 / Markdown / Excel / Word / PowerPoint 预览、
+  托盘菜单、插件管理面板的真实截图，功能描述更直观
+- README 支持多语言：新增英文版 [README.en.md](README.en.md)，顶部语言切换
+- 新增 [Scripts/capture-screenshots.ps1](Scripts/capture-screenshots.ps1)
+  截图捕获脚本，方便后续更新 README 截图
+
 ## QuickLook-Next 3.20.0
 
 ### 更美观

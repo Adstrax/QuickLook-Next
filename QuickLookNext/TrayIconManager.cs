@@ -348,6 +348,20 @@ internal partial class TrayIconManager : IDisposable
 
     private static string LanguageDisplayName(string cultureName)
     {
+        // v3.21.0: use the plain "简体中文 / 繁体中文" labels instead of the
+        // culture's native "中文（中国）/ 中文（台湾）".
+        if (string.Equals(cultureName, "zh-CN", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(cultureName, "zh-Hans", StringComparison.OrdinalIgnoreCase))
+        {
+            return "简体中文";
+        }
+
+        if (string.Equals(cultureName, "zh-TW", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(cultureName, "zh-Hant", StringComparison.OrdinalIgnoreCase))
+        {
+            return "繁体中文";
+        }
+
         try
         {
             return CultureInfo.GetCultureInfo(cultureName).NativeName;

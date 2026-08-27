@@ -1,13 +1,29 @@
 # QuickLook-Next
 
+**简体中文** | [English](README.en.md)
+
 > QuickLook 的 **UI 美化与功能完善版**（基于 [QL-Win/QuickLook](https://github.com/QL-Win/QuickLook)
 > 4.5.0 的 .NET 10 迁移版）。
 
-QuickLook-Next 不再只是“精简版”：保留完整的文件预览能力，并把预览背景、窗口圆角、
-主题、托盘菜单、插件管理、语言、自动更新等体验全面重构与增强——**功能只多不少**。
+QuickLook-Next 保留完整的文件预览能力，并把预览背景、窗口圆角、主题、托盘菜单、
+插件管理、语言、自动更新等体验全面重构与增强——**功能只多不少**。
 
 独立分支 `lite`，与官方完整版命名隔离（管道 / 互斥体使用 `QuickLookNext.App.*`），
 可同时安装互不干扰。
+
+## 界面一览
+
+| 图片预览 | Markdown 预览 |
+|---|---|
+| ![图片预览](docs/screenshots/preview-image.png) | ![Markdown 预览](docs/screenshots/preview-markdown.png) |
+
+| Excel 预览（自研渲染） | Word 预览（自研渲染） | PowerPoint 预览（自研渲染） |
+|---|---|---|
+| ![Excel 预览](docs/screenshots/preview-excel.png) | ![Word 预览](docs/screenshots/preview-word.png) | ![PowerPoint 预览](docs/screenshots/preview-powerpoint.png) |
+
+| 托盘菜单（Acrylic） | 插件管理面板 |
+|---|---|
+| ![托盘菜单](docs/screenshots/tray-menu-window.png) | ![插件管理面板](docs/screenshots/plugin-manager.png) |
 
 ## 相比原版的主要改进
 
@@ -22,19 +38,33 @@ QuickLook-Next 不再只是“精简版”：保留完整的文件预览能力�
 - **亮色 / 暗色 / 跟随系统**：托盘菜单一键切换并持久化，预览立即生效
 - **顶部状态栏默认隐藏**：鼠标移到窗口顶部标题栏区域才显示，移开后自动隐藏，
   不遮挡内容
-- **托盘菜单分组**：主题模式、背景模式、语言、选项收进二级子菜单，顶层保持简短
+- **托盘菜单分组 + 图标**：主题模式、背景模式、语言、选项收进二级子菜单，
+  顶层保持简短，条目带 Fluent 图标
 
 ### 功能完善
 
+- **Office 三件套自研渲染**：Excel / Word / PowerPoint 不再调用 Windows 系统预览
+  组件，改为自研解析渲染（MiniExcel / OOXML 解析 → WebView2），获得圆角、毛玻璃、
+  深浅色一致的观感，且内容固定浅色纸面、阅读舒适
 - **插件管理面板（原版没有）**：列出用户安装与内置插件，用户插件可直接卸载；
   插件契约保持 `QuickLook.Common` / `QuickLook.Plugin.*`，老插件无需重新编译即可
   安装加载
-- **内置语言切换**：托盘菜单「语言」子菜单支持跟随系统 + 30 种语言，选择后持久化
+- **内置语言切换**：托盘菜单「语言」子菜单支持跟随系统 + 30 种语言（常用语言
+  优先排序），选择后持久化
 - **自动更新**：检查更新时直接下载 Release 安装包并原地更新重启，不再只是打开网页
 - **文本预览可上下滚动**：修复分层窗口收不到滚轮消息的问题，txt / log / json /
   代码等预览可正常滚动
 - **预览打开提速**：第二实例不再初始化 WPF，直接通过命名管道转发给常驻实例；
   图片解码管线在启动后台预热，首次预览不再支付一次性初始化成本
+
+### 性能与体积
+
+- **启动提速**：25 个插件程序集并行加载、语法高亮并行初始化，插件就绪时间从约
+  2.5s 降到约 0.4s
+- **按需加载**：罕见格式插件（3D、数据库、PE、邮件等）首次遇到才加载，常驻内存
+  与原生库占用更低；Markdown 预览按需加载 mermaid / MathJax
+- **发布包精简**：运行库统一收进 `lib\`，共享依赖去重，应用图标无损压缩
+  （zip 约 60MB）
 
 ### 工程与架构
 
@@ -42,8 +72,9 @@ QuickLook-Next 不再只是“精简版”：保留完整的文件预览能力�
 - **纯 C# 空格键链路**：焦点判断 + Explorer / 桌面选区读取改为 P/Invoke + Shell COM，
   不再依赖原生 C++ 工具链
 - **命名隔离**：管道 / 互斥体使用 `QuickLookNext.App.*`，与官方完整版互不干扰
-- **自动化测试**：png / txt / md / zip / ttf / mp4 预览 + Shell 选区链路（test.ps1，
-  提交前必须全绿）
+- **自动化测试**：19 种格式预览 + Shell 选区链路 + 托盘菜单/插件面板
+  （[test.ps1](test.ps1)，提交前必须全绿）；GitHub Actions 在每次推送自动构建并
+  运行冒烟测试
 
 ## 安装与使用
 
@@ -67,7 +98,8 @@ dotnet build QuickLookNext.slnx -c Release
 提交前运行冒烟测试：`.\test.ps1`（要求全部通过）。
 
 生成用户友好的发布包（根目录只保留 `QuickLook-Next.exe` 和少量配置文件，
-其余运行库收进 `lib\` 子目录，插件在 `QuickLook.Plugin` 子目录，自带便携模式）：
+其余运行库收进 `lib\` 子目录，插件在 `QuickLook.Plugin` 子目录，自带便携模式与
+首次使用说明）：
 
 ```powershell
 .\Scripts\pack-release.ps1 -MakeZip
@@ -80,6 +112,7 @@ dotnet build QuickLookNext.slnx -c Release
 QuickLook-Next.exe
 QuickLook-Next.dll / .deps.json / .runtimeconfig.json
 Translations.config
+使用说明.txt        # 首次使用说明（含 .NET 运行时要求）
 lib\               # 第三方运行库
 runtimes\          # 原生运行库
 QuickLook.Plugin\  # 内置插件
@@ -96,7 +129,7 @@ QuickLook.Plugin\  # 内置插件
 | VideoViewer | 视频与音频（MediaInfo 嗅探，支持 mp4/mkv/avi/mov/webm/mp3/flac 等） |
 | TextViewer | 文本与代码（txt/log/ini/json/xml/rtf/csv 及数百种代码语言） |
 | MarkdownViewer | Markdown（md/mdx/mermaid/ipynb/adoc/rst 等） |
-| OfficeViewer | Office（doc/docx、xls/xlsx、ppt/pptx、odt/ods/odp、vsd/vsdx） |
+| OfficeViewer | Office（docx/xlsx/pptx 自研渲染；doc/xls/ppt/odt/ods/odp/vsd/vsdx 系统兜底） |
 | HtmlViewer | HTML/MHT/URL（WebView2 渲染，也是 MD 插件的依赖） |
 | PdfViewer | PDF |
 | ArchiveViewer | 压缩包与安装包（zip/rar/7z/tar/gz/bz2/xz/cbz/cbr/jar/apk/msi 等） |
