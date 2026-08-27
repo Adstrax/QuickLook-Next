@@ -14,21 +14,62 @@ so it can be installed side-by-side with the official build without conflicts.
 
 ## Screenshots
 
-| Image preview | Markdown preview |
-|---|---|
-| ![Image preview](docs/screenshots/preview-image.png) | ![Markdown preview](docs/screenshots/preview-markdown.png) |
+All screenshots below show the app running in real use.
 
-| PDF preview | Excel preview (self-rendered) |
-|---|---|
-| ![PDF preview](docs/screenshots/preview-pdf.png) | ![Excel preview](docs/screenshots/preview-excel.png) |
+### Image preview
 
-| Word preview (self-rendered) | PowerPoint preview (self-rendered) |
-|---|---|
-| ![Word preview](docs/screenshots/preview-word.png) | ![PowerPoint preview](docs/screenshots/preview-powerpoint.png) |
+100+ image formats (png / jpg / gif / webp / bmp / psd / raw / heic / svg etc.)
+with Acrylic backdrop from the first frame that follows the wallpaper, plus
+native Win11 rounded corners.
 
-| Tray menu (Acrylic) | Plugin manager |
-|---|---|
-| ![Tray menu](docs/screenshots/tray-menu-window.png) | ![Plugin manager](docs/screenshots/plugin-manager.png) |
+![Image preview](docs/screenshots/preview-image.png)
+
+### Markdown preview
+
+Standard Markdown, mermaid diagrams and MathJax formulas with syntax
+highlighting; content scrolls smoothly.
+
+![Markdown preview](docs/screenshots/preview-markdown.png)
+
+### Excel preview (self-rendered)
+
+No Windows system preview component — OOXML parsing + WebView2 rendering
+in-house; fixed light paper surface, consistent corners and theme.
+
+![Excel preview](docs/screenshots/preview-excel.png)
+
+### Word preview (self-rendered)
+
+Continuous flowing document layout with high fidelity; scroll to read;
+no Office installation required.
+
+![Word preview](docs/screenshots/preview-word.png)
+
+### PowerPoint preview (self-rendered)
+
+Page-by-page slides with layout and colors preserved.
+
+![PowerPoint preview](docs/screenshots/preview-powerpoint.png)
+
+### PDF preview
+
+Page-by-page PDF browsing with a clean left frame + right paper layout.
+
+![PDF preview](docs/screenshots/preview-pdf.png)
+
+### Tray menu (Acrylic)
+
+Frosted tray menu with theme / backdrop / language in submenus and Fluent
+icons; clicking an option does not accidentally close the menu.
+
+![Tray menu](docs/screenshots/tray-menu.png)
+
+### Plugin manager
+
+Lists built-in and user plugins; user plugins can be uninstalled directly;
+existing plugins load without recompiling.
+
+![Plugin manager](docs/screenshots/plugin-manager.png)
 
 ## Highlights vs. the original
 

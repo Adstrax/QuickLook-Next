@@ -13,21 +13,59 @@ QuickLook-Next 保留完整的文件预览能力，并把预览背景、窗口�
 
 ## 界面一览
 
-| 图片预览 | Markdown 预览 |
-|---|---|
-| ![图片预览](docs/screenshots/preview-image.png) | ![Markdown 预览](docs/screenshots/preview-markdown.png) |
+以下截图均来自实际运行效果。
 
-| PDF 预览 | Excel 预览（自研渲染） |
-|---|---|
-| ![PDF 预览](docs/screenshots/preview-pdf.png) | ![Excel 预览](docs/screenshots/preview-excel.png) |
+### 图片预览
 
-| Word 预览（自研渲染） | PowerPoint 预览（自研渲染） |
-|---|---|
-| ![Word 预览](docs/screenshots/preview-word.png) | ![PowerPoint 预览](docs/screenshots/preview-powerpoint.png) |
+支持 png / jpg / gif / webp / bmp / psd / raw / heic / svg 等 100+ 图片格式；
+Acrylic 毛玻璃背景一打开即生效并跟随壁纸，窗口带 Win11 原生圆角。
 
-| 托盘菜单（Acrylic） | 插件管理面板 |
-|---|---|
-| ![托盘菜单](docs/screenshots/tray-menu-window.png) | ![插件管理面板](docs/screenshots/plugin-manager.png) |
+![图片预览](docs/screenshots/preview-image.png)
+
+### Markdown 预览
+
+支持标准 Markdown、mermaid 图表与 MathJax 公式，代码高亮；内容可上下滚动，
+阅读体验流畅。
+
+![Markdown 预览](docs/screenshots/preview-markdown.png)
+
+### Excel 预览（自研渲染）
+
+不再调用 Windows 系统预览组件，改为 OOXML 解析 + WebView2 自研渲染；
+固定浅色纸面、阅读舒适，圆角与主题和整体界面一致。
+
+![Excel 预览](docs/screenshots/preview-excel.png)
+
+### Word 预览（自研渲染）
+
+以连续文档流形式渲染，样式还原度高，支持滚动阅读；无需安装 Office。
+
+![Word 预览](docs/screenshots/preview-word.png)
+
+### PowerPoint 预览（自研渲染）
+
+逐页展示幻灯片，排版与配色完整保留；自研渲染，观感统一。
+
+![PowerPoint 预览](docs/screenshots/preview-powerpoint.png)
+
+### PDF 预览
+
+逐页浏览 PDF，左侧框架区 + 右侧纸面布局清晰，阅读舒适。
+
+![PDF 预览](docs/screenshots/preview-pdf.png)
+
+### 托盘菜单（Acrylic）
+
+毛玻璃托盘菜单，主题 / 背景 / 语言等收进二级子菜单，条目带 Fluent 图标；
+点击选项不会误关菜单。
+
+![托盘菜单](docs/screenshots/tray-menu.png)
+
+### 插件管理面板
+
+列出内置与用户插件，用户插件可直接卸载；老插件无需重新编译即可安装加载。
+
+![插件管理面板](docs/screenshots/plugin-manager.png)
 
 ## 相比原版的主要改进
 
