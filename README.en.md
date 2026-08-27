@@ -74,8 +74,15 @@ existing plugins load without recompiling.
 - **Light / Dark / System themes**: switch from the tray menu, persisted instantly.
 - **Auto-hiding top bar**: the caption area only appears when the cursor reaches
   the top of the window.
+- **Unified theme colors**: the tray menu and plugin manager share one palette
+  (text / separators / hover / accent); the accent follows the system accent color.
+- **Theme-aware scrollbars**: scrollbar thumbs follow the light / dark theme in
+  the preview window, tray menu and plugin manager.
+- **No flicker when switching previews**: the fade-in plays on the first preview
+  only; switching files keeps full opacity.
 - **Grouped tray menu with icons**: theme / backdrop / language / options live in
-  submenus with Fluent icons, keeping the top level short.
+  submenus with Fluent icons, keeping the top level short; also fixed menu
+  flicker, icon-click menu disappearance and submenu mis-closing.
 
 ### Features
 
@@ -87,7 +94,8 @@ existing plugins load without recompiling.
   plugins; the plugin contract stays `QuickLook.Common` / `QuickLook.Plugin.*`,
   so existing plugins load without recompiling.
 - **Built-in language switching**: follow-system + 30 languages in the tray menu
-  (common languages first), persisted.
+  (common languages first, names shown in their own language — Chinese displays
+  as 简体中文 / 繁体中文), persisted.
 - **Auto-update**: downloads the Release package, replaces files and restarts
   in place.
 - **Scrollable text preview**: fixed layered-window wheel routing; txt / log /
@@ -100,9 +108,12 @@ existing plugins load without recompiling.
 - **Faster startup**: plugin assemblies load in parallel and syntax highlighting
   initializes concurrently — plugin-ready time dropped from ~2.5 s to ~0.4 s.
 - **On-demand loading**: rare-format plugins (3D, databases, PE, e-mail, ...)
-  load only on first use; Markdown loads mermaid / MathJax only when needed.
+  load only on first use, and the MediaInfo (~8 MB) and ImageMagick (~24 MB)
+  native libraries are no longer preloaded; Markdown loads mermaid / MathJax
+  only when needed.
 - **Leaner package**: runtimes live in `lib\`, shared dependencies are
-  deduplicated, the app icon is losslessly compressed (~60 MB zip).
+  deduplicated, the app icon is losslessly compressed (app.ico 1457 KB → 92 KB,
+  exe ~1.6 MB → 0.25 MB, ~60 MB zip).
 
 ### Engineering
 
@@ -112,6 +123,7 @@ existing plugins load without recompiling.
   reading use P/Invoke + Shell COM, no native C++ toolchain.
 - **Name isolation**: `QuickLookNext.App.*` pipes/mutex — installs side-by-side
   with the official build.
+- **Build quality**: build warnings cleaned up from 31 to 1.
 - **Automated tests**: 19 format previews + shell-selection + tray menu / plugin
   panel ([test.ps1](test.ps1), must stay green); GitHub Actions builds and runs
   the smoke test on every push.
