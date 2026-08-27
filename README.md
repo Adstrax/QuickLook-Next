@@ -29,24 +29,13 @@ Acrylic 毛玻璃背景一打开即生效并跟随壁纸，窗口带 Win11 原�
 
 ![Markdown 预览](docs/screenshots/preview-markdown.png)
 
-### Excel 预览（自研渲染）
+### Office 预览（自研渲染，截图以 Excel 为例）
 
-不再调用 Windows 系统预览组件，改为 OOXML 解析 + WebView2 自研渲染；
-固定浅色纸面、阅读舒适，圆角与主题和整体界面一致。
+Excel / Word / PowerPoint 均不再调用 Windows 系统预览组件，改为 OOXML 解析 +
+WebView2 自研渲染；固定浅色纸面、阅读舒适，圆角与主题和整体界面一致，
+无需安装 Office。
 
-![Excel 预览](docs/screenshots/preview-excel.png)
-
-### Word 预览（自研渲染）
-
-以连续文档流形式渲染，样式还原度高，支持滚动阅读；无需安装 Office。
-
-![Word 预览](docs/screenshots/preview-word.png)
-
-### PowerPoint 预览（自研渲染）
-
-逐页展示幻灯片，排版与配色完整保留；自研渲染，观感统一。
-
-![PowerPoint 预览](docs/screenshots/preview-powerpoint.png)
+![Office 预览（Excel 示例）](docs/screenshots/preview-excel.png)
 
 ### PDF 预览
 

@@ -31,25 +31,13 @@ highlighting; content scrolls smoothly.
 
 ![Markdown preview](docs/screenshots/preview-markdown.png)
 
-### Excel preview (self-rendered)
+### Office preview (self-rendered; screenshot shows Excel)
 
-No Windows system preview component — OOXML parsing + WebView2 rendering
-in-house; fixed light paper surface, consistent corners and theme.
+Excel / Word / PowerPoint all use in-house rendering (OOXML parsing + WebView2)
+instead of the Windows system preview component — no Office installation
+required. The screenshot shows Excel as an example.
 
-![Excel preview](docs/screenshots/preview-excel.png)
-
-### Word preview (self-rendered)
-
-Continuous flowing document layout with high fidelity; scroll to read;
-no Office installation required.
-
-![Word preview](docs/screenshots/preview-word.png)
-
-### PowerPoint preview (self-rendered)
-
-Page-by-page slides with layout and colors preserved.
-
-![PowerPoint preview](docs/screenshots/preview-powerpoint.png)
+![Office preview (Excel example)](docs/screenshots/preview-excel.png)
 
 ### PDF preview
 
