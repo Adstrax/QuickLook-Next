@@ -2,6 +2,9 @@
 # captures each window to docs\screenshots for the README.
 #
 # 用法: powershell -File Scripts\capture-screenshots.ps1
+#       powershell -File Scripts\capture-screenshots.ps1 -OnlyPdf
+
+param([switch]$OnlyPdf)
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -77,33 +80,38 @@ $p = Start-Process -FilePath $exe -ArgumentList '/autorun' -PassThru
 Start-Sleep -Seconds 8
 
 # 2. 各格式预览窗口
-Capture-Preview $p 'test.png' 'test.png' 'preview-image'
-Capture-Preview $p 'test.md' 'test.md' 'preview-markdown'
-Capture-Preview $p 'test.xlsx' 'test.xlsx' 'preview-excel'
-Capture-Preview $p 'test.docx' 'test.docx' 'preview-word'
-Capture-Preview $p 'test.pptx' 'test.pptx' 'preview-powerpoint'
+if (-not $OnlyPdf) {
+    Capture-Preview $p 'test.png' 'test.png' 'preview-image'
+    Capture-Preview $p 'test.md' 'test.md' 'preview-markdown'
+    Capture-Preview $p 'test.xlsx' 'test.xlsx' 'preview-excel'
+    Capture-Preview $p 'test.docx' 'test.docx' 'preview-word'
+    Capture-Preview $p 'test.pptx' 'test.pptx' 'preview-powerpoint'
+}
+Capture-Preview $p 'test.pdf' 'test.pdf' 'preview-pdf'
 
 Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
-# 3. 托盘菜单（全屏抓取，菜单出现在光标处）
-$p2 = Start-Process -FilePath $exe -ArgumentList '/autorun /test-tray-menu' -PassThru
-Start-Sleep -Seconds 4
-$screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-Capture-Rect $screen.Left $screen.Top $screen.Width $screen.Height (Join-Path $outDir 'tray-menu.png')
-Stop-Process -Id $p2.Id -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
+if (-not $OnlyPdf) {
+    # 3. 托盘菜单（全屏抓取，菜单出现在光标处）
+    $p2 = Start-Process -FilePath $exe -ArgumentList '/autorun /test-tray-menu' -PassThru
+    Start-Sleep -Seconds 4
+    $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    Capture-Rect $screen.Left $screen.Top $screen.Width $screen.Height (Join-Path $outDir 'tray-menu.png')
+    Stop-Process -Id $p2.Id -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
 
-# 4. 插件管理面板
-$p3 = Start-Process -FilePath $exe -ArgumentList '/autorun /test-plugin-manager' -PassThru
-Start-Sleep -Seconds 6
-$info = [ShotHelper]::Find($p3.Id, 'Manage Plugins')
-if ($info) {
-    $parts = $info.Split('|')
-    Capture-Rect ([int]$parts[1]) ([int]$parts[2]) ([int]$parts[3]) ([int]$parts[4]) (Join-Path $outDir 'plugin-manager.png')
-    Write-Host 'saved plugin-manager.png'
+    # 4. 插件管理面板
+    $p3 = Start-Process -FilePath $exe -ArgumentList '/autorun /test-plugin-manager' -PassThru
+    Start-Sleep -Seconds 6
+    $info = [ShotHelper]::Find($p3.Id, 'Manage Plugins')
+    if ($info) {
+        $parts = $info.Split('|')
+        Capture-Rect ([int]$parts[1]) ([int]$parts[2]) ([int]$parts[3]) ([int]$parts[4]) (Join-Path $outDir 'plugin-manager.png')
+        Write-Host 'saved plugin-manager.png'
+    }
+    Stop-Process -Id $p3.Id -Force -ErrorAction SilentlyContinue
 }
-Stop-Process -Id $p3.Id -Force -ErrorAction SilentlyContinue
 
 Get-Process -Name 'QuickLook-Next' -ErrorAction SilentlyContinue | Stop-Process -Force
 Write-Host 'done'

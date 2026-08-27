@@ -14,9 +14,9 @@ so it can be installed side-by-side with the official build without conflicts.
 
 ## Screenshots
 
-| Image preview | Markdown preview |
-|---|---|
-| ![Image preview](docs/screenshots/preview-image.png) | ![Markdown preview](docs/screenshots/preview-markdown.png) |
+| Image preview | Markdown preview | PDF preview |
+|---|---|---|
+| ![Image preview](docs/screenshots/preview-image.png) | ![Markdown preview](docs/screenshots/preview-markdown.png) | ![PDF preview](docs/screenshots/preview-pdf.png) |
 
 | Excel preview (self-rendered) | Word preview (self-rendered) | PowerPoint preview (self-rendered) |
 |---|---|---|

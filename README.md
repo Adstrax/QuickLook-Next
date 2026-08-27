@@ -13,9 +13,9 @@ QuickLook-Next 保留完整的文件预览能力，并把预览背景、窗口�
 
 ## 界面一览
 
-| 图片预览 | Markdown 预览 |
-|---|---|
-| ![图片预览](docs/screenshots/preview-image.png) | ![Markdown 预览](docs/screenshots/preview-markdown.png) |
+| 图片预览 | Markdown 预览 | PDF 预览 |
+|---|---|---|
+| ![图片预览](docs/screenshots/preview-image.png) | ![Markdown 预览](docs/screenshots/preview-markdown.png) | ![PDF 预览](docs/screenshots/preview-pdf.png) |
 
 | Excel 预览（自研渲染） | Word 预览（自研渲染） | PowerPoint 预览（自研渲染） |
 |---|---|---|
