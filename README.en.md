@@ -14,13 +14,17 @@ so it can be installed side-by-side with the official build without conflicts.
 
 ## Screenshots
 
-| Image preview | Markdown preview | PDF preview |
-|---|---|---|
-| ![Image preview](docs/screenshots/preview-image.png) | ![Markdown preview](docs/screenshots/preview-markdown.png) | ![PDF preview](docs/screenshots/preview-pdf.png) |
+| Image preview | Markdown preview |
+|---|---|
+| ![Image preview](docs/screenshots/preview-image.png) | ![Markdown preview](docs/screenshots/preview-markdown.png) |
 
-| Excel preview (self-rendered) | Word preview (self-rendered) | PowerPoint preview (self-rendered) |
-|---|---|---|
-| ![Excel preview](docs/screenshots/preview-excel.png) | ![Word preview](docs/screenshots/preview-word.png) | ![PowerPoint preview](docs/screenshots/preview-powerpoint.png) |
+| PDF preview | Excel preview (self-rendered) |
+|---|---|
+| ![PDF preview](docs/screenshots/preview-pdf.png) | ![Excel preview](docs/screenshots/preview-excel.png) |
+
+| Word preview (self-rendered) | PowerPoint preview (self-rendered) |
+|---|---|
+| ![Word preview](docs/screenshots/preview-word.png) | ![PowerPoint preview](docs/screenshots/preview-powerpoint.png) |
 
 | Tray menu (Acrylic) | Plugin manager |
 |---|---|
