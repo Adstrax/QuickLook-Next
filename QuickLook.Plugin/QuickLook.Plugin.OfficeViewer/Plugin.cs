@@ -132,10 +132,6 @@ public sealed class Plugin : IViewer
                 extension.Equals(".xlsm", StringComparison.OrdinalIgnoreCase))
             {
                 _panel = new SpreadsheetPanel(path);
-                // v3.24.0: parsing runs off the UI thread; keep the busy
-                // spinner (animated on a separate surface, input passes
-                // through) until the rendered page actually shows.
-                ((OfficePanelBase)_panel).Ready = () => context.IsBusy = false;
                 context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
             }
@@ -143,18 +139,20 @@ public sealed class Plugin : IViewer
                 extension.Equals(".docm", StringComparison.OrdinalIgnoreCase))
             {
                 _panel = new DocumentPanel(path);
-                ((OfficePanelBase)_panel).Ready = () => context.IsBusy = false;
                 context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
             }
             else
             {
                 _panel = new PresentationPanel(path);
-                ((OfficePanelBase)_panel).Ready = () => context.IsBusy = false;
                 context.ViewerContent = (UIElement)_panel;
                 context.Title = Path.GetFileName(path);
             }
 
+            // v3.25.0: parsing runs off the UI thread, but the busy spinner
+            // made previews *feel* slower. Clear it immediately; the rendered
+            // page simply appears when ready.
+            context.IsBusy = false;
             return;
         }
 

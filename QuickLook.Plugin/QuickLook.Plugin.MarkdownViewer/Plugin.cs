@@ -78,9 +78,6 @@ public sealed class Plugin : IViewer
         if (AsciiDocPanel.CanHandle(path))
         {
             var panel = new AsciiDocPanel();
-            // v3.24.0: the rendered page loads asynchronously; keep the busy
-            // spinner until it shows (the spinner itself never blocks input).
-            panel.Ready = () => context.IsBusy = false;
             panel.PreviewAsciiDoc(path);
             _panel = panel;
         }
@@ -93,7 +90,6 @@ public sealed class Plugin : IViewer
         else if (MermaidPanel.CanHandle(path))
         {
             var panel = new MermaidPanel();
-            panel.Ready = () => context.IsBusy = false;
             panel.PreviewMermaid(path);
             _panel = panel;
         }
@@ -106,18 +102,16 @@ public sealed class Plugin : IViewer
         else
         {
             var panel = new MarkdownPanel();
-            panel.Ready = () => context.IsBusy = false;
             panel.PreviewMarkdown(path);
             _panel = panel;
         }
 
         context.ViewerContent = _panel;
         context.Title = Path.GetFileName(path);
-
-        // Ipynb / RST render synchronously; clear the spinner here. The
-        // async panels (Markdown / Mermaid / AsciiDoc) clear it via Ready.
-        if (IpynbPanel.CanHandle(path) || RstPanel.CanHandle(path))
-            context.IsBusy = false;
+        // v3.25.0: parsing runs off the UI thread, but the busy spinner made
+        // previews feel slower. Clear it immediately; the rendered page simply
+        // appears when ready.
+        context.IsBusy = false;
     }
 
     public void Cleanup()

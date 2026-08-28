@@ -2,6 +2,16 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.25.0
+
+### 修复
+
+- 撤回 3.24.0 的「Office / Markdown 加载期间保留转圈」改动：转圈会让人感觉
+  打开反而更慢。现在 Office / Markdown 的解析仍在后台进行（窗口不卡顿），
+  但不再显示转圈，内容就绪后直接出现
+- 保留 3.24.0 的其余改进：Markdown / Mermaid 后台解析、mermaid / MathJax
+  资源启动后台预载、spinner 层不拦截输入（对 PDF 加载转圈仍然生效）
+
 ## QuickLook-Next 3.24.0
 
 ### 体验（预览更顺滑）

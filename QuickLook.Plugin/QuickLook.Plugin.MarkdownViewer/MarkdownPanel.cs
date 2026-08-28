@@ -37,13 +37,6 @@ public class MarkdownPanel : WebpagePanel
     protected internal static readonly Dictionary<string, byte[]> _resources = [];
     protected byte[] _homePage;
 
-    /// <summary>
-    /// v3.24.0: invoked once on the UI thread after the first WebView2
-    /// navigation completes, so the plugin can clear the busy spinner exactly
-    /// when the rendered page becomes visible.
-    /// </summary>
-    public Action Ready { get; set; }
-
     static MarkdownPanel()
     {
         InitializeResources();
@@ -93,15 +86,6 @@ public class MarkdownPanel : WebpagePanel
                 NavigateToUri(new Uri("file://quicklook/"));
             });
         }, TaskScheduler.Default);
-    }
-
-    protected override void WebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
-    {
-        base.WebView_NavigationCompleted(sender, e);
-
-        var ready = Ready;
-        Ready = null;
-        ready?.Invoke();
     }
 
     protected string GenerateMarkdownHtml(string path)
