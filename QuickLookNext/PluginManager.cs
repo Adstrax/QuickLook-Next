@@ -57,6 +57,7 @@ public sealed class PluginManager
         "QuickLook.Plugin.DbViewer",
         "QuickLook.Plugin.DumpViewer",
         "QuickLook.Plugin.ELFViewer",
+        "QuickLook.Plugin.FontViewer",
         "QuickLook.Plugin.HelixViewer",
         "QuickLook.Plugin.MailViewer",
         "QuickLook.Plugin.MediaInfoViewer",
@@ -126,6 +127,11 @@ public sealed class PluginManager
         [".sketch"] = ["QuickLook.Plugin.ThumbnailViewer"],
         [".xd"] = ["QuickLook.Plugin.ThumbnailViewer"],
         [".xmind"] = ["QuickLook.Plugin.ThumbnailViewer"],
+        [".ttf"] = ["QuickLook.Plugin.FontViewer"],
+        [".otf"] = ["QuickLook.Plugin.FontViewer"],
+        [".woff"] = ["QuickLook.Plugin.FontViewer"],
+        [".woff2"] = ["QuickLook.Plugin.FontViewer"],
+        [".ttc"] = ["QuickLook.Plugin.FontViewer"],
         [".apk"] = ["QuickLook.Plugin.AppViewer"],
         [".aab"] = ["QuickLook.Plugin.AppViewer"],
         [".aar"] = ["QuickLook.Plugin.AppViewer"],
@@ -182,6 +188,18 @@ public sealed class PluginManager
     private readonly object _lazyLock = new();
     private List<(long Seq, string Path)> _pendingLazy = [];
     private readonly Dictionary<IViewer, long> _seqByPlugin = [];
+
+    // v3.22.0: per-extension match cache for the preview hot path. The first
+    // preview of an extension pays the full priority-ordered CanHandle scan;
+    // later previews re-run the scan only up to the cached winner (inclusive),
+    // so a higher-priority plugin whose CanHandle depends on file content can
+    // still win for a different file of the same extension - the outcome is
+    // identical to a full scan, just with fewer CanHandle calls in the common
+    // case. Entries are cleared whenever the plugin list changes (lazy plugin
+    // loaded, user plugin uninstalled).
+    private readonly object _matchCacheLock = new();
+    private readonly Dictionary<string, (IViewer Plugin, int Index)> _matchCache = new(StringComparer.OrdinalIgnoreCase);
+    private const int MatchCacheMaxEntries = 128;
 
     private PluginManager()
     {
@@ -264,39 +282,149 @@ public sealed class PluginManager
         var instance = GetInstance();
         instance.EnsureLoaded();
 
-        var matched = instance.LoadedPlugins.FirstOrDefault(plugin =>
-            {
-                var can = false;
-                try
-                {
-#if DEBUG
-                    var timer = new Stopwatch();
-                    timer.Start();
-
-                    can = plugin.CanHandle(path);
-
-                    timer.Stop();
-                    Debug.WriteLine($"{plugin.GetType()}: {can}, {timer.ElapsedMilliseconds}ms");
-#else
-                    can = plugin.CanHandle(path);
-#endif
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
-                }
-
-                return can;
-            });
-
-        // v3.4.0: no eager plugin claimed the file - try the rarely-used
-        // built-ins, loading them on demand.
-        matched ??= instance.MatchLazyPlugin(path);
+        var matched = instance.FindMatchCore(path);
 
         var selected = matched ?? DefaultPlugin;
         instance.EnsurePluginReady(selected);
 
         return selected.GetType().CreateInstance<IViewer>();
+    }
+
+    /// <summary>
+    /// v3.22.0: matches a path against the loaded plugins. When a cached
+    /// winner exists for the extension, the scan starts from the cached
+    /// position instead of the top, so repeated same-format previews skip the
+    /// CanHandle calls of every plugin below the winner.
+    /// </summary>
+    private IViewer FindMatchCore(string path)
+    {
+        var cached = TryGetCachedMatch(path, out var cachedIndex);
+
+        if (cachedIndex >= 0)
+        {
+            // Re-verify from the top of the priority order up to and including
+            // the cached winner, exactly like a full scan would.
+            for (var i = 0; i <= cachedIndex; i++)
+            {
+                var plugin = LoadedPlugins[i];
+                if (!CanHandle(plugin, path))
+                    continue;
+
+                if (!ReferenceEquals(plugin, cached))
+                    RememberMatch(path, i);
+                return plugin;
+            }
+
+            // The cached plugin no longer claims this file; drop the stale
+            // entry and finish the scan where it left off.
+            ClearMatchCache();
+        }
+
+        for (var i = Math.Max(0, cachedIndex + 1); i < LoadedPlugins.Count; i++)
+        {
+            var plugin = LoadedPlugins[i];
+            if (CanHandle(plugin, path))
+            {
+                RememberMatch(path, i);
+                return plugin;
+            }
+        }
+
+        // v3.4.0: no eager plugin claimed the file - try the rarely-used
+        // built-ins, loading them on demand.
+        var lazy = MatchLazyPlugin(path);
+        if (lazy != null)
+        {
+            var index = LoadedPlugins.IndexOf(lazy);
+            if (index >= 0)
+                RememberMatch(path, index);
+        }
+
+        return lazy;
+    }
+
+    private static bool CanHandle(IViewer plugin, string path)
+    {
+        var can = false;
+        try
+        {
+#if DEBUG
+            var timer = new Stopwatch();
+            timer.Start();
+
+            can = plugin.CanHandle(path);
+
+            timer.Stop();
+            Debug.WriteLine($"{plugin.GetType()}: {can}, {timer.ElapsedMilliseconds}ms");
+#else
+            can = plugin.CanHandle(path);
+#endif
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"{plugin.GetType()}: CanHandle failed: {ex}");
+        }
+
+        return can;
+    }
+
+    private IViewer TryGetCachedMatch(string path, out int index)
+    {
+        index = -1;
+        var key = GetMatchCacheKey(path);
+        if (key is null)
+            return null;
+
+        lock (_matchCacheLock)
+        {
+            if (!_matchCache.TryGetValue(key, out var entry))
+                return null;
+
+            // The plugin list changes when lazy plugins load or user plugins
+            // are uninstalled; both paths clear the cache, but guard anyway.
+            if (entry.Index >= LoadedPlugins.Count ||
+                !ReferenceEquals(LoadedPlugins[entry.Index], entry.Plugin))
+            {
+                _matchCache.Remove(key);
+                return null;
+            }
+
+            index = entry.Index;
+            return entry.Plugin;
+        }
+    }
+
+    private void RememberMatch(string path, int index)
+    {
+        var key = GetMatchCacheKey(path);
+        if (key is null)
+            return;
+
+        lock (_matchCacheLock)
+        {
+            if (_matchCache.Count >= MatchCacheMaxEntries)
+                _matchCache.Clear();
+            _matchCache[key] = (LoadedPlugins[index], index);
+        }
+    }
+
+    private void ClearMatchCache()
+    {
+        lock (_matchCacheLock)
+            _matchCache.Clear();
+    }
+
+    private static string GetMatchCacheKey(string path)
+    {
+        // CLSID paths ("::...") behave like a pseudo-extension; directories
+        // have no extension and always fall back to the default plugin.
+        if (path.StartsWith("::", StringComparison.Ordinal))
+            return "::";
+        if (Directory.Exists(path))
+            return null;
+
+        var ext = Path.GetExtension(path);
+        return string.IsNullOrEmpty(ext) ? null : ext;
     }
 
     /// <summary>
@@ -480,6 +608,10 @@ public sealed class PluginManager
             return seqA.CompareTo(seqB);
         });
 
+        // v3.22.0: the plugin list changed, so cached extension -> plugin
+        // entries may point at stale indexes; drop them.
+        ClearMatchCache();
+
         return instance;
     }
 
@@ -536,8 +668,11 @@ public sealed class PluginManager
         // v3.3.0: phase 2 - initialize plugins in the background, but each one
         // lazily: a preview that matches a plugin not yet reached initializes
         // it on demand (EnsurePluginReady) instead of waiting for all of them.
-        foreach (var plugin in loaded)
-            EnsurePluginReady(plugin);
+        // v3.22.0: run the Inits in parallel - each plugin initializes only
+        // its own static state on this background thread, so the total time
+        // drops from sum(Init) to max(Init) and the "not yet initialized"
+        // window for early previews shrinks accordingly.
+        Parallel.ForEach(loaded, EnsurePluginReady);
 
         App.RecordStartupPhase("plugins-inited");
     }
@@ -811,6 +946,10 @@ public sealed class PluginManager
                 return false;
             }
         });
+
+        // v3.22.0: the plugin list changed, so cached extension -> plugin
+        // entries may point at plugins that no longer exist; drop them.
+        ClearMatchCache();
     }
 
     private static void CollectPlugins(string root, bool user, List<PluginEntry> list)

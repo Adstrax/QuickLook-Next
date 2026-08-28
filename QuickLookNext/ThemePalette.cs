@@ -11,32 +11,59 @@ namespace QuickLookNext;
 /// </summary>
 internal static class ThemePalette
 {
-    internal static Brush Text(bool isDark) => FromHex(isDark ? "#F5F5F5" : "#1A1A1A");
+    // v3.22.0: the palette is fixed per theme, so cache one frozen brush per
+    // (color, theme) pair instead of allocating a new unfrozen SolidColorBrush
+    // on every tray-menu / plugin-panel construction. Frozen brushes are
+    // immutable, thread-safe and cheaper for WPF to use across renders.
+    private static readonly Brush LightText = Create("#1A1A1A");
+    private static readonly Brush DarkText = Create("#F5F5F5");
+    private static readonly Brush LightSecondaryText = Create("#7A7A7A");
+    private static readonly Brush DarkSecondaryText = Create("#9E9E9E");
+    private static readonly Brush LightHover = Create("#10000000");
+    private static readonly Brush DarkHover = Create("#14FFFFFF");
+    private static readonly Brush LightSeparator = Create("#10000000");
+    private static readonly Brush DarkSeparator = Create("#14FFFFFF");
+    private static readonly Brush LightBorder = Create("#26000000");
+    private static readonly Brush DarkBorder = Create("#26FFFFFF");
+    private static readonly Brush LightTint = Create("#B8F8F6F4");
+    private static readonly Brush DarkTint = Create("#8C20242A");
+    private static readonly Brush LightButtonBg = Create("#14000000");
+    private static readonly Brush DarkButtonBg = Create("#14FFFFFF");
+    private static readonly Brush LightButtonHover = Create("#24000000");
+    private static readonly Brush DarkButtonHover = Create("#24FFFFFF");
+    private static readonly Brush LightDanger = Create("#FFC42B1C");
+    private static readonly Brush DarkDanger = Create("#FFFF7B72");
+    private static readonly Brush LightScrollbarThumb = Create("#59000000");
+    private static readonly Brush DarkScrollbarThumb = Create("#66FFFFFF");
+    private static readonly Brush LightAccentFallback = Create("#005FB8");
+    private static readonly Brush DarkAccentFallback = Create("#60CDFF");
 
-    internal static Brush SecondaryText(bool isDark) => FromHex(isDark ? "#9E9E9E" : "#7A7A7A");
+    internal static Brush Text(bool isDark) => isDark ? DarkText : LightText;
 
-    internal static Brush Hover(bool isDark) => FromHex(isDark ? "#14FFFFFF" : "#10000000");
+    internal static Brush SecondaryText(bool isDark) => isDark ? DarkSecondaryText : LightSecondaryText;
 
-    internal static Brush Separator(bool isDark) => FromHex(isDark ? "#14FFFFFF" : "#10000000");
+    internal static Brush Hover(bool isDark) => isDark ? DarkHover : LightHover;
 
-    internal static Brush Border(bool isDark) => FromHex(isDark ? "#26FFFFFF" : "#26000000");
+    internal static Brush Separator(bool isDark) => isDark ? DarkSeparator : LightSeparator;
 
-    internal static Brush Tint(bool isDark) => FromHex(isDark ? "#8C20242A" : "#B8F8F6F4");
+    internal static Brush Border(bool isDark) => isDark ? DarkBorder : LightBorder;
 
-    internal static Brush ButtonBg(bool isDark) => FromHex(isDark ? "#14FFFFFF" : "#14000000");
+    internal static Brush Tint(bool isDark) => isDark ? DarkTint : LightTint;
 
-    internal static Brush ButtonHover(bool isDark) => FromHex(isDark ? "#24FFFFFF" : "#24000000");
+    internal static Brush ButtonBg(bool isDark) => isDark ? DarkButtonBg : LightButtonBg;
 
-    internal static Brush Danger(bool isDark) => FromHex(isDark ? "#FFFF7B72" : "#FFC42B1C");
+    internal static Brush ButtonHover(bool isDark) => isDark ? DarkButtonHover : LightButtonHover;
+
+    internal static Brush Danger(bool isDark) => isDark ? DarkDanger : LightDanger;
 
     /// <summary>
     /// v3.20.0: scrollbar thumb - dark on light surfaces, light on dark ones.
     /// </summary>
-    internal static Brush ScrollbarThumb(bool isDark) => FromHex(isDark ? "#66FFFFFF" : "#59000000");
+    internal static Brush ScrollbarThumb(bool isDark) => isDark ? DarkScrollbarThumb : LightScrollbarThumb;
 
     internal static Brush Accent(bool isDark)
     {
-        return LiveAccent() ?? FromHex(isDark ? "#60CDFF" : "#005FB8");
+        return LiveAccent() ?? (isDark ? DarkAccentFallback : LightAccentFallback);
     }
 
     /// <summary>
@@ -47,11 +74,16 @@ internal static class ThemePalette
         if (LiveAccent() is SolidColorBrush solid)
         {
             var c = solid.Color;
-            return new SolidColorBrush(Color.FromArgb(0x18, c.R, c.G, c.B));
+            var brush = new SolidColorBrush(Color.FromArgb(0x18, c.R, c.G, c.B));
+            brush.Freeze();
+            return brush;
         }
 
-        return FromHex(isDark ? "#1860CDFF" : "#18005FB8");
+        return isDark ? DarkAccentTint : LightAccentTint;
     }
+
+    private static readonly Brush LightAccentTint = Create("#18005FB8");
+    private static readonly Brush DarkAccentTint = Create("#1860CDFF");
 
     private static Brush LiveAccent()
     {
@@ -66,6 +98,10 @@ internal static class ThemePalette
         }
     }
 
-    private static Brush FromHex(string hex) =>
-        new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+    private static Brush Create(string hex)
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        brush.Freeze();
+        return brush;
+    }
 }

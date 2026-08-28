@@ -18,8 +18,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace QuickLookNext;
 
@@ -77,18 +77,20 @@ public static class Program
                 // Manually resolve the assembly fails
                 // https://github.com/QL-Win/QuickLook/issues/1618
                 // e.g. "System.Memory, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
-                if (e.Name.Split(',').FirstOrDefault() is string assemblyName)
+                // v3.22.0: slice the simple name instead of
+                // Split(',').FirstOrDefault(), so the resolve hot path (every
+                // plugin assembly load) allocates no extra array/string.
+                var comma = e.Name.IndexOf(',');
+                var assemblyName = comma < 0 ? e.Name : e.Name[..comma];
+                if (AssemblyIndex.Value.TryGetValue(assemblyName, out var indexedPath))
                 {
-                    if (AssemblyIndex.Value.TryGetValue(assemblyName, out var indexedPath))
-                    {
-                        return Assembly.LoadFrom(indexedPath);
-                    }
+                    return Assembly.LoadFrom(indexedPath);
+                }
 
-                    // Fallback for files added after startup (rare): scan once.
-                    foreach (var libPath in FetchFiles(AppDomain.CurrentDomain.BaseDirectory, assemblyName + ".dll"))
-                    {
-                        return Assembly.LoadFrom(libPath);
-                    }
+                // Fallback for files added after startup (rare): scan once.
+                foreach (var libPath in FetchFiles(AppDomain.CurrentDomain.BaseDirectory, assemblyName + ".dll"))
+                {
+                    return Assembly.LoadFrom(libPath);
                 }
             }
             catch
@@ -112,6 +114,14 @@ public static class Program
 
         if (StartupForwarder.TryForwardToRunningInstance())
             return;
+
+        // v3.22.0: build the assembly index in the background so the first
+        // AssemblyResolve hit (e.g. the first plugin or third-party assembly
+        // touched by a preview) never pays the recursive directory scan on the
+        // resolving thread. AssemblyIndex.Value is thread-safe; a concurrent
+        // reader only waits for this background build, which overlaps with the
+        // rest of startup instead of happening at the first preview.
+        _ = Task.Run(() => AssemblyIndex.Value);
 
         App.Main();
     }

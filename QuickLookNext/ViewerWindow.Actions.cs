@@ -382,7 +382,18 @@ public partial class ViewerWindow
             return;
         }
 
-        SetOpenWithButtonAndPath();
+        // v3.22.0: the "Open / Open with" tooltip and share-button visibility
+        // come from the shell-association lookup (AssocQueryString /
+        // FileVersionInfo), which can take a few milliseconds on a cold
+        // registry/disk cache. Defer it to Background priority so it never
+        // delays the spinner / first content frame; the click handlers still
+        // resolve the association themselves, so the buttons stay fully
+        // usable while the hint updates.
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (IsVisible && _path == path)
+                SetOpenWithButtonAndPath();
+        }, DispatcherPriority.Background);
 
         // Show the spinner only for plugins that did not opt out (images and
         // videos set ShowBusyIndicator=false in Prepare to avoid the spinner).
