@@ -101,6 +101,10 @@ public partial class App : Application
 
     private bool _cleanExit = true;
     private Mutex _isRunning;
+    // v3.27.0: guards the exception-report window against re-entrancy. If the
+    // report itself fails to render, re-showing it from inside the dispatcher
+    // exception handler would recurse and flood the log.
+    private bool _exceptionReportShowing;
 
     static App()
     {
@@ -325,9 +329,30 @@ public partial class App : Application
             try
             {
                 ProcessHelper.WriteLog(e.Exception.ToString());
+
+                if (_exceptionReportShowing)
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                _exceptionReportShowing = true;
                 Current?.Dispatcher?.BeginInvoke(() =>
                 {
-                    Wpf.Ui.Violeta.Controls.ExceptionReport.Show(e.Exception);
+                    try
+                    {
+                        Wpf.Ui.Violeta.Controls.ExceptionReport.Show(e.Exception);
+                    }
+                    finally
+                    {
+                        // Reset on the next idle pass: the nested
+                        // DispatcherUnhandledException (when the report itself
+                        // throws) is processed before Background priority, so
+                        // it sees the flag still set and does not recurse.
+                        Current?.Dispatcher?.BeginInvoke(
+                            () => _exceptionReportShowing = false,
+                            System.Windows.Threading.DispatcherPriority.Background);
+                    }
                 });
             }
             catch (Exception ex)

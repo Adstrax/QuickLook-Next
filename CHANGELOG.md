@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.27.0
+
+### 健壮性
+
+- 异常报告防递归：若异常报告窗口自身渲染失败，不再反复重试刷爆日志
+  （此前极端情况下会在数秒内写入上 MB 日志）
+- 冒烟测试 Shell 集成步骤健壮化：Explorer 选区探针自动重试；在无可用
+  Explorer 文件窗口的环境中明确跳过而非误报失败
+
 ## QuickLook-Next 3.26.0
 
 ### 体验（Office 预览不再闪白）
