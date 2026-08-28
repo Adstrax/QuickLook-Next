@@ -47,7 +47,12 @@ public sealed partial class Plugin : IViewer, IMoreMenu
     {
         // The `*.eot` and `*.svg` font types are not supported
         // TODO: Check `*.otc` type
-        return !Directory.Exists(path) && new string[] { ".ttf", ".otf", ".woff", ".woff2", ".ttc" }.Any(path.ToLower().EndsWith);
+        return !Directory.Exists(path) &&
+            (path.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith(".otf", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith(".woff", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase));
     }
 
     public void Prepare(string path, ContextObject context)

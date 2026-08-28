@@ -60,7 +60,7 @@ public sealed class Plugin : IViewer
             || IpynbPanel.CanHandle(path)
             || MermaidPanel.CanHandle(path)
             || RstPanel.CanHandle(path)
-            || _markdownExtensions.Any(path.ToLower().EndsWith);
+            || _markdownExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 
     public void Prepare(string path, ContextObject context)

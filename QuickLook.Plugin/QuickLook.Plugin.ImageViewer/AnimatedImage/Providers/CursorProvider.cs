@@ -103,7 +103,7 @@ internal class CursorProvider : ImageMagickProvider
 
             try
             {
-                if (Path.LocalPath.ToLower().EndsWith(".ani"))
+                if (Path.LocalPath.EndsWith(".ani", StringComparison.OrdinalIgnoreCase))
                 {
                     return AnimatedCursor(Path.LocalPath);
                 }

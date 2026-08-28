@@ -39,7 +39,9 @@ public sealed class Plugin : IViewer
 
     public bool CanHandle(string path)
     {
-        return !Directory.Exists(path) && new[] { ".eml", ".msg" }.Any(path.ToLower().EndsWith);
+        return !Directory.Exists(path) &&
+            (path.EndsWith(".eml", StringComparison.OrdinalIgnoreCase) ||
+             path.EndsWith(".msg", StringComparison.OrdinalIgnoreCase));
     }
 
     public void Prepare(string path, ContextObject context)

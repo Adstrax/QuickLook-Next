@@ -139,7 +139,7 @@ public partial class ArchiveInfoPanel : UserControl, IDisposable, INotifyPropert
         // ReaderFactory is slow... so limit its usage
         string[] useReader = [".tar.gz", ".tgz", ".tar.bz2", ".tar.lz", ".tar.xz"];
 
-        if (useReader.Any(path.ToLower().EndsWith))
+        if (useReader.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
         {
             var reader = ReaderFactory.Open(fileStream, new ChardetReaderOptions());
 

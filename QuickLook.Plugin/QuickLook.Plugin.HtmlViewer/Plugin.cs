@@ -44,8 +44,8 @@ public sealed partial class Plugin : IViewer, IMoreMenu
 
     public bool CanHandle(string path)
     {
-        return !Directory.Exists(path) && (_extensions.Any(path.ToLower().EndsWith) ||
-                                           path.ToLower().EndsWith(".url") &&
+        return !Directory.Exists(path) && (_extensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) ||
+                                           path.EndsWith(".url", StringComparison.OrdinalIgnoreCase) &&
                                            _supportedProtocols.Contains(Helper.GetUrlPath(path).Split(':')[0]
                                                .ToLower()));
     }
@@ -62,7 +62,7 @@ public sealed partial class Plugin : IViewer, IMoreMenu
         context.ViewerContent = _panel;
         context.Title = Path.IsPathRooted(path) ? Path.GetFileName(path) : path;
 
-        if (path.ToLower().EndsWith(".url"))
+        if (path.EndsWith(".url", StringComparison.OrdinalIgnoreCase))
             path = Helper.GetUrlPath(path);
         _panel.FallbackPath = Path.GetDirectoryName(path); // Reserve opportunities for requesting exceeds MAX_PATH (260) limitation
         _panel.NavigateToFile(path);

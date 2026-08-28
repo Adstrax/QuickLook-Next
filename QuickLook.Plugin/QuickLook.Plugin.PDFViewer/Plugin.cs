@@ -21,8 +21,9 @@ using QuickLook.Common.Plugin;
 using System;
 using System.IO;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace QuickLook.Plugin.PDFViewer;
@@ -33,6 +34,7 @@ public sealed class Plugin : IViewer
     private string _path;
     private PdfViewerControl _pdfControl;
     private PasswordControl _passwordControl;
+    private bool _disposed;
 
     public int Priority => -1;
 
@@ -40,29 +42,29 @@ public sealed class Plugin : IViewer
     {
     }
 
-public bool CanHandle(string path)
-{
-    if (Directory.Exists(path))
-        return false;
+    public bool CanHandle(string path)
+    {
+        if (Directory.Exists(path))
+            return false;
 
-    var extension = Path.GetExtension(path);
-    if (extension.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-        return true;
+        var extension = Path.GetExtension(path);
+        if (extension.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            return true;
 
-    // v1.2.35: files with a known extension are matched by extension only, so
-    // previewing e.g. txt/zip files no longer opens the file on the UI thread
-    // for nothing. Magic-number detection is reserved for extensionless files.
-    if (extension.Length > 0)
-        return false;
+        // v1.2.35: files with a known extension are matched by extension only, so
+        // previewing e.g. txt/zip files no longer opens the file on the UI thread
+        // for nothing. Magic-number detection is reserved for extensionless files.
+        if (extension.Length > 0)
+            return false;
 
-    using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-    byte[] buffer = new byte[4];
-    if (fs.Read(buffer, 0, 4) < 4) return false;
-    return buffer[0] == (byte)'%' &&
-    buffer[1] == (byte)'P' &&
-    buffer[2] == (byte)'D' &&
-    buffer[3] == (byte)'F';
-}
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        byte[] buffer = new byte[4];
+        if (fs.Read(buffer, 0, 4) < 4) return false;
+        return buffer[0] == (byte)'%' &&
+        buffer[1] == (byte)'P' &&
+        buffer[2] == (byte)'D' &&
+        buffer[3] == (byte)'F';
+    }
 
     public void Prepare(string path, ContextObject context)
     {
@@ -79,13 +81,84 @@ public bool CanHandle(string path)
         _pdfControl = new PdfViewerControl();
         context.ViewerContent = _pdfControl;
 
-        Exception exception = null;
+        // v3.23.0: parsing a large PDF (Pdfium) can take hundreds of ms. Run
+        // it off the UI thread so the preview window stays responsive (close /
+        // scroll / switch) while the document loads; the parsed document is
+        // applied back on the UI thread when ready.
+        _ = Task.Run(() =>
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            return new PdfDocumentWrapper(stream);
+        }).ContinueWith(t =>
+        {
+            _pdfControl.Dispatcher.BeginInvoke(() =>
+            {
+                if (_disposed)
+                {
+                    if (t.IsCompletedSuccessfully)
+                        t.Result.Dispose();
+                    return;
+                }
 
-        _ = _pdfControl.Dispatcher.BeginInvoke(() =>
+                if (t.IsFaulted)
+                {
+                    var error = t.Exception?.GetBaseException();
+                    if (error is PdfException pe &&
+                        pe.Message == "Password required or incorrect password")
+                    {
+                        ShowPasswordControl(path, context);
+                        return;
+                    }
+
+                    ShowError(context, error?.ToString() ?? "Failed to load PDF.");
+                    return;
+                }
+
+                try
+                {
+                    _pdfControl.LoadPdf(t.Result);
+
+                    ResizeWindowToContent(context);
+
+                    context.Title = $"1 / {_pdfControl.TotalPages}: {Path.GetFileName(path)}";
+
+                    _pdfControl.CurrentPageChanged += UpdateWindowCaption;
+                    context.IsBusy = false;
+                }
+                catch (Exception ex)
+                {
+                    ShowError(context, ex.ToString());
+                }
+            });
+        }, TaskScheduler.Default);
+    }
+
+    public void Cleanup()
+    {
+        GC.SuppressFinalize(this);
+        _disposed = true;
+
+        _pdfControl?.Dispose();
+        _pdfControl = null;
+
+        _context = null;
+    }
+
+    /// <summary>
+    /// v3.23.0: password-protected PDF flow. The retry re-reads the file on
+    /// the UI thread; it only happens on an explicit user action (typing the
+    /// password), so it does not block preview startup.
+    /// </summary>
+    private void ShowPasswordControl(string path, ContextObject context)
+    {
+        _passwordControl = new PasswordControl();
+        _passwordControl.PasswordRequested += (string password) =>
         {
             try
             {
-                _pdfControl.LoadPdf(path);
+                context.ViewerContent = _pdfControl;
+                context.IsBusy = true;
+                _pdfControl.LoadPdf(path, password);
 
                 ResizeWindowToContent(context);
 
@@ -96,55 +169,31 @@ public bool CanHandle(string path)
             }
             catch (PdfException ex) when (ex.Message == "Password required or incorrect password")
             {
-                // Fallback to request a password
-                _passwordControl = new PasswordControl();
-                _passwordControl.PasswordRequested += (string password) =>
-                {
-                    try
-                    {
-                        context.ViewerContent = _pdfControl;
-                        context.IsBusy = true;
-                        _pdfControl.LoadPdf(path, password);
-
-                        ResizeWindowToContent(context);
-
-                        context.Title = $"1 / {_pdfControl.TotalPages}: {Path.GetFileName(path)}";
-
-                        _pdfControl.CurrentPageChanged += UpdateWindowCaption;
-                        context.IsBusy = false;
-                    }
-                    catch (PdfException ex) when (ex.Message == "Password required or incorrect password")
-                    {
-                        // This password is not accepted
-                        return false;
-                    }
-
-                    // This password is accepted
-                    return true;
-                };
-
-                context.ViewerContent = _passwordControl;
-                context.Title = $"[PASSWORD PROTECTED] {Path.GetFileName(path)}";
-                context.IsBusy = false;
+                // This password is not accepted
+                return false;
             }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-        }, DispatcherPriority.Loaded).Wait();
 
-        if (exception != null)
-            ExceptionDispatchInfo.Capture(exception).Throw();
+            // This password is accepted
+            return true;
+        };
+
+        context.ViewerContent = _passwordControl;
+        context.Title = $"[PASSWORD PROTECTED] {Path.GetFileName(path)}";
+        context.IsBusy = false;
     }
 
-    public void Cleanup()
+    private static void ShowError(ContextObject context, string message)
     {
-        GC.SuppressFinalize(this);
-
-        _pdfControl?.Dispose();
-        _pdfControl = null;
-
-        _context = null;
+        context.ViewerContent = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 14,
+            Margin = new Thickness(24),
+        };
+        context.IsBusy = false;
     }
 
     private void UpdateWindowCaption(object sender, EventArgs e2)

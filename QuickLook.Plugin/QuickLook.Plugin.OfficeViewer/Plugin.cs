@@ -62,7 +62,7 @@ public sealed class Plugin : IViewer
         if (Directory.Exists(path))
             return false;
 
-        if (!Extensions.Any(path.ToLower().EndsWith))
+        if (!Extensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
             return false;
 
         // Self-rendered formats do not depend on a registered system handler.

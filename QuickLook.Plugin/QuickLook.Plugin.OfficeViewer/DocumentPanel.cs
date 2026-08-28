@@ -7,6 +7,6 @@ public sealed class DocumentPanel : OfficePanelBase
 {
     public DocumentPanel(string path)
     {
-        Navigate(DocxToHtml.Convert(path));
+        NavigateAsync(() => DocxToHtml.Convert(path));
     }
 }

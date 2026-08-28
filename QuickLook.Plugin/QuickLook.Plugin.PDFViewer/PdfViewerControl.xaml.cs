@@ -281,10 +281,7 @@ public partial class PdfViewerControl : UserControl, INotifyPropertyChanged, IDi
         PdfDocumentWrapper = new PdfDocumentWrapper(stream, password);
         _pdfLoaded = true;
 
-        if (PdfDocumentWrapper.PdfDocument.PageCount < 2)
-            listThumbnails.Visibility = Visibility.Collapsed;
-
-        BeginLoadThumbnails();
+        ApplyLoadedDocument();
     }
 
     public void LoadPdf(MemoryStream stream)
@@ -293,6 +290,23 @@ public partial class PdfViewerControl : UserControl, INotifyPropertyChanged, IDi
         PdfDocumentWrapper = new PdfDocumentWrapper(stream);
         _pdfLoaded = true;
 
+        ApplyLoadedDocument();
+    }
+
+    /// <summary>
+    /// v3.23.0: applies an already-parsed document (loaded off the UI thread)
+    /// without re-reading the file. Must run on the UI thread.
+    /// </summary>
+    public void LoadPdf(PdfDocumentWrapper wrapper)
+    {
+        PdfDocumentWrapper = wrapper;
+        _pdfLoaded = true;
+
+        ApplyLoadedDocument();
+    }
+
+    private void ApplyLoadedDocument()
+    {
         if (PdfDocumentWrapper.PdfDocument.PageCount < 2)
             listThumbnails.Visibility = Visibility.Collapsed;
 

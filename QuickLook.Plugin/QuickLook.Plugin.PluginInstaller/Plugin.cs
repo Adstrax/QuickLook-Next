@@ -34,7 +34,7 @@ public sealed class Plugin : IViewer
 
     public bool CanHandle(string path)
     {
-        return !Directory.Exists(path) && path.ToLower().EndsWith(".qlplugin");
+        return !Directory.Exists(path) && path.EndsWith(".qlplugin", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Prepare(string path, ContextObject context)

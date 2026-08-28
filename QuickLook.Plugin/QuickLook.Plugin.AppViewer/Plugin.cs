@@ -78,7 +78,8 @@ public sealed partial class Plugin : IViewer, IMoreMenu
 
     public bool CanHandle(string path)
     {
-        return !Directory.Exists(path) && _extensions.Any(path.ToLower().EndsWith);
+        return !Directory.Exists(path) &&
+            _extensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 
     public void Prepare(string path, ContextObject context)

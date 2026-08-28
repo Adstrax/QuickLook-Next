@@ -3,6 +3,7 @@ using Microsoft.Web.WebView2.Wpf;
 using QuickLook.Common.Helpers;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -17,6 +18,7 @@ namespace QuickLook.Plugin.OfficeViewer;
 public abstract class OfficePanelBase : UserControl, IDisposable
 {
     private readonly WebView2 _webView = new();
+    private bool _disposed;
 
     protected OfficePanelBase()
     {
@@ -39,8 +41,47 @@ public abstract class OfficePanelBase : UserControl, IDisposable
             Dispatcher.BeginInvoke(() => _webView.NavigateToString(html)));
     }
 
+    /// <summary>
+    /// v3.23.0: builds the HTML on a background thread (OOXML parsing can take
+    /// hundreds of ms on large documents) and navigates back on the UI thread
+    /// when ready, so the preview window stays responsive while the document
+    /// parses.
+    /// </summary>
+    protected void NavigateAsync(Func<string> buildHtml)
+    {
+        var dispatcher = Dispatcher;
+
+        _ = Task.Run(buildHtml).ContinueWith(t =>
+        {
+            dispatcher.BeginInvoke(() =>
+            {
+                if (_disposed)
+                    return;
+
+                if (t.IsFaulted)
+                {
+                    Navigate(ErrorHtml(t.Exception?.GetBaseException()));
+                    return;
+                }
+
+                Navigate(t.Result);
+            });
+        }, TaskScheduler.Default);
+    }
+
     public void Dispose()
     {
+        _disposed = true;
         _webView.Dispose();
+    }
+
+    private static string ErrorHtml(Exception error)
+    {
+        return
+            """
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <style>body{margin:24px;font-family:'Segoe UI',sans-serif;font-size:14px;color:#C42B1C}</style>
+            </head><body><div>无法读取此文档（文件可能已损坏或格式不受支持）。</div></body></html>
+            """ + (error is null ? string.Empty : $"<!-- {error.Message} -->");
     }
 }

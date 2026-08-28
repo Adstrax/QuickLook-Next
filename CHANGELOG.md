@@ -2,6 +2,22 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.23.0
+
+### 体验（预览不卡顿）
+
+- PDF 预览改为后台解析：打开大 PDF 时窗口立即可交互（滚动 / 关闭 / 切换不再
+  被解析卡住），文档解析完成后自动应用
+- Office 自研渲染（Excel / Word / PowerPoint）改为后台解析：OOXML 解析不再
+  阻塞 UI 线程，WebView2 内容就绪后自动显示
+- PDF / Office 解析失败不再崩溃：显示错误信息页；密码保护的 PDF 仍走密码流程
+
+### 性能
+
+- 各插件 `CanHandle` 不再做 `path.ToLower()` 字符串分配，统一改用
+  `OrdinalIgnoreCase` 比较
+- PDFViewer 代码缩进整理
+
 ## QuickLook-Next 3.22.0
 
 ### 性能

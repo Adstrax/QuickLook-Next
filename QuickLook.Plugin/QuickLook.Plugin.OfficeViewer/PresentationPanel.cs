@@ -7,6 +7,6 @@ public sealed class PresentationPanel : OfficePanelBase
 {
     public PresentationPanel(string path)
     {
-        Navigate(PptxToHtml.Convert(path));
+        NavigateAsync(() => PptxToHtml.Convert(path));
     }
 }

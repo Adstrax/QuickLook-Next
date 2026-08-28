@@ -99,7 +99,7 @@ internal class ImageMagickProvider : AnimationProvider
         {
             // Only flatten multi-layer gimp xcf files. Other formats (e.g. PSD) should avoid
             // loading all layers via MagickImageCollection for performance.
-            if (Path.LocalPath.ToLower().EndsWith(".xcf"))
+            if (Path.LocalPath.EndsWith(".xcf", StringComparison.OrdinalIgnoreCase))
             {
                 using var layers = new MagickImageCollection(Path.LocalPath, settings);
                 if (layers.Count > 1)

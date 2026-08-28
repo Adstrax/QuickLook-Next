@@ -19,7 +19,7 @@ public sealed class SpreadsheetPanel : OfficePanelBase
 
     public SpreadsheetPanel(string path)
     {
-        Navigate(BuildHtml(path));
+        NavigateAsync(() => BuildHtml(path));
     }
 
     private static string BuildHtml(string path)
