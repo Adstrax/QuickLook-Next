@@ -21,3 +21,7 @@ QuickLookNext website will not obtain personally-identifying information about y
 The software application doesn’t collect anything personal information from you.
 
 The software application exchange data only with https://github.com using the GitHub Releases API. If you are viewing a remote content via the software, data exchange will happen between you and the remote content.
+
+Local plugin-usage statistics (which preview plugin handled a file) are saved
+only on your machine next to the other settings, and are used to tune which
+plugins stay resident. They are never uploaded.

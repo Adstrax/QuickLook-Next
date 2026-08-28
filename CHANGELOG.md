@@ -2,6 +2,15 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.28.0
+
+### 工程（插件常驻策略数据化）
+
+- 新增本地插件使用统计：每次预览记录由哪个插件处理，保存在本机设置目录
+  （plugin-usage.json，约 1KB），用于后续按真实使用数据调整「常驻 / 按需」
+  插件名单；数据不上传，内存占用仅几 KB，写盘去抖且不阻塞预览
+- 统计可通过 `DisablePluginUsageTracking` 设置关闭
+
 ## QuickLook-Next 3.27.0
 
 ### 健壮性

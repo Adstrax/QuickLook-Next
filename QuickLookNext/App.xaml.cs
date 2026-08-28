@@ -132,6 +132,10 @@ public partial class App : Application
         // with the rest of startup instead of blocking it.
         _ = Task.Run(() => _ = _gpuInBlacklist.Value);
 
+        // v3.28.0: preload the plugin-usage counter on a background thread so
+        // the first preview never pays the one-time stats file read.
+        _ = Task.Run(PluginUsageTracker.Preload);
+
         IsTimingEnabled = e.Args.Contains("/test-timing");
         IsStartupTimingEnabled = e.Args.Contains("/test-startup");
         DisableFocusMonitor = e.Args.Contains("/test-no-focusmonitor");
@@ -471,6 +475,8 @@ public partial class App : Application
 
         if (!_cleanExit)
             return;
+
+        PluginUsageTracker.Flush();
 
         _isRunning.ReleaseMutex();
 

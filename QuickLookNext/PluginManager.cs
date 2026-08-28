@@ -19,6 +19,7 @@ using QuickLook.Common.ExtensionMethods;
 using QuickLook.Common.Helpers;
 using QuickLook.Common.Plugin;
 using QuickLook.Plugin.InfoPanel;
+using QuickLookNext.Helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -286,6 +287,14 @@ public sealed class PluginManager
 
         var selected = matched ?? DefaultPlugin;
         instance.EnsurePluginReady(selected);
+
+        // v3.28.0: local-only usage statistics for re-balancing the eager /
+        // lazy plugin split from real data.
+        if (matched != null)
+        {
+            PluginUsageTracker.Record(
+                selected.GetType().Assembly.GetName().Name ?? selected.GetType().Name);
+        }
 
         return selected.GetType().CreateInstance<IViewer>();
     }
