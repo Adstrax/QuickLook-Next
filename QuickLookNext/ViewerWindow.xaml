@@ -231,6 +231,7 @@
             <busyDecorator:SpinIcon x:Name="busySpinner"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
+                                    IsHitTestVisible="False"
                                     FontFamily="{StaticResource SegoeFluent}"
                                     FontSize="30"
                                     Foreground="{DynamicResource TextFillColorPrimaryBrush}"

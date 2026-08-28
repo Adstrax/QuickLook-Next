@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using UtfUnknown;
 
 namespace QuickLook.Plugin.MarkdownViewer;
@@ -35,6 +36,13 @@ public class MarkdownPanel : WebpagePanel
     protected const string _resourcePrefix = "QuickLook.Plugin.MarkdownViewer.Resources.";
     protected internal static readonly Dictionary<string, byte[]> _resources = [];
     protected byte[] _homePage;
+
+    /// <summary>
+    /// v3.24.0: invoked once on the UI thread after the first WebView2
+    /// navigation completes, so the plugin can clear the busy spinner exactly
+    /// when the rendered page becomes visible.
+    /// </summary>
+    public Action Ready { get; set; }
 
     static MarkdownPanel()
     {
@@ -66,11 +74,34 @@ public class MarkdownPanel : WebpagePanel
     {
         FallbackPath = Path.GetDirectoryName(path);
 
-        var html = GenerateMarkdownHtml(path);
-        byte[] bytes = Encoding.UTF8.GetBytes(html);
-        _homePage = bytes;
+        // v3.24.0: reading + rendering a large markdown file can take tens of
+        // milliseconds on the UI thread. Build the HTML off the UI thread and
+        // navigate back when ready, so the preview window stays responsive.
+        var dispatcher = Dispatcher;
+        _ = Task.Run(() => GenerateMarkdownHtml(path)).ContinueWith(t =>
+        {
+            dispatcher.BeginInvoke(() =>
+            {
+                // The panel was disposed (preview closed / superseded).
+                if (_webView == null)
+                    return;
 
-        NavigateToUri(new Uri("file://quicklook/"));
+                _homePage = t.IsFaulted
+                    ? Encoding.UTF8.GetBytes(ErrorHtml())
+                    : Encoding.UTF8.GetBytes(t.Result);
+
+                NavigateToUri(new Uri("file://quicklook/"));
+            });
+        }, TaskScheduler.Default);
+    }
+
+    protected override void WebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+    {
+        base.WebView_NavigationCompleted(sender, e);
+
+        var ready = Ready;
+        Ready = null;
+        ready?.Invoke();
     }
 
     protected string GenerateMarkdownHtml(string path)
@@ -186,6 +217,16 @@ public class MarkdownPanel : WebpagePanel
     {
         using var reader = new StreamReader(ReadStream(key), Encoding.UTF8);
         return reader.ReadToEnd();
+    }
+
+    private static string ErrorHtml()
+    {
+        return
+            """
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <style>body{margin:24px;font-family:'Segoe UI',sans-serif;font-size:14px;color:#C42B1C}</style>
+            </head><body><div>无法读取此文档（文件可能已损坏或格式不受支持）。</div></body></html>
+            """;
     }
 
     public new static class MimeTypes

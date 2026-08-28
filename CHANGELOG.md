@@ -2,6 +2,18 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.24.0
+
+### 体验（预览更顺滑）
+
+- Markdown / Mermaid 预览改为后台解析：打开大文档或 mermaid 图表时窗口不再
+  卡顿，渲染完成自动显示；mermaid / MathJax 资源改在启动后台预载，首次
+  Markdown 预览不再等待一次性资源加载
+- 异步加载期间的转圈不再挡交互：spinner 层 `IsHitTestVisible=False`，
+  加载过程中滚动 / 关闭 / 切换照常可用
+- Office（Excel / Word / PowerPoint）与 Markdown 加载期间保留转圈直到内容
+  真正渲染完成，不再出现「白一下再出内容」的闪烁
+
 ## QuickLook-Next 3.23.0
 
 ### 体验（预览不卡顿）

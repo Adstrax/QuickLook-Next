@@ -49,6 +49,11 @@ public sealed class Plugin : IViewer
 
     public void Init()
     {
+        // v3.24.0: MarkdownPanel's static ctor loads the embedded mermaid /
+        // MathJax assets (~5 MB) into a static dictionary. Init runs on the
+        // background plugin-load thread, so force the load here and the first
+        // markdown preview never pays it on the UI thread.
+        _ = MarkdownPanel.ContainsKey("/__preload__");
     }
 
     public bool CanHandle(string path)
@@ -73,6 +78,9 @@ public sealed class Plugin : IViewer
         if (AsciiDocPanel.CanHandle(path))
         {
             var panel = new AsciiDocPanel();
+            // v3.24.0: the rendered page loads asynchronously; keep the busy
+            // spinner until it shows (the spinner itself never blocks input).
+            panel.Ready = () => context.IsBusy = false;
             panel.PreviewAsciiDoc(path);
             _panel = panel;
         }
@@ -85,6 +93,7 @@ public sealed class Plugin : IViewer
         else if (MermaidPanel.CanHandle(path))
         {
             var panel = new MermaidPanel();
+            panel.Ready = () => context.IsBusy = false;
             panel.PreviewMermaid(path);
             _panel = panel;
         }
@@ -97,13 +106,18 @@ public sealed class Plugin : IViewer
         else
         {
             var panel = new MarkdownPanel();
+            panel.Ready = () => context.IsBusy = false;
             panel.PreviewMarkdown(path);
             _panel = panel;
         }
 
         context.ViewerContent = _panel;
         context.Title = Path.GetFileName(path);
-        context.IsBusy = false;
+
+        // Ipynb / RST render synchronously; clear the spinner here. The
+        // async panels (Markdown / Mermaid / AsciiDoc) clear it via Ready.
+        if (IpynbPanel.CanHandle(path) || RstPanel.CanHandle(path))
+            context.IsBusy = false;
     }
 
     public void Cleanup()

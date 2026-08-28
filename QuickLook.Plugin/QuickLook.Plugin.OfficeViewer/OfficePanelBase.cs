@@ -35,10 +35,34 @@ public abstract class OfficePanelBase : UserControl, IDisposable
         };
     }
 
+    /// <summary>
+    /// v3.24.0: invoked once on the UI thread after the first WebView2
+    /// navigation completes, so the plugin can clear the busy spinner exactly
+    /// when the content becomes visible (instead of showing a blank area).
+    /// </summary>
+    public Action Ready { get; set; }
+
     protected void Navigate(string html)
     {
-        _ = _webView.EnsureCoreWebView2Async().ContinueWith(_ =>
-            Dispatcher.BeginInvoke(() => _webView.NavigateToString(html)));
+        HookReadyOnce();
+
+        _ = _webView.EnsureCoreWebView2Async().ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+            {
+                // WebView2 could not start; clear the spinner so the window
+                // never stays stuck on a loading state.
+                Dispatcher.BeginInvoke(() =>
+                {
+                    var ready = Ready;
+                    Ready = null;
+                    ready?.Invoke();
+                });
+                return;
+            }
+
+            Dispatcher.BeginInvoke(() => _webView.NavigateToString(html));
+        });
     }
 
     /// <summary>
@@ -67,6 +91,22 @@ public abstract class OfficePanelBase : UserControl, IDisposable
                 Navigate(t.Result);
             });
         }, TaskScheduler.Default);
+    }
+
+    private void HookReadyOnce()
+    {
+        if (Ready is null)
+            return;
+
+        EventHandler<CoreWebView2NavigationCompletedEventArgs> handler = null;
+        handler = (_, _) =>
+        {
+            _webView.NavigationCompleted -= handler;
+            var ready = Ready;
+            Ready = null;
+            ready?.Invoke();
+        };
+        _webView.NavigationCompleted += handler;
     }
 
     public void Dispose()

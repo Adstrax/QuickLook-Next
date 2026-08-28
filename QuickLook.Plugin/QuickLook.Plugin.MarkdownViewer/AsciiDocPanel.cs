@@ -37,6 +37,12 @@ public class AsciiDocPanel : WebpagePanel
     private byte[] _adocBytes;
     private string _adocName;
 
+    /// <summary>
+    /// v3.24.0: invoked once on the UI thread after the rendered page loads,
+    /// so the plugin can clear the busy spinner exactly when content shows.
+    /// </summary>
+    public Action Ready { get; set; }
+
     public static bool CanHandle(string path)
     {
         if (string.IsNullOrEmpty(path) || Directory.Exists(path))
@@ -60,13 +66,17 @@ public class AsciiDocPanel : WebpagePanel
     {
         base.WebView_NavigationCompleted(sender, e);
 
-        if (!e.IsSuccess || _adocBytes == null || _webView?.CoreWebView2 == null)
-            return;
+        if (e.IsSuccess && _adocBytes != null && _webView?.CoreWebView2 != null)
+        {
+            var base64 = Convert.ToBase64String(_adocBytes);
+            var nameJson = EscapeJsonString(_adocName ?? "file.adoc");
+            var json = $"{{\"type\":\"open-adoc\",\"payload\":{{\"base64\":\"{base64}\",\"name\":{nameJson}}}}}";
+            _webView.CoreWebView2.PostWebMessageAsJson(json);
+        }
 
-        var base64 = Convert.ToBase64String(_adocBytes);
-        var nameJson = EscapeJsonString(_adocName ?? "file.adoc");
-        var json = $"{{\"type\":\"open-adoc\",\"payload\":{{\"base64\":\"{base64}\",\"name\":{nameJson}}}}}";
-        _webView.CoreWebView2.PostWebMessageAsJson(json);
+        var ready = Ready;
+        Ready = null;
+        ready?.Invoke();
     }
 
     protected override void WebView_WebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs args)
