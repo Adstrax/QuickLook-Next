@@ -1,12 +1,14 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using QuickLook.Common.Helpers;
+using QuickLook.Common.Plugin;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WpfColor = System.Windows.Media.Color;
 
 namespace QuickLook.Plugin.OfficeViewer;
 
@@ -22,16 +24,39 @@ public abstract class OfficePanelBase : UserControl, IDisposable
 
     protected OfficePanelBase()
     {
+        // v3.26.0: the panel used to be opaque white from the moment it was
+        // created, so switching to an Office file flashed a big white box
+        // before the page loaded (especially jarring in dark mode). Match the
+        // loading surface to the app theme; the white "paper" only appears
+        // together with the rendered content. Stays opaque, so the v3.17.0
+        // "transparent WebView2 composites to black" issue cannot reappear.
+        var tint = IsDarkTheme()
+            ? WpfColor.FromRgb(0x17, 0x17, 0x17)
+            : WpfColor.FromRgb(0xF2, 0xF2, 0xF2);
+
         _webView.CreationProperties = new CoreWebView2CreationProperties
         {
             UserDataFolder = Path.Combine(SettingHelper.LocalDataPath, @"WebView2_Data\"),
         };
-        // v3.17.0: solid white paper surface, independent of the app theme.
-        _webView.DefaultBackgroundColor = System.Drawing.Color.White;
+        // The control background only shows before the page paints; the page
+        // itself is an opaque white paper surface (v3.17.0).
+        _webView.DefaultBackgroundColor = System.Drawing.Color.FromArgb(
+            tint.A, tint.R, tint.G, tint.B);
         Content = new Border
         {
-            Background = Brushes.White,
+            Background = new SolidColorBrush(tint),
             Child = _webView,
+        };
+    }
+
+    private static bool IsDarkTheme()
+    {
+        var theme = (Themes)SettingHelper.Get("LastTheme", (int)Themes.None, "QuickLookNext");
+        return theme switch
+        {
+            Themes.Dark => true,
+            Themes.Light => false,
+            _ => OSThemeHelper.AppsUseDarkTheme(),
         };
     }
 

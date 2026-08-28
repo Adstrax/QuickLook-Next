@@ -2,6 +2,14 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.26.0
+
+### 体验（Office 预览不再闪白）
+
+- Office（Excel / Word / PowerPoint）加载中的面板背景改为跟随应用主题
+  （暗色为深色、亮色为浅灰）：切换 / 打开时不再先闪一大块白色，白色纸面
+  与内容一起出现；内容仍固定浅色纸面，阅读体验不变
+
 ## QuickLook-Next 3.25.0
 
 ### 修复
