@@ -35,6 +35,7 @@ public class WebpagePanel : UserControl
     protected string _primaryPath;
     protected string _fallbackPath;
     protected WebView2 _webView;
+    private bool _disposed;
 
     public string FallbackPath
     {
@@ -47,7 +48,15 @@ public class WebpagePanel : UserControl
         if (!Helper.IsWebView2Available())
             Content = CreateDownloadButton();
         else
+        {
             InitializeComponent();
+
+            // v3.29.0: track the control so the idle recycler can shut the
+            // Chromium process group down after the last web preview closes.
+            // Registered here (not in InitializeComponent) because derived
+            // panels like SvgImagePanel override InitializeComponent entirely.
+            WebView2Lifecycle.Register(_webView);
+        }
     }
 
     protected virtual void InitializeComponent()
@@ -175,6 +184,16 @@ public class WebpagePanel : UserControl
 
     protected virtual void WebView_CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
     {
+        // v3.29.0: the panel may have been disposed while CoreWebView2 was
+        // still initializing; drop the freshly created controller so it
+        // does not linger until the idle recycler runs.
+        if (_disposed)
+        {
+            try { _webView?.Dispose(); }
+            catch { /* best effort */ }
+            return;
+        }
+
         if (e.IsSuccess)
         {
             // v1.2.1: make the web content follow the app's manual light/dark
@@ -265,8 +284,22 @@ public class WebpagePanel : UserControl
 
     public void Dispose()
     {
-        _webView?.Dispose();
-        _webView = null;
+        _disposed = true;
+
+        if (_webView != null)
+        {
+            // v3.29.0: stop tracking first so the idle recycler counts this
+            // control as gone even if Dispose below throws.
+            WebView2Lifecycle.Unregister(_webView);
+            try
+            {
+                _webView.Dispose();
+            }
+            finally
+            {
+                _webView = null;
+            }
+        }
     }
 
     private object CreateDownloadButton()

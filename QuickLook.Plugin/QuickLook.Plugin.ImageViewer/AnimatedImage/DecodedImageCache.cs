@@ -32,8 +32,9 @@ namespace QuickLook.Plugin.ImageViewer.AnimatedImage;
 internal static class DecodedImageCache
 {
     private const int MaxEntries = 24;
-    private const long MaxTotalPixels = 48L * 1024 * 1024; // ~48 MP (~192 MB BGRA worst case)
-    private const long MaxSinglePixels = 24L * 1024 * 1024;
+    // v3.29.0: halve the worst-case decoded-image retention (~192 MB -> ~96 MB).
+    private const long MaxTotalPixels = 24L * 1024 * 1024; // ~24 MP (~96 MB BGRA worst case)
+    private const long MaxSinglePixels = 16L * 1024 * 1024;
 
     private static readonly object Sync = new();
     private static readonly Dictionary<string, LinkedListNode<Entry>> Map = [];

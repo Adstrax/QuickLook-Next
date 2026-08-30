@@ -37,6 +37,17 @@ public partial class Plugin : IViewer, IMoreMenu
         ".txt", ".rtf",
     };
 
+    // v3.29.0: MarkdownViewer is now loaded on first use (lazy). These
+    // extensions belong to it by priority, so TextViewer must not claim
+    // them - otherwise the eager content-sniff fallback would win .md /
+    // .rst / .adoc / ... previews and MarkdownViewer would never load.
+    private static readonly HashSet<string> MarkdownViewerExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".md", ".markdown", ".mdx", ".mmd", ".mkd", ".mdwn", ".mdown", ".mdc",
+        ".qmd", ".rmd", ".rmarkdown", ".apib", ".mdtxt", ".mdtext",
+        ".adoc", ".asciidoc", ".asc", ".ad", ".ipynb", ".mermaid", ".rst", ".restructuredtext",
+    };
+
     private TextViewerPanel _tvp;
     private string _currentPath;
 
@@ -56,6 +67,10 @@ public partial class Plugin : IViewer, IMoreMenu
     public bool CanHandle(string path)
     {
         if (Directory.Exists(path))
+            return false;
+
+        // v3.29.0: hand the Markdown family to MarkdownViewer (lazy).
+        if (MarkdownViewerExtensions.Contains(Path.GetExtension(path)))
             return false;
 
         if (WellKnownExtensions.Contains(Path.GetExtension(path)))

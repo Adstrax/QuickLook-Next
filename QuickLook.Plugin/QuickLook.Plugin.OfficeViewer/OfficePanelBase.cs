@@ -2,6 +2,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using QuickLook.Common.Helpers;
 using QuickLook.Common.Plugin;
+using QuickLook.Plugin.HtmlViewer;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -47,6 +48,10 @@ public abstract class OfficePanelBase : UserControl, IDisposable
             Background = new SolidColorBrush(tint),
             Child = _webView,
         };
+
+        // v3.29.0: track the control so the idle recycler can shut the
+        // Chromium process group down after the last Office preview closes.
+        WebView2Lifecycle.Register(_webView);
     }
 
     private static bool IsDarkTheme()
@@ -97,6 +102,10 @@ public abstract class OfficePanelBase : UserControl, IDisposable
     public void Dispose()
     {
         _disposed = true;
+
+        // v3.29.0: stop tracking first so the idle recycler counts this
+        // control as gone even if Dispose below throws.
+        WebView2Lifecycle.Unregister(_webView);
         _webView.Dispose();
     }
 

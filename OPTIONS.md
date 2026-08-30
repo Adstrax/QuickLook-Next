@@ -170,6 +170,15 @@ These keys are also stored in `QuickLookNext.config`.
 - Example:
   - `<ExtensionBlocklist>.insv;.exe</ExtensionBlocklist>`
 
+### `<WebView2IdleTimeoutSeconds>`
+- Default: `300`
+- Type: `Integer`
+- Description: Seconds to wait after the last web-based preview (Markdown / Office /
+  HTML / SVG / CHM / font preview) closes before the app force-reclaims the
+  Chromium processes of its own WebView2 data folder. Set to `0` to disable.
+- Example:
+  - `<WebView2IdleTimeoutSeconds>120</WebView2IdleTimeoutSeconds>`
+
 ## QuickLook.Plugin.ImageViewer.config options
 
 ### `<UseColorProfile>`

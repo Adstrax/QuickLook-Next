@@ -2,6 +2,27 @@
 
 > QuickLookNext Changelog starting from version `4.0.0`.
 
+## QuickLook-Next 3.29.0
+
+### 内存（PDF 为主的日常使用更省）
+
+- Markdown / Office 预览改为按需加载：启动进程不再常驻这两个插件及其依赖
+  （mermaid / MathJax 资源、MiniExcel / OOXML 解析链、WebView2 依赖），
+  首次预览对应文件时才加载；常驻私有内存实测降低约 25MB
+- WebView2 闲置回收：最后一个 Web 类预览（Markdown / Office / HTML / SVG /
+  CHM / 字体预览等）关闭后闲置 5 分钟，自动关闭残留控件并回收本应用的
+  Chromium 进程；可用 QuickLookNext.config 的 WebView2IdleTimeoutSeconds
+  调整（单位秒，0 表示关闭自动回收）
+- 图片解码缓存收紧：最坏占用量由约 192MB 降至约 96MB，遏制越用越涨
+
+### 修复
+
+- 修复 Markdown 按需化后 .md / .rst / .adoc / .ipynb 等扩展名被 TextViewer
+  内容嗅探抢占、Markdown 预览退回纯文本的问题；高优先级按需插件现在仍能
+  正确接管这些格式
+
+冒烟测试全部通过（构建 / 托盘菜单 / 19+ 格式预览 / Shell 集成）。
+
 ## QuickLook-Next 3.28.0
 
 ### 工程（插件常驻策略数据化）
