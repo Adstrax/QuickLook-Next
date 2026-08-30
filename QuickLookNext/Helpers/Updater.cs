@@ -76,9 +76,17 @@ internal class Updater
             {
                 var json = DownloadJson("https://api.github.com/repos/Adstrax/QuickLook-Next/releases/latest");
 
-                var nVersion = (string)json["tag_name"];
+                var nVersion = (string)json["tag_name"] ?? string.Empty;
 
-                if (new Version(nVersion) <= Assembly.GetExecutingAssembly().GetName().Version)
+                // v3.29.0: tolerate a "v" prefix on release tags (GitHub
+                // conventions vary) and never let a malformed tag crash the
+                // update check - treat it as "no newer version".
+                var cleanVersion = nVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase)
+                    ? nVersion[1..]
+                    : nVersion;
+
+                if (!Version.TryParse(cleanVersion, out var latestVersion) ||
+                    latestVersion <= Assembly.GetExecutingAssembly().GetName().Version)
                 {
                     if (!silent)
                     {
