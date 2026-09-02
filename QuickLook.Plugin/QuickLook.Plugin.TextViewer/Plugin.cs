@@ -57,11 +57,10 @@ public partial class Plugin : IViewer, IMoreMenu
 
     public void Init()
     {
-        // v1.2.35: loading all syntax-highlighting definitions takes a few
-        // hundred ms. Do it during background plugin loading (which always
-        // finishes before the first preview can start) instead of paying it
-        // on the UI thread at the first text preview.
-        HighlightingThemeManager.Initialize();
+        // v3.30.0: the ~50 MB of compiled syntax-highlighting definitions
+        // no longer load at startup. They are compiled in the background on
+        // the first text/code preview (HighlightingThemeManager.EnsureLoadedAsync),
+        // so PDF/image-only sessions never pay for code highlighting.
     }
 
     public bool CanHandle(string path)

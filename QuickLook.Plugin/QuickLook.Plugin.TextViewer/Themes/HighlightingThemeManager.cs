@@ -38,15 +38,52 @@ public class HighlightingThemeManager
 
     public static HighlightingManager Dark { get; internal set; }
 
+    // v3.30.0: the syntax library is no longer compiled at startup; it is
+    // loaded once on a background thread at the first text preview.
+    private static readonly object LoadSync = new();
+    private static volatile bool _initialized;
+    private static Task _loadTask;
+
+    public static bool IsInitialized => _initialized;
+
     public static void Initialize()
     {
-        InitHighlightingManager();
-        InitCustomHighlighting();
+        lock (LoadSync)
+        {
+            if (_initialized)
+                return;
+
+            InitHighlightingManager();
+            InitCustomHighlighting();
+
+            _initialized = true;
+        }
+    }
+
+    /// <summary>
+    /// v3.30.0: starts the syntax-library compile on a background thread the
+    /// first time a text preview needs it. Returns the in-flight task so
+    /// the caller can re-apply highlighting once the definitions land.
+    /// </summary>
+    public static Task EnsureLoadedAsync()
+    {
+        lock (LoadSync)
+        {
+            if (_initialized)
+                return Task.CompletedTask;
+
+            // Retry after a fault (e.g. transient IO) instead of sticking
+            // to a failed task for the rest of the session.
+            if (_loadTask is null || _loadTask.IsFaulted)
+                _loadTask = Task.Run(Initialize);
+
+            return _loadTask;
+        }
     }
 
     public static HighlightingTheme GetHighlightingByExtensionOrDetector(string path, string extension, string text = null)
     {
-        if (Light is null || Dark is null) return HighlightingTheme.Default;
+        if (!IsInitialized) return HighlightingTheme.Default;
 
         var useFormatDetector = SettingHelper.Get("UseFormatDetector", true, "QuickLook.Plugin.TextViewer");
         // v1.2.35: the format-detector pass scans the whole text and is only

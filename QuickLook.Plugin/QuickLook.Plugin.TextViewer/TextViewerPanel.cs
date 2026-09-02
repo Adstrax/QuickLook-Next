@@ -45,6 +45,10 @@ namespace QuickLook.Plugin.TextViewer;
 public partial class TextViewerPanel : TextEditor, IDisposable
 {
     private bool _disposed;
+    // v3.30.0: idempotency guards for re-applying the view when the lazy
+    // syntax-definition load finishes after the plain first frame.
+    private bool _customTransformersAdded;
+    private bool _decolorizerAdded;
 
     /// <summary>Maximum number of characters allowed on a single line before it is truncated.</summary>
     private const int MAX_LINE_LENGTH = 10000;
@@ -68,11 +72,10 @@ public partial class TextViewerPanel : TextEditor, IDisposable
             Application.Current.Resources.MergedDictionaries.Add(groupDictionary);
         }
 
-        // v1.2.35: normally already initialized from Plugin.Init on the
-        // background plugin-load task; this is only a fallback for paths that
-        // skip plugin loading, so it never re-runs on the UI thread.
-        if (HighlightingThemeManager.Light is null)
-            HighlightingThemeManager.Initialize();
+        // v3.30.0: syntax definitions compile lazily in the background at
+        // the first text preview. The fallback here must never compile them
+        // synchronously on this (UI) thread; LoadFileAsync renders plain
+        // text first and upgrades the highlighting when the load finishes.
     }
 
     public TextViewerPanel()
@@ -324,6 +327,43 @@ public partial class TextViewerPanel : TextEditor, IDisposable
 
     public void LoadFileAsync(string path, ContextObject context)
     {
+        // v3.30.0: applies (or re-applies, after the lazy syntax-library load)
+        // syntax highlighting for the current document. UI thread only; the
+        // custom line transformers are added once per panel instance.
+        void ApplyHighlighting(string path, string text, string extension, bool disableHighlighting)
+        {
+            if (_disposed)
+                return;
+
+            var highlighting = HighlightingThemeManager.GetHighlightingByExtensionOrDetector(path, extension, text);
+
+            SyntaxHighlighting = disableHighlighting
+                ? null
+                : highlighting.SyntaxHighlighting;
+
+            if (SyntaxHighlighting is ICustomHighlightingDefinition custom && !_customTransformersAdded)
+            {
+                _customTransformersAdded = true;
+                foreach (var lineTransformer in custom.LineTransformers)
+                {
+                    TextArea.TextView.LineTransformers.Add(lineTransformer);
+                }
+            }
+
+            if (highlighting.IsDark)
+            {
+                Background = Brushes.Transparent;
+                SetResourceReference(ForegroundProperty, "WindowTextForeground");
+            }
+            else
+            {
+                // if os dark mode, but not AllowDarkTheme, make background light
+                Background = OSThemeHelper.AppsUseDarkTheme()
+                    ? new SolidColorBrush(Color.FromArgb(175, 255, 255, 255))
+                    : Brushes.Transparent;
+            }
+        }
+
         _ = Task.Run(() =>
         {
             const int maxLength = 5 * 1024 * 1024;
@@ -375,42 +415,24 @@ public partial class TextViewerPanel : TextEditor, IDisposable
 
             Dispatcher.BeginInvoke(() =>
             {
+                if (_disposed)
+                    return;
+
                 var extension = Path.GetExtension(path);
-                var highlighting = HighlightingThemeManager.GetHighlightingByExtensionOrDetector(path, extension, text);
+                var disableHighlighting = bufferCopy.Length > maxHighlightingLength;
 
                 Encoding = encoding;
-                SyntaxHighlighting = bufferCopy.Length > maxHighlightingLength
-                    ? null
-                : highlighting.SyntaxHighlighting;
-            Document = doc;
-
-                if (SyntaxHighlighting is ICustomHighlightingDefinition custom)
-                {
-                    foreach (var lineTransformer in custom.LineTransformers)
-                    {
-                        TextArea.TextView.LineTransformers.Add(lineTransformer);
-                    }
-                }
+                Document = doc;
 
                 // Only install the decolorizer when the file actually contained long lines,
                 // to avoid the per-line overhead on normal files.
-                if (hasLongLines)
+                if (hasLongLines && !_decolorizerAdded)
                 {
+                    _decolorizerAdded = true;
                     TextArea.TextView.LineTransformers.Add(new TruncatedLineDecolorizer(this));
                 }
 
-                if (highlighting.IsDark)
-                {
-                    Background = Brushes.Transparent;
-                    SetResourceReference(ForegroundProperty, "WindowTextForeground");
-                }
-                else
-                {
-                    // if os dark mode, but not AllowDarkTheme, make background light
-                    Background = OSThemeHelper.AppsUseDarkTheme()
-                        ? new SolidColorBrush(Color.FromArgb(175, 255, 255, 255))
-                        : Brushes.Transparent;
-                }
+                ApplyHighlighting(path, text, extension, disableHighlighting);
 
                 // Support automatic RTL for text files
                 if (extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
@@ -426,7 +448,27 @@ public partial class TextViewerPanel : TextEditor, IDisposable
                     }
                 }
 
-            context.IsBusy = false;
+                context.IsBusy = false;
+
+                // v3.30.0: the syntax library is compiled in the background on
+                // the first text preview, so the frame above may be plain. When
+                // the definitions are ready, refresh the highlighting in place.
+                if (!HighlightingThemeManager.IsInitialized)
+                {
+                    _ = HighlightingThemeManager.EnsureLoadedAsync().ContinueWith(t =>
+                    {
+                        if (_disposed || !t.IsCompletedSuccessfully)
+                            return;
+
+                        Dispatcher.BeginInvoke(() =>
+                        {
+                            if (_disposed)
+                                return;
+
+                            ApplyHighlighting(path, text, extension, disableHighlighting);
+                        }, DispatcherPriority.Render);
+                    }, TaskScheduler.Default);
+                }
             }, DispatcherPriority.Render);
         });
     }
